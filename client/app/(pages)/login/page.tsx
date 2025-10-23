@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Image from "next/image"
 import sstlogo from '@/public/sstlogo.png'
-import LoginButton from '@/components/features/login/loginButton' 
+import LoginButton from '@/components/features/login/LoginButton' 
 
 const LoginPage = () => {
   return (

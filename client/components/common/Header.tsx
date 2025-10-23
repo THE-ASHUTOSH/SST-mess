@@ -27,15 +27,6 @@ const Header = () => {
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-4">
-              <Link href="/" className={navLinkClass("/")}>Home</Link>
-              <Link href="/menu" className={navLinkClass("/menu")}>Menu</Link>
-              <Link href="/mess-bill" className={navLinkClass("/mess-bill")}>Mess Bill</Link>
-              <Link href="/complaints" className={navLinkClass("/complaints")}>Complaints</Link>
-            </div>
-          </div>
 
           {/* Auth Buttons - Desktop */}
           <div className="hidden md:block">

@@ -1,0 +1,25 @@
+import mongoose from "mongoose";
+
+const vendorFeedbackFormSchema = new mongoose.Schema({
+    vendorName: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Vendor",
+        required: true,
+    },
+    user:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+    },
+    feedback: {
+        type: String,
+        required: true,
+    },
+    rating: {
+        type: Number,
+        required: true,
+    },
+});
+
+export default mongoose.model("VendorFeedback", vendorFeedbackFormSchema);
+    

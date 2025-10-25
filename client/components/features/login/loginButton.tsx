@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import goggleLogo from '../../../public/google.png'
 
+
+
 const loginButton = () => {
   return (
     <Button 
             variant="outline" 
             className="w-full py-6 text-white bg-zinc-800 hover:bg-zinc-800/80 border-0 transition-all duration-300 text-base"
-            onClick={() => {/* Add Google sign in logic */}}
+            onClick={() => {window.location.href = 'http://localhost:5000/auth/google'}}
           >
             <Image
               src={goggleLogo}

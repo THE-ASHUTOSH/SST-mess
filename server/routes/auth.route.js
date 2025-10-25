@@ -1,6 +1,7 @@
 import express from "express";
 import passport from "passport";
 import { generateToken } from "../utils/generateToken.js";
+import { getUserDetails } from "../controllers/user.controller.js";
 
 const router = express.Router();
 
@@ -33,16 +34,6 @@ router.get(
   }
 );
 
-router.get("/details", (req, res) => {
-  if (!req.cookies?.token) {
-  return res.status(401).json({ message: "Unauthorized" });
-}
-
-  if(req.cookies && req.cookies.token){
-    const user = jwt.verify(req.cookies.token, "your_jwt_secret_key");
-    return res.json({user});
-  }
-  res.json();
-});
+router.get("/details", getUserDetails);
 
 export default router;

@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const vendorFeedbackFormSchema = new mongoose.Schema({
-    vendorName: {
+    vendor: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Vendor",
         required: true,

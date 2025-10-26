@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { Card } from '@/components/ui/card'
 import Link from 'next/link';
-import { set } from 'mongoose';
+
 
 const Feedback = () => {
   const [rating, setRating] = useState(0)

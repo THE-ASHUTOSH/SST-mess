@@ -11,6 +11,7 @@ interface Vendor {
 const VendorDetail = () => {
   const [vendors, setvendors] = useState<Vendor[]>([])
   useEffect(() => {
+    console.log(process.env.NEXT_PUBLIC_BACKEND_URL)
     async function loadVendors() {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/getVendors`, {

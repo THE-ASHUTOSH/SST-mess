@@ -2,12 +2,14 @@
 
 import React, { useState } from 'react'
 import { Card } from '@/components/ui/card'
+import Link from 'next/link';
+import { set } from 'mongoose';
 
 const Feedback = () => {
   const [rating, setRating] = useState(0)
   const [hoveredRating, setHoveredRating] = useState(0)
   const [feedback, setFeedback] = useState('')
-
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const handleStarClick = (selectedRating: number) => {
     setRating(selectedRating)
   }
@@ -16,59 +18,59 @@ const Feedback = () => {
     setHoveredRating(hoveredValue)
   }
 
-  const handleSubmit = async(e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     // Handle form submission here
     console.log('Submitted feedback:', { rating, feedback })
 
     const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/vendorFeedbackForm`;
-    
+
     const requestBody = JSON.stringify({
-        rating : rating,
-        feedback : feedback
-      });
+      rating: rating,
+      feedback: feedback
+    });
 
     try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            // NOTE: If using a native FormData object (for file uploads), 
-            // omit 'Content-Type', and pass formData directly as the body.
-          },
-          body: requestBody,
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // NOTE: If using a native FormData object (for file uploads), 
+          // omit 'Content-Type', and pass formData directly as the body.
+        },
+        body: requestBody,
 
-          credentials: 'include'
-        });
+        credentials: 'include'
+      });
 
-        if (!response.ok) {
-          // Handle HTTP error statuses (4xx, 5xx)
-          // Note: fetch() only throws an error for network failures, not for 4xx/5xx responses
-          const errorData = await response.json();
-          throw new Error(`HTTP error! Status: ${response.status}. Details: ${errorData.message || 'Unknown error'}`);
-        }
-
-        // Process the successful response
-        const data = await response.json();
-        console.log('Sucessfully submitted feedback:', data);
-
-      } catch (error) {
-        console.error('Unable to submit feedback:', error);
+      if (!response.ok) {
+        // Handle HTTP error statuses (4xx, 5xx)
+        // Note: fetch() only throws an error for network failures, not for 4xx/5xx responses
+        const errorData = await response.json();
+        throw new Error(`HTTP error! Status: ${response.status}. Details: ${errorData.message || 'Unknown error'}`);
       }
 
-    
+      // Process the successful response
+      const data = await response.json();
+      setShowSuccessPopup(true);
+      console.log('Sucessfully submitted feedback:', data);
+
+    } catch (error) {
+      console.error('Unable to submit feedback:', error);
+    }
+
+
   }
 
   const renderStar = (value: number) => {
     const isSelected = (hoveredRating || rating) >= value
-    
+
     return (
       <button
         key={value}
         type="button"
-        className={`transform transition-all duration-300 hover:scale-110 focus:outline-none ${
-          isSelected ? 'text-yellow-400' : 'text-gray-600'
-        }`}
+        className={`transform transition-all duration-300 hover:scale-110 focus:outline-none ${isSelected ? 'text-yellow-400' : 'text-gray-600'
+          }`}
         onClick={() => handleStarClick(value)}
         onMouseEnter={() => handleStarHover(value)}
         onMouseLeave={() => handleStarHover(0)}
@@ -127,16 +129,66 @@ const Feedback = () => {
             <button
               type="submit"
               disabled={!rating}
-              className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-300 ${
-                rating
+              className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-300 ${rating
                   ? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-purple-500 hover:to-blue-500 text-white hover:shadow-lg hover:shadow-purple-500/20 hover:-translate-y-0.5'
                   : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-              }`}
+                }`}
             >
               Submit Feedback
             </button>
           </form>
         </div>
+        {showSuccessPopup && (
+          <Link href="/student/dashboard">
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-90 p-4 backdrop-blur-3xl"
+              role="alert"
+              onClick={() => setShowSuccessPopup(false)}
+            >
+              <div
+                className="relative flex flex-col items-center gap-4 rounded-2xl bg-white p-8 shadow-2xl transform animate-in fade-in zoom-in duration-300"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Success Icon */}
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-500">
+                  <svg
+                    className="h-8 w-8 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={3}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+
+                {/* Message */}
+                <div className="text-center">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                    Success!
+                  </h3>
+                  <p className="text-gray-600">
+                    Form submitted successfully!
+                  </p>
+                </div>
+
+                {/* Button */}
+                <Link href="/student/dashboard">
+                  <button
+                    className="mt-2 px-8 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 active:scale-95 transition-all duration-200 shadow-md"
+                    onClick={() => setShowSuccessPopup(false)}
+                  >
+                    OK
+                  </button>
+                </Link>
+              </div>
+            </div>
+          </Link>
+        )}
       </Card>
     </div>
   )

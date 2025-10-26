@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
+import Link from 'next/link';
 interface Vendor {
   _id: string;
   name: string;
@@ -17,7 +18,7 @@ const SelectVendor = () => {
   })
 
   const [showMessage, setShowMessage] = useState(false)
-
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -67,7 +68,7 @@ const SelectVendor = () => {
 
       const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/vendorSelectionForm`;
 
-      
+
       const requestBody = JSON.stringify({
         name: formData.name,
         room: formData.room,
@@ -82,7 +83,7 @@ const SelectVendor = () => {
           },
           body: requestBody,
 
-       
+
           credentials: 'include'
         });
 
@@ -93,6 +94,7 @@ const SelectVendor = () => {
 
         // Process the successful response
         const data = await response.json();
+        setShowSuccessPopup(true);
         console.log('Success:', data);
 
       } catch (error) {
@@ -102,6 +104,7 @@ const SelectVendor = () => {
       console.error(error);
     }
   };
+
 
 
   return (
@@ -183,6 +186,57 @@ const SelectVendor = () => {
             </button>
           </form>
         </div>
+        {showSuccessPopup && (
+          <Link href="/student/dashboard">
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-90 p-4 backdrop-blur-3xl"
+            role="alert"
+            onClick={() => setShowSuccessPopup(false)}
+          >
+            <div
+              className="relative flex flex-col items-center gap-4 rounded-2xl bg-white p-8 shadow-2xl transform animate-in fade-in zoom-in duration-300"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Success Icon */}
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-500">
+                <svg
+                  className="h-8 w-8 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={3}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+
+              {/* Message */}
+              <div className="text-center">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  Success!
+                </h3>
+                <p className="text-gray-600">
+                  Form submitted successfully!
+                </p>
+              </div>
+
+              {/* Button */}
+              <Link href="/student/dashboard">
+              <button
+                className="mt-2 px-8 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 active:scale-95 transition-all duration-200 shadow-md"
+                onClick={() => setShowSuccessPopup(false)}
+              >
+                OK
+              </button>
+              </Link>
+            </div>
+          </div>
+          </Link>
+        )}
       </Card>
     </div>
   )

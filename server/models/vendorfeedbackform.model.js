@@ -13,7 +13,6 @@ const vendorFeedbackFormSchema = new mongoose.Schema({
     },
     feedback: {
         type: String,
-        required: true,
     },
     rating: {
         type: Number,

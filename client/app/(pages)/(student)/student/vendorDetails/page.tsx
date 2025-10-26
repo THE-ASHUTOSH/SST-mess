@@ -15,7 +15,6 @@ const VendorDetail = () => {
     async function loadVendors() {
       try {
         const response = await axios.get("http://127.0.0.1:5000/vendor/getVendors", { withCredentials: true });
-        console.log("Vendor response:", response.data.vendor);
         setvendors(response.data.vendor);
         console.log("Vendors fetched:", vendors);
       } catch (err) {

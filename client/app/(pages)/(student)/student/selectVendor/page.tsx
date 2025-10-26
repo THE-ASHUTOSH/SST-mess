@@ -1,8 +1,15 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
-
+import axios from 'axios'
+interface Vendor {
+  _id: string;
+  name: string;
+  price: number;
+  description: string;
+  menu: string;
+}
 const SelectVendor = () => {
   const [formData, setFormData] = useState({
     name: '',
@@ -12,11 +19,6 @@ const SelectVendor = () => {
 
   const [showMessage, setShowMessage] = useState(false)
 
-  const messOptions = [
-    { value: 'mess1', label: 'Mess A - Vegetarian' },
-    { value: 'mess2', label: 'Mess B - Non-Vegetarian' },
-    { value: 'mess3', label: 'Mess C - Mixed' }
-  ]
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -30,11 +32,72 @@ const SelectVendor = () => {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [vendors, setvendors] = useState<Vendor[]>([])
+  useEffect(() => {
+    async function loadVendors() {
+      try {
+        const response = await axios.get("http://127.0.0.1:5000/vendor/getVendors", { withCredentials: true });
+        setvendors(response.data.vendor);
+        console.log("Vendors fetched:", vendors);
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    loadVendors();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     // Handle form submission here
-    console.log('Form submitted:', formData)
-  }
+    try {
+      const user = await fetch('http://localhost:5000/auth/details', { credentials: 'include' });
+      console.log(await user.json());
+      // const response = await axios.post('http://localhost:5000/vendor/vendorSelectionForm', formData, { withCredentials: true });
+      // console.log('Form submitted successfully', response.data.vendorSection);
+      const url = 'http://localhost:5000/vendor/vendorSelectionForm';
+
+      // Assuming 'formData' is a JavaScript object (not a native FormData object)
+      // that needs to be sent as JSON, which is typical for an Axios POST request.
+      const requestBody = JSON.stringify({
+        name: formData.name,
+        room : formData.room,
+        vendor : formData.mess
+      });
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            // NOTE: If using a native FormData object (for file uploads), 
+            // omit 'Content-Type', and pass formData directly as the body.
+          },
+          body: requestBody,
+
+          // 👈 The 'fetch' equivalent of axios's 'withCredentials: true'
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          // Handle HTTP error statuses (4xx, 5xx)
+          // Note: fetch() only throws an error for network failures, not for 4xx/5xx responses
+          const errorData = await response.json();
+          throw new Error(`HTTP error! Status: ${response.status}. Details: ${errorData.message || 'Unknown error'}`);
+        }
+
+        // Process the successful response
+        const data = await response.json();
+        console.log('Success:', data);
+
+      } catch (error) {
+        console.error('Fetch operation failed:', error);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-4 animate-fade-in-up">
@@ -43,7 +106,7 @@ const SelectVendor = () => {
           <h1 className="text-2xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-indigo-400">
             Select Your Mess
           </h1>
-          
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <label htmlFor="name" className="text-sm font-medium text-gray-300">
@@ -90,9 +153,9 @@ const SelectVendor = () => {
                 required
               >
                 <option value="">Select a mess</option>
-                {messOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
+                {vendors.map(option => (
+                  <option key={option._id} value={option._id}>
+                    {option.name} - ₹{option.price}
                   </option>
                 ))}
               </select>
@@ -101,7 +164,7 @@ const SelectVendor = () => {
             {showMessage && formData.mess && (
               <div className="py-3 px-4 rounded-lg bg-blue-500/10 border border-blue-500/20 animate-fade-in">
                 <p className="text-sm text-blue-400">
-                  You have selected {messOptions.find(opt => opt.value === formData.mess)?.label}. 
+                  You have selected {vendors.find(opt => opt._id === formData.mess)?.name}.
                   Please ensure this is your final choice as it cannot be changed later.
                 </p>
               </div>

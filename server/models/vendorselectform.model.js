@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 
-const vendorSectionSchema = new mongoose.Schema({
+const vendorSelectionSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
@@ -22,4 +22,4 @@ const vendorSectionSchema = new mongoose.Schema({
     },
 });
 
-export default mongoose.model("VendorSection", vendorSectionSchema);
+export default mongoose.model("VendorSelection", vendorSelectionSchema);

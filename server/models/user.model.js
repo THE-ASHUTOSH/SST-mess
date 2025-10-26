@@ -14,6 +14,13 @@ const userModel = new mongoose.Schema({
         type:String,
         enum:['admin','student'],
         default:'student',
+    },
+    pictue:{
+        type:String,
+    },
+    name:{
+        type:String,
+        required:true,
     }
 })
 

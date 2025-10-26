@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
-import axios from 'axios'
 interface Vendor {
   _id: string;
   name: string;
@@ -36,9 +35,21 @@ const SelectVendor = () => {
   useEffect(() => {
     async function loadVendors() {
       try {
-        const response = await axios.get("http://127.0.0.1:5000/vendor/getVendors", { withCredentials: true });
-        setvendors(response.data.vendor);
-        console.log("Vendors fetched:", vendors);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/getVendors`, {
+          method: "GET",
+          credentials: "include", // equivalent to withCredentials: true
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setvendors(data.vendor);
+        console.log("Vendors fetched:", data.vendor);
       } catch (err) {
         console.log(err);
       }
@@ -51,18 +62,16 @@ const SelectVendor = () => {
     e.preventDefault()
     // Handle form submission here
     try {
-      const user = await fetch('http://localhost:5000/auth/details', { credentials: 'include' });
+      const user = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/details`, { credentials: 'include' });
       console.log(await user.json());
-      // const response = await axios.post('http://localhost:5000/vendor/vendorSelectionForm', formData, { withCredentials: true });
-      // console.log('Form submitted successfully', response.data.vendorSection);
-      const url = 'http://localhost:5000/vendor/vendorSelectionForm';
 
-      // Assuming 'formData' is a JavaScript object (not a native FormData object)
-      // that needs to be sent as JSON, which is typical for an Axios POST request.
+      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/vendorSelectionForm`;
+
+      
       const requestBody = JSON.stringify({
         name: formData.name,
-        room : formData.room,
-        vendor : formData.mess
+        room: formData.room,
+        vendor: formData.mess
       });
 
       try {
@@ -70,18 +79,14 @@ const SelectVendor = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            // NOTE: If using a native FormData object (for file uploads), 
-            // omit 'Content-Type', and pass formData directly as the body.
           },
           body: requestBody,
 
-          // 👈 The 'fetch' equivalent of axios's 'withCredentials: true'
+       
           credentials: 'include'
         });
 
         if (!response.ok) {
-          // Handle HTTP error statuses (4xx, 5xx)
-          // Note: fetch() only throws an error for network failures, not for 4xx/5xx responses
           const errorData = await response.json();
           throw new Error(`HTTP error! Status: ${response.status}. Details: ${errorData.message || 'Unknown error'}`);
         }

@@ -12,7 +12,7 @@ const loginButton = () => {
     <Button 
             variant="outline" 
             className="w-full py-6 text-white bg-zinc-800 hover:bg-zinc-800/80 border-0 transition-all duration-300 text-base"
-            onClick={() => {window.location.href = 'http://localhost:5000/auth/google'}}
+            onClick={() => {window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/google`}}
           >
             <Image
               src={goggleLogo}

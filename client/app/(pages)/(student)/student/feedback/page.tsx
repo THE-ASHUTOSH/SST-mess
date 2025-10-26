@@ -16,10 +16,47 @@ const Feedback = () => {
     setHoveredRating(hoveredValue)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async(e: React.FormEvent) => {
     e.preventDefault()
     // Handle form submission here
     console.log('Submitted feedback:', { rating, feedback })
+
+    const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/vendorFeedbackForm`;
+    
+    const requestBody = JSON.stringify({
+        rating : rating,
+        feedback : feedback
+      });
+
+    try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            // NOTE: If using a native FormData object (for file uploads), 
+            // omit 'Content-Type', and pass formData directly as the body.
+          },
+          body: requestBody,
+
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          // Handle HTTP error statuses (4xx, 5xx)
+          // Note: fetch() only throws an error for network failures, not for 4xx/5xx responses
+          const errorData = await response.json();
+          throw new Error(`HTTP error! Status: ${response.status}. Details: ${errorData.message || 'Unknown error'}`);
+        }
+
+        // Process the successful response
+        const data = await response.json();
+        console.log('Sucessfully submitted feedback:', data);
+
+      } catch (error) {
+        console.error('Unable to submit feedback:', error);
+      }
+
+    
   }
 
   const renderStar = (value: number) => {

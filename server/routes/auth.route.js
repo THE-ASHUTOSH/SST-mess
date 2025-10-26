@@ -21,7 +21,7 @@ router.get(
       picture: req.user.picture,
     });
 
-    res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'none',domain: "localhost" });
+    res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'none',});
     const userfound = await User.findOne({email:req.user.email});
     if(!userfound){
         const newUser = new User({
@@ -33,7 +33,7 @@ router.get(
         await newUser.save();
         console.log("New user created:", newUser);
       }
-    res.redirect('http://localhost:3000/student');
+    res.redirect(`${process.env.CLIENT_URL}/student`);
 
     res.json({
       success: true,

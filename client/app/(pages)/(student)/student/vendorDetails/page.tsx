@@ -1,7 +1,6 @@
 "use client"
 import React, { useState, useEffect, use } from 'react'
 import EventCard from '@/components/common/EventCard'
-import axios from 'axios'
 interface Vendor {
   _id: string;
   name: string;
@@ -14,9 +13,21 @@ const VendorDetail = () => {
   useEffect(() => {
     async function loadVendors() {
       try {
-        const response = await axios.get("http://127.0.0.1:5000/vendor/getVendors", { withCredentials: true });
-        setvendors(response.data.vendor);
-        console.log("Vendors fetched:", vendors);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/getVendors`, {
+          method: "GET",
+          credentials: "include", // equivalent to withCredentials: true
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setvendors(data.vendor);
+        console.log("Vendors fetched:", data.vendor);
       } catch (err) {
         console.log(err);
       }
@@ -31,16 +42,16 @@ const VendorDetail = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
 
         {vendors.map((vendor) => (
-        <EventCard
-          key={vendor._id}
-          title={vendor.name}
-          description={`Price: ₹${vendor.price}`}
-          redirectUrl={vendor.menu} // custom prop for redirect
-          
-        >
-          <p>{vendor.description}</p>
-        </EventCard>
-      ))}
+          <EventCard
+            key={vendor._id}
+            title={vendor.name}
+            description={`Price: ₹${vendor.price}`}
+            redirectUrl={vendor.menu} // custom prop for redirect
+
+          >
+            <p>{vendor.description}</p>
+          </EventCard>
+        ))}
 
 
       </div>

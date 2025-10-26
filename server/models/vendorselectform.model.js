@@ -20,6 +20,13 @@ const vendorSelectionSchema = new mongoose.Schema({
         ref: "Vendor",
         required: true,
     },
+    date: {
+        type: Date,
+        default: Date.now,
+    },
+},
+{
+    timestamps: true,
 });
 
 export default mongoose.model("VendorSelection", vendorSelectionSchema);

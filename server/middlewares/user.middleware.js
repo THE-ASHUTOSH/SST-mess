@@ -8,11 +8,11 @@ async function adduserdetails(req,res,next){
         
     }
     if (req.cookies && req.cookies.token) {
-        const user = jwt.verify(req.cookies.token, "your_jwt_secret_key");
+        const user = jwt.verify(req.cookies.token, process.env.JWT_SECRET_KEY);
         // console.log(user);
-        const u = await User.findOne({email:"ashutosh.24bcs10111@sst.scaler.com"});
-        console.log(u._id);
-        req.body.user = u._id;
+        const u = await User.findOne({email: user.email});
+        // console.log(u._id);
+        req.body.user = u;
     }
     next();
 

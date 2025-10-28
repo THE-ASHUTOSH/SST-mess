@@ -21,7 +21,7 @@ passport.use(
         picture: profile.photos?.[0]?.value,
         provider: "google",
       };
-      console.log("Google profile:", profile);
+      // console.log("Google profile:", profile);
       done(null, user);
     }
   )

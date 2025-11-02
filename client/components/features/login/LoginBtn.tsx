@@ -4,25 +4,23 @@ import React from 'react'
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import goggleLogo from '../../../public/google.png'
+import GoogleButton from 'react-google-button'
 
 
 
 const loginButton = () => {
     return (
-        <Button
-            variant="outline"
-            className="w-full py-6 text-white bg-zinc-800 hover:bg-zinc-800/80 border-0 transition-all duration-300 text-base"
-            onClick={() => { window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/google` }}
-        >
-            <Image
-                src={goggleLogo}
-                alt="Google"
-                width={40}
-                height={40}
-                className="mr-3"
-            />
-            Continue with Google
-        </Button>
+        <div className="w-full rounded-sm overflow-hidden transition-transform duration-300 hover:scale-105 hover:brightness-110 active:scale-95 rounded-2xl">
+        <GoogleButton
+            type="dark"
+            label="Continue with Google"
+            className=" transition-transform duration-300 hover:scale-125 hover:brightness-110 active:scale-95"
+            onClick={() => {
+                window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/google`
+            }}
+            style={{ width: '100%', transition: 'all 0.3s ease', }}
+        />
+        </div>
     )
 }
 

@@ -1,6 +1,7 @@
 "use client"
 import React, { useState, useEffect, use } from 'react'
 import EventCard from '@/components/common/EventCard'
+import LoadingSpinner from '@/components/common/LoadingAnimation';
 interface Vendor {
   _id: string;
   name: string;
@@ -10,6 +11,7 @@ interface Vendor {
 }
 const VendorDetail = () => {
   const [vendors, setvendors] = useState<Vendor[]>([])
+  const [loading, setloading] = useState(true)
   useEffect(() => {
     // console.log(process.env.NEXT_PUBLIC_BACKEND_URL)
     async function loadVendors() {
@@ -28,6 +30,7 @@ const VendorDetail = () => {
 
         const data = await response.json();
         setvendors(data.vendor);
+        setloading(false)
         // console.log("Vendors fetched:", data.vendor);
       } catch (err) {
         // console.log(err);
@@ -40,6 +43,7 @@ const VendorDetail = () => {
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <h1 className="text-4xl font-extrabold text-center mb-10 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-indigo-400 tracking-tight transform hover:scale-105 transition-transform duration-300">Menu</h1>
+      {loading && <LoadingSpinner/>}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
 
         {vendors.map((vendor) => (
@@ -53,7 +57,7 @@ const VendorDetail = () => {
             <p>{vendor.description}</p>
           </EventCard>
         ))}
-
+        
 
       </div>
     </div>

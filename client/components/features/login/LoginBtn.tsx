@@ -10,7 +10,7 @@ import GoogleButton from 'react-google-button'
 
 const loginButton = () => {
     return (
-        <div className="w-full rounded-sm overflow-hidden transition-transform duration-300 hover:scale-105 hover:brightness-110 active:scale-95 rounded-2xl">
+        <div className="w-full rounded-sm overflow-hidden transition-transform duration-300 hover:scale-103 hover:brightness-105 active:scale-95">
         <GoogleButton
             type="dark"
             label="Continue with Google"

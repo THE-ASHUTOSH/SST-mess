@@ -1,7 +1,7 @@
 import express from "express";
 import passport from "passport";
 import { generateToken } from "../utils/generateToken.js";
-import { getUserDetails } from "../controllers/user.controller.js";
+import { getUserDetails,verifyUser } from "../controllers/user.controller.js";
 import User from "../models/user.model.js";
 const router = express.Router();
 
@@ -40,17 +40,13 @@ router.get(
     }catch(err){
         console.log("Error while creating user");
     }
-    res.redirect(`${process.env.CLIENT_URL}/student`);
+    res.redirect(`${process.env.CLIENT_URL}/auth/callback?token=${token}`);
 
-    res.json({
-      success: true,
-      token,
-      user: req.user,
-    });
     
   }
 );
 
 router.get("/details", getUserDetails);
+router.post("/verify",verifyUser)
 
 export default router;

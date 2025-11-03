@@ -26,6 +26,11 @@ app.use(
         allowedHeaders: ["Content-Type", "Authorization"],
     })
 );
+// Health route
+app.get("/heathcheck", (req, res) => {
+    res.send("Healthy");
+});
+
 app.use("/auth", authRouter);
 app.use("/vendor", vendorRoute);
 connectDB();

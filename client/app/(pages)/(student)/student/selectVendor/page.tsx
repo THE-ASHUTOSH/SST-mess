@@ -19,6 +19,7 @@ const SelectVendor = () => {
 
   const [showMessage, setShowMessage] = useState(false)
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [showErrorPopup, setShowErrorPopup] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -50,9 +51,9 @@ const SelectVendor = () => {
 
         const data = await response.json();
         setvendors(data.vendor);
-        console.log("Vendors fetched:", data.vendor);
+        // console.log("Vendors fetched:", data.vendor);
       } catch (err) {
-        console.log(err);
+        // console.log(err);
       }
     }
 
@@ -64,7 +65,7 @@ const SelectVendor = () => {
     // Handle form submission here
     try {
       const user = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/details`, { credentials: 'include' });
-      console.log(await user.json());
+      // console.log(await user.json());
 
       const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/vendorSelectionForm`;
 
@@ -95,12 +96,14 @@ const SelectVendor = () => {
         // Process the successful response
         const data = await response.json();
         setShowSuccessPopup(true);
-        console.log('Success:', data);
+        // console.log('Success:', data);
 
       } catch (error) {
+        setShowErrorPopup(true);
         console.error('Fetch operation failed:', error);
       }
     } catch (error) {
+      setShowErrorPopup(true);
       console.error(error);
     }
   };
@@ -187,18 +190,69 @@ const SelectVendor = () => {
           </form>
         </div>
         {showSuccessPopup && (
-          <Link href="/student/dashboard">
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-90 p-4 backdrop-blur-3xl"
+              role="alert"
+              onClick={() => setShowSuccessPopup(false)}
+            >
+              <div
+                className="relative flex flex-col items-center gap-4 rounded-2xl bg-white p-8 shadow-2xl transform animate-in fade-in zoom-in duration-300"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Success Icon */}
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-500">
+                  <svg
+                    className="h-8 w-8 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={3}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+
+                {/* Message */}
+                <div className="text-center">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                    Success!
+                  </h3>
+                  <p className="text-gray-600">
+                    Form submitted successfully!
+                  </p>
+                </div>
+
+                {/* Button */}
+                <Link href="/student/dashboard">
+                  <button
+                    className="mt-2 px-8 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 active:scale-95 transition-all duration-200 shadow-md"
+                    onClick={() => setShowSuccessPopup(false)}
+                  >
+                    OK
+                  </button>
+                </Link>
+              </div>
+            </div>
+        )}
+
+        {/* error pop up */}
+        {showErrorPopup && (
+
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-90 p-4 backdrop-blur-3xl"
             role="alert"
-            onClick={() => setShowSuccessPopup(false)}
+            onClick={() => setShowErrorPopup(false)}
           >
             <div
               className="relative flex flex-col items-center gap-4 rounded-2xl bg-white p-8 shadow-2xl transform animate-in fade-in zoom-in duration-300"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Success Icon */}
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-500">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500">
                 <svg
                   className="h-8 w-8 text-white"
                   fill="none"
@@ -209,7 +263,7 @@ const SelectVendor = () => {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={3}
-                    d="M5 13l4 4L19 7"
+                    d="M6 18 18 6M6 6l12 12"
                   />
                 </svg>
               </div>
@@ -217,25 +271,25 @@ const SelectVendor = () => {
               {/* Message */}
               <div className="text-center">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Success!
+                  Error!
                 </h3>
                 <p className="text-gray-600">
-                  Form submitted successfully!
+                  Something went wrong!
                 </p>
               </div>
 
               {/* Button */}
               <Link href="/student/dashboard">
-              <button
-                className="mt-2 px-8 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 active:scale-95 transition-all duration-200 shadow-md"
-                onClick={() => setShowSuccessPopup(false)}
-              >
-                OK
-              </button>
+                <button
+                  className="mt-2 px-8 py-3 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 active:scale-95 transition-all duration-200 shadow-md"
+                  onClick={() => setShowErrorPopup(false)}
+                >
+                  OK
+                </button>
               </Link>
             </div>
           </div>
-          </Link>
+
         )}
       </Card>
     </div>

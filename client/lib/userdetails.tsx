@@ -20,9 +20,9 @@ async function UserDetails() {
     }
 
     const details = await response.json();
-    console.log("User details fetched:", details);
+    // console.log("User details fetched:", details);
     return details;
   } catch (err) {
-    console.log("Error fetching user details:", err);
+    // console.log("Error fetching user details:", err);
   }
 }

@@ -10,6 +10,7 @@ const Feedback = () => {
   const [hoveredRating, setHoveredRating] = useState(0)
   const [feedback, setFeedback] = useState('')
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [showErrorPopup, setShowErrorPopup] = useState(false);
   const handleStarClick = (selectedRating: number) => {
     setRating(selectedRating)
   }
@@ -21,7 +22,7 @@ const Feedback = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     // Handle form submission here
-    console.log('Submitted feedback:', { rating, feedback })
+    
 
     const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/vendorFeedbackForm`;
 
@@ -53,9 +54,11 @@ const Feedback = () => {
       // Process the successful response
       const data = await response.json();
       setShowSuccessPopup(true);
-      console.log('Sucessfully submitted feedback:', data);
+      // console.log('Submitted feedback:', { rating, feedback })
+      // console.log('Sucessfully submitted feedback:', data);
 
     } catch (error) {
+      setShowErrorPopup(true);
       console.error('Unable to submit feedback:', error);
     }
 
@@ -139,7 +142,6 @@ const Feedback = () => {
           </form>
         </div>
         {showSuccessPopup && (
-          <Link href="/student/dashboard">
             <div
               className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-90 p-4 backdrop-blur-3xl"
               role="alert"
@@ -187,7 +189,58 @@ const Feedback = () => {
                 </Link>
               </div>
             </div>
-          </Link>
+        )}
+        {/* error message popup  */}
+        {showErrorPopup && (
+
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-90 p-4 backdrop-blur-3xl"
+            role="alert"
+            onClick={() => setShowErrorPopup(false)}
+          >
+            <div
+              className="relative flex flex-col items-center gap-4 rounded-2xl bg-white p-8 shadow-2xl transform animate-in fade-in zoom-in duration-300"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Success Icon */}
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500">
+                <svg
+                  className="h-8 w-8 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={3}
+                    d="M6 18 18 6M6 6l12 12"
+                  />
+                </svg>
+              </div>
+
+              {/* Message */}
+              <div className="text-center">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  Error!
+                </h3>
+                <p className="text-gray-600">
+                  Something went wrong!
+                </p>
+              </div>
+
+              {/* Button */}
+              <Link href="/student/dashboard">
+                <button
+                  className="mt-2 px-8 py-3 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 active:scale-95 transition-all duration-200 shadow-md"
+                  onClick={() => setShowErrorPopup(false)}
+                >
+                  OK
+                </button>
+              </Link>
+            </div>
+          </div>
+
         )}
       </Card>
     </div>

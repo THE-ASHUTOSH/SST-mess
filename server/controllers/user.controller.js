@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-function getUserDetails(req, res) {
+function verifyAndSendDetails(req, res) {
     console.log(req.cookies);
     if (!req.cookies?.token) {
         // res.redirect('http://localhost:3000/login')
@@ -12,7 +12,7 @@ function getUserDetails(req, res) {
     res.json();
 }
 
-function verifyUser(req, res) {
+function verifyAndSetCookies(req, res) {
     if (!req.body.token) {
         return res.status(400).json({ error: "No token provided" });
     }
@@ -28,4 +28,4 @@ function verifyUser(req, res) {
     });
 }
 
-export { getUserDetails, verifyUser };
+export { verifyAndSendDetails, verifyAndSetCookies };

@@ -10,7 +10,7 @@ export default function AuthPage() {
     useEffect(() => {
         const verifyUser = async () => {
             try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/verify`, {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/verifyandsetcookies`, {
                     method: "POST", 
                     headers: {
                         "Content-Type": "application/json",

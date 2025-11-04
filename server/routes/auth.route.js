@@ -1,7 +1,7 @@
 import express from "express";
 import passport from "passport";
 import { generateToken } from "../utils/generateToken.js";
-import { getUserDetails,verifyUser } from "../controllers/user.controller.js";
+import { verifyAndSendDetails,verifyAndSetCookies } from "../controllers/user.controller.js";
 import User from "../models/user.model.js";
 const router = express.Router();
 
@@ -46,7 +46,7 @@ router.get(
   }
 );
 
-router.get("/details", getUserDetails);
-router.post("/verify",verifyUser)
+router.get("/verifyanddetails", verifyAndSendDetails);
+router.post("/verifyandsetcookies",verifyAndSetCookies)
 
 export default router;

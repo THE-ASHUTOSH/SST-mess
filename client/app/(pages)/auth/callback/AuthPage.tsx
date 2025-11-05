@@ -29,7 +29,7 @@ export default function AuthPage() {
             const data = await response.json();
             setUser(data.user ?? data)
             const userRole = data.user.role;
-            // console.log("User role:", userRole);
+            console.log("User role:", userRole);
             redirect(userRole === "admin" ? "/admin" : userRole === "student" ? "/student" : "/login");
         }
         if (!response.ok) {

@@ -15,7 +15,16 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Mess Management System - SST",
-  description: "App to mange the mess system of SST",
+  description: "App to manage the mess system of SST",
+  icons: {
+    icon: [
+      { url: '/sstlogo.png' }
+    ],
+    shortcut: ['/sstlogo.png'],
+    apple: [
+      { url: '/sstlogo.png' }
+    ]
+  }
 };
 
 export default function RootLayout({

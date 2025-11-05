@@ -4,6 +4,12 @@ const nextConfig: NextConfig = {
   // Disable automatic static optimization
   staticPageGenerationTimeout: 0,
   
+  // Configure image optimization
+  images: {
+    domains: ['lh3.googleusercontent.com'], // for Google profile pictures
+    unoptimized: process.env.NODE_ENV === 'development',
+  },
+  
   // Configure headers for auth routes
   async headers() {
     return [

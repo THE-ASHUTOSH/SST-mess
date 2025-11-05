@@ -1,14 +1,12 @@
 "use client";
 
-import { useUser } from "@/context/UserContext";
-import { useSearchParams, useRouter, redirect } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 export default function AuthPage() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const router = useRouter();
-  const {setUser} = useUser();
 
   useEffect(() => {
     if (!token) return;
@@ -24,20 +22,22 @@ export default function AuthPage() {
             credentials: "include",
           }
         );
-        // console.log(await response.json());
-        if(response.ok){
-            const data = await response.json();
-            setUser(data.user ?? data)
-            const userRole = data.user.role;
-            console.log("User role:", userRole);
-            redirect(userRole === "admin" ? "/admin" : userRole === "student" ? "/student" : "/login");
-        }
+
         if (!response.ok) {
-          alert("Failed to verify user");
+          return router.push("/login");
         }
 
-      } catch (err) {
-        console.error(err);
+        const data = await response.json(); // contains user info
+        const userRole = data.user?.role;
+
+        router.push(
+          userRole === "admin"
+            ? "/admin"
+            : userRole === "student"
+            ? "/student"
+            : "/login"
+        );
+      } catch {
         router.push("/login");
       }
     };

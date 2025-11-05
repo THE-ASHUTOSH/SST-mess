@@ -21,7 +21,7 @@ router.get(
       picture: req.user.picture,
     });
 
-    res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'none',});
+    res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'none'});
     const userfound = await User.findOne({email:req.user.email});
 
     const DEFAULT_ROLL = '00000'

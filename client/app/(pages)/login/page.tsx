@@ -5,8 +5,30 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Image from "next/image"
 import sstlogo from '@/public/sstlogo.png'
 import LoginButton from '../../../components/features/login/LoginBtn' 
+import { useUser } from '@/context/UserContext'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 const LoginPage = () => {
+  const { user, loading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user) {
+      // redirect to appropriate dashboard
+      if (user.role === 'admin') router.push('/admin/dashboard');
+      else router.push('/student/dashboard');
+    }
+  }, [user, loading, router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center">
+        <div className="text-white">Checking authentication...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen w-full flex items-center justify-center">
       <Card className="w-full max-w-sm mx-4 bg-gray-950 border-0 transition-all duration-300 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] p-6">

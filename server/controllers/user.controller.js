@@ -24,36 +24,53 @@ async function verifyAndSendDetails(req, res) {
     }
 }
 
-function verifyAndSetCookies(req, res) {
+async function verifyAndSetCookies(req, res) {
+    // Set cache control headers to prevent caching
+    res.setHeader('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
     if (!req.body.token) {
+        console.error('No token provided in request');
         return res.status(400).json({ error: "No token provided" });
     }
 
-    jwt.verify(req.body.token, process.env.JWT_SECRET_KEY, async (err, payload) => {
-        if (err) {
-            return res.status(401).json({ error: "Invalid token" });
-        }
+    try {
+        const payload = await jwt.verify(req.body.token, process.env.JWT_SECRET_KEY);
+        console.log('Token verified, payload:', payload);
 
         try {
-            // set cookie
-            
-            // try to fetch DB user to return role
-            try{
-                const dbUser = await User.findOne({ email: payload.email }).select('-__v').lean();
-            if(dbUser){
-                res.cookie('token', req.body.token, { httpOnly: true, secure: true, sameSite: 'none' });
-                return res.status(200).json({ user: dbUser});
+            const dbUser = await User.findOne({ email: payload.email }).select('-__v').lean();
+            console.log('User found:', dbUser ? 'yes' : 'no');
+
+            if (dbUser) {
+                // Set cookie with proper settings for cross-domain
+                const cookieOptions = {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production', // Only secure in production
+                    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+                    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+                    path: '/',
+                    domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined // Adjust this to your domain
+                };
+                
+                res.cookie('token', req.body.token, cookieOptions);
+                console.log('Cookie set with options:', cookieOptions);
+                
+                return res.status(200).json({ 
+                    user: dbUser,
+                    debug: process.env.NODE_ENV === 'development' ? { cookieSet: true, options: cookieOptions } : undefined
+                });
             }
-            return res.status(401).json({ message: 'Unauthorized' });
-            }catch(err){
-                return res.status(401).json({ message: 'Unauthorized' });
-            }
-            
-        } catch (e) {
-            console.error('verifyAndSetCookies error', e);
-            return res.status(500).json({ error: 'Server error' });
+            return res.status(401).json({ message: 'User not found' });
+        } catch (dbError) {
+            console.error('Database error:', dbError);
+            return res.status(500).json({ error: 'Database error' });
         }
-    });
+    } catch (jwtError) {
+        console.error('JWT verification error:', jwtError);
+        return res.status(401).json({ error: "Invalid token" });
+    }
 }
 
 export { verifyAndSendDetails, verifyAndSetCookies };

@@ -2,17 +2,17 @@
 
 async function UserDetails() {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/details`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/verifyanddetails`, {
       method: "GET",
-      credentials: "include", 
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
     });
 
     if (response.status === 401) {
-      window.location.href = '/login';
-      return;
+      // Not authenticated
+      return { user: null, status: 401 };
     }
 
     if (!response.ok) {
@@ -20,9 +20,9 @@ async function UserDetails() {
     }
 
     const details = await response.json();
-    // console.log("User details fetched:", details);
     return details;
   } catch (err) {
-    // console.log("Error fetching user details:", err);
+    console.error("Error fetching user details:", err);
+    return { user: null, error: err };
   }
 }

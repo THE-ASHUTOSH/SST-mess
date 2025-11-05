@@ -49,4 +49,11 @@ router.get(
 router.get("/verifyanddetails", verifyAndSendDetails);
 router.post("/verifyandsetcookies",verifyAndSetCookies)
 
+// Logout: clear the auth cookie
+router.post("/logout", (req, res) => {
+  // Clear cookie set by login
+  res.clearCookie('token', { httpOnly: true, secure: true, sameSite: 'none' });
+  return res.status(200).json({ message: 'Logged out' });
+});
+
 export default router;

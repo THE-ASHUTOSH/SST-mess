@@ -24,7 +24,7 @@ async function verifyAndSendDetails(req, res) {
     }
 }
 
-function verifyAndSetCookies(req, res) {
+async function verifyAndSetCookies(req, res) {
     if (!req.body.token) {
         return res.status(400).json({ error: "No token provided" });
     }

@@ -4,7 +4,7 @@ import User from "../models/user.model.js";
 async function verifyAndSendDetails(req, res) {
     try {
         if (!req.cookies?.token) {
-            return res.status(401).json({ message: "Unauthorized" });
+            return res.status(402).json({ message: "Unauthorized" });
         }
 
         const payload = jwt.verify(req.cookies.token, process.env.JWT_SECRET_KEY);

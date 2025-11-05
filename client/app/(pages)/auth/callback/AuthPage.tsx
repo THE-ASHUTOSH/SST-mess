@@ -22,8 +22,11 @@ export default function AuthPage() {
             credentials: "include",
           }
         );
-
         router.push(response.ok ? "/student" : "/login");
+        if (!response.ok) {
+          alert("Failed to verify user");
+        }
+
       } catch (err) {
         console.error(err);
         router.push("/login");

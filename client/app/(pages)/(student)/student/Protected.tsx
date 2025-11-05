@@ -11,6 +11,7 @@ const Protected: React.FC<{children: React.ReactNode}> = ({children}) => {
             if (!loading && (!user || user.role !== "student")) {
                 router.replace('/login');
             }
+            console.log("Loading from student", loading);
         }, [loading, user, router]);
 
     // While verifying, you may display a blank or a loader

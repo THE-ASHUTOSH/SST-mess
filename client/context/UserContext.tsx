@@ -55,6 +55,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 if (!mounted) return;
                 // backend returns { user }
                 setUser(data.user ?? data);
+                console.log("User verified:", data.user ?? data);
+                console.log("Loading from context", loading);
             } catch (err) {
                 console.error("verify error", err);
                 if (mounted) setUser(null);

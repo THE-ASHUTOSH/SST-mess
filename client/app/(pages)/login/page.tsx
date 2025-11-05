@@ -28,6 +28,7 @@ const LoginPage = () => {
       </div>
     );
   }
+  console.log(" Student ");
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center">

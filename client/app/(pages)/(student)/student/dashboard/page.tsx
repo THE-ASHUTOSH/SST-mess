@@ -2,6 +2,7 @@ import React from 'react'
 import EventCard from '@/components/common/EventCard'
 
 const dashboard = () => {
+    console.log("Rendering Student Dashboard");
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <h1 className="text-4xl font-extrabold text-center mb-10 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-indigo-400 tracking-tight transform hover:scale-105 transition-transform duration-300">Dashboard</h1>

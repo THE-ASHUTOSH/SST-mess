@@ -12,6 +12,12 @@ const Dashboard = () => {
         <EventCard title="Add Vendor" redirectUrl="/admin/addVendor">
             <p>Add a new vendor to the system</p>
         </EventCard>
+        <EventCard title="Choice Analysis" redirectUrl="/admin/choiceAnalysis">
+            <p>Analyze the choices made for vendors</p>
+        </EventCard>
+        <EventCard title="FeedBack Analysis" redirectUrl="/admin/feedBackAnalysis">
+            <p>Analyze the feedback received for vendors</p>
+        </EventCard>
         
     
       </div>

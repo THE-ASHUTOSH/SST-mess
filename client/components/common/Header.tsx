@@ -2,27 +2,19 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useUser } from '@/context/UserContext'
+import useUserStore from '@/store/useUserStore'
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
 
-
-  const { user, setUser } = useUser();
+  const user = useUserStore((s: any) => s.user)
+  const setUser = useUserStore((s: any) => s.setUser)
   const router = useRouter();
 
   async function handleLogout() {
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-      });
-    } catch (err) {
-      console.error('Logout error', err);
-    }
-    // Clear client-side state and redirect to login
+    // use store logout handler which clears state and calls backend
+    await useUserStore.getState().logout();
     setUser(null);
     router.push('/login');
   }

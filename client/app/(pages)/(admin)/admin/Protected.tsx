@@ -1,10 +1,11 @@
 "use client";
 import React,{useEffect} from 'react'
-import { useUser } from "@/context/UserContext";
+import useUserStore from '@/store/useUserStore'
 import { useRouter } from "next/navigation";
 
 const Protected: React.FC<{children: React.ReactNode}> = ({children}) => {
-    const { user, loading } = useUser();
+    const user = useUserStore((s: any) => s.user);
+    const loading = useUserStore((s: any) => s.loading);
     const router = useRouter();
 
     // useEffect(() => {

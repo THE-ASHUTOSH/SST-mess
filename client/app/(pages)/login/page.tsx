@@ -5,12 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Image from "next/image"
 import sstlogo from '@/public/sstlogo.png'
 import LoginButton from '../../../components/features/login/LoginBtn' 
-import { useUser } from '@/context/UserContext'
+import useUserStore from '@/store/useUserStore'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
 const LoginPage = () => {
-  const { user, loading } = useUser();
+  const user = useUserStore((s: any) => s.user);
+  const loading = useUserStore((s: any) => s.loading);
   const router = useRouter();
 
   useEffect(() => {

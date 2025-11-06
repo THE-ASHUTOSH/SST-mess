@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, redirect } from "next/navigation";
 import { useEffect } from "react";
 
 export default function AuthPage() {
@@ -24,13 +24,13 @@ export default function AuthPage() {
         );
 
         if (!response.ok) {
-          return router.push("/login");
+          return redirect("/login");
         }
 
         const data = await response.json(); // contains user info
         const userRole = data.user?.role;
         console.log("User role from callback:", userRole);
-        router.replace(
+        redirect(
           userRole === "admin"
           ? "/admin"
           : userRole === "student"

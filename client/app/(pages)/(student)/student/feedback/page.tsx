@@ -54,7 +54,7 @@ const Feedback = () => {
       // Process the successful response
       const data = await response.json();
       setShowSuccessPopup(true);
-      // console.log('Submitted feedback:', { rating, feedback })
+      console.log('Submitted feedback:', { rating, feedback })
       // console.log('Sucessfully submitted feedback:', data);
 
     } catch (error) {

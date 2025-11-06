@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import Link from 'next/link';
+import LoadingAnimation from '@/components/common/LoadingAnimation';
 interface Vendor {
   _id: string;
   name: string;
@@ -20,6 +21,7 @@ const SelectVendor = () => {
   const [showMessage, setShowMessage] = useState(false)
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [showErrorPopup, setShowErrorPopup] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -62,6 +64,7 @@ const SelectVendor = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsSubmitting(true);
     // Handle form submission here
     try {
       const user = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/details`, { credentials: 'include' });
@@ -105,6 +108,8 @@ const SelectVendor = () => {
     } catch (error) {
       setShowErrorPopup(true);
       console.error(error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -183,9 +188,10 @@ const SelectVendor = () => {
 
             <button
               type="submit"
-              className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-purple-500 hover:to-blue-500 text-white font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              disabled={isSubmitting}
+              className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-purple-500 hover:to-blue-500 text-white font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-purple-500/50 disabled:bg-gray-700 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              Submit Selection
+              {isSubmitting ? <LoadingAnimation /> : 'Submit Selection'}
             </button>
           </form>
         </div>

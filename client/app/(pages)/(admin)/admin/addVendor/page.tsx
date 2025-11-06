@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { Card } from '@/components/ui/card'
 import Link from 'next/link';
+import LoadingAnimation from '@/components/common/LoadingAnimation';
 
 const AddVendor = () => {
   const [formData, setFormData] = useState({
@@ -14,6 +15,7 @@ const AddVendor = () => {
 
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [showErrorPopup, setShowErrorPopup] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -25,6 +27,7 @@ const AddVendor = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsSubmitting(true);
     try {
       const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/addVendor`;
       const requestBody = JSON.stringify({
@@ -52,6 +55,8 @@ const AddVendor = () => {
     } catch (error) {
       setShowErrorPopup(true);
       console.error('Fetch operation failed:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -129,9 +134,10 @@ const AddVendor = () => {
 
             <button
               type="submit"
-              className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-purple-500 hover:to-blue-500 text-white font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              disabled={isSubmitting}
+              className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-purple-500 hover:to-blue-500 text-white font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-purple-500/50 disabled:bg-gray-700 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              Add Vendor
+              {isSubmitting ? <LoadingAnimation /> : 'Add Vendor'}
             </button>
           </form>
         </div>

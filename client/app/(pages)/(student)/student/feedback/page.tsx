@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { Card } from '@/components/ui/card'
 import Link from 'next/link';
+import LoadingSpinner from '@/components/common/LoadingAnimation';
 
 
 const Feedback = () => {
@@ -11,6 +12,7 @@ const Feedback = () => {
   const [feedback, setFeedback] = useState('')
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [showErrorPopup, setShowErrorPopup] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const handleStarClick = (selectedRating: number) => {
     setRating(selectedRating)
   }
@@ -21,8 +23,10 @@ const Feedback = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsSubmitting(true);
+
     // Handle form submission here
-    
+
 
     const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/vendorFeedbackForm`;
 
@@ -60,6 +64,8 @@ const Feedback = () => {
     } catch (error) {
       setShowErrorPopup(true);
       console.error('Unable to submit feedback:', error);
+    } finally {
+      setIsSubmitting(false);
     }
 
 
@@ -131,13 +137,13 @@ const Feedback = () => {
 
             <button
               type="submit"
-              disabled={!rating}
-              className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-300 ${rating
+              disabled={!rating || isSubmitting}
+              className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${rating && !isSubmitting
                   ? 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-purple-500 hover:to-blue-500 text-white hover:shadow-lg hover:shadow-purple-500/20 hover:-translate-y-0.5'
                   : 'bg-gray-700 text-gray-400 cursor-not-allowed'
                 }`}
             >
-              Submit Feedback
+              {isSubmitting ? <LoadingSpinner /> : 'Submit Feedback'}
             </button>
           </form>
         </div>

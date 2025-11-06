@@ -1,15 +1,14 @@
 "use client"
 import React, { useState } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import useUserStore from '@/store/useUserStore'
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const pathname = usePathname();
 
-  const user = useUserStore((s: any) => s.user)
-  const setUser = useUserStore((s: any) => s.setUser)
+  const user = useUserStore((state) => state.user)
+  const setUser = useUserStore((state) => state.setUser)
   const router = useRouter();
 
   async function handleLogout() {

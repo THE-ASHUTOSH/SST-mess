@@ -52,10 +52,6 @@ useEffect(() => {
       if (mounted) setUser(null);
     } finally {
       if (mounted) setLoading(false);
-      setTimeout(() => {
-        if (mounted) setLoading(false);
-        // console.log("User verification completed, loading set to false", user);
-      }, 500);
     }
   };
 

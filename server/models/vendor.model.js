@@ -16,7 +16,11 @@ const vendorSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-});
+    updatedAt: {
+        type: Date,
+        default: Date.now,
+    },
+}, { timestamps: true });
 
 export default mongoose.model("Vendor", vendorSchema);
     

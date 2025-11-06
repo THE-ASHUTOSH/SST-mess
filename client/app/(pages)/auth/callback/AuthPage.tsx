@@ -29,13 +29,13 @@ export default function AuthPage() {
 
         const data = await response.json(); // contains user info
         const userRole = data.user?.role;
-
-        router.push(
+        console.log("User role from callback:", userRole);
+        router.replace(
           userRole === "admin"
-            ? "/admin"
-            : userRole === "student"
-            ? "/student"
-            : "/login"
+          ? "/admin"
+          : userRole === "student"
+          ? "/student"
+          : "/login"
         );
       } catch {
         router.push("/login");

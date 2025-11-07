@@ -25,13 +25,13 @@ export default function AuthPage() {
 
         if (!response.ok) {
           alert("Unauthorized access. Please log in again.");
-          return redirect("/login");
+          return router.push("/login");
         }
 
         const data = await response.json(); // contains user info
         const userRole = data.user?.role;
         console.log("User role from callback:", userRole);
-        redirect(
+        router.push(
           userRole === "admin"
           ? "/admin"
           : userRole === "student"

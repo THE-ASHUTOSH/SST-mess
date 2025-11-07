@@ -12,7 +12,7 @@ async function adduserdetails(req,res,next){
         // console.log(user);
         const u = await User.findOne({email: user.email});
         // console.log(u._id);
-        req.body.user = u;
+        req.user = u;
     }
     next();
 

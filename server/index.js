@@ -6,6 +6,8 @@ import "./config/passport.js";
 import vendorModel from "./models/vendor.model.js";
 import connectDB from "./config/dbconfig.js";
 import vendorRoute from "./routes/vendor.route.js";
+import mealRouter from "./routes/meal.route.js";
+import { adduserdetails } from "./middlewares/user.middleware.js";
 import cookieParser from "cookie-parser";
 
 dotenv.config({ quiet: true });
@@ -32,7 +34,9 @@ app.get("/heathcheck", (req, res) => {
 });
 
 app.use("/auth", authRouter);
+
 app.use("/vendor", vendorRoute);
+app.use("/meal", adduserdetails, mealRouter);
 connectDB();
 
 // app.get("/addvendor",async(req,res)=>{

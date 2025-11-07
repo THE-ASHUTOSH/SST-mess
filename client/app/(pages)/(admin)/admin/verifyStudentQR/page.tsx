@@ -44,7 +44,7 @@ const VerifyStudentQRPage = () => {
   const handleVerify = async (token: string) => {
     try {
       const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/meal/verify-qr`, { token }, { withCredentials: true });
-      setMessage(response.data.message);
+      setMessage(`Meal verified for ${response.data.user}.`);
       setError('');
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response?.data?.message) {

@@ -11,8 +11,10 @@ async function adduserdetails(req,res,next){
         const user = jwt.verify(req.cookies.token, process.env.JWT_SECRET_KEY);
         // console.log(user);
         const u = await User.findOne({email: user.email});
+        console.log("user details from middleware:", u);
         // console.log(u._id);
-        req.user = u;
+        req.body.user = u;
+        console.log(req.body)
     }
     next();
 

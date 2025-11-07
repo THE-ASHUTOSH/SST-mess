@@ -1,4 +1,5 @@
 import Meal from "../models/meal.model.js";
+import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 
 export const generateQR = async (req, res) => {
@@ -45,7 +46,9 @@ export const verifyQR = async (req, res) => {
     const meal = new Meal({ user: userId });
     await meal.save();
 
-    res.status(200).json({ message: "Meal verified successfully." });
+    const user = await User.findById(userId);
+
+    res.status(200).json({ message: "Meal verified successfully.", user: user.name });
   } catch (error) {
     console.error("Error verifying QR code:", error);
     if (error.name === "JsonWebTokenError") {

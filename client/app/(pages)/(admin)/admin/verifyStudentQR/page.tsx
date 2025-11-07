@@ -46,8 +46,8 @@ const VerifyStudentQRPage = () => {
       const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/meal/verify-qr`, { token }, { withCredentials: true });
       setMessage(response.data.message);
       setError('');
-    } catch (err: any) {
-      if (err.response?.data?.message) {
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response?.data?.message) {
         setError(err.response.data.message);
       } else {
         setError('Error verifying QR code. Please try again later.');

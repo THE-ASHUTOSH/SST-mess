@@ -15,8 +15,8 @@ const GetFoodPage = () => {
         const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/meal/generate-qr`, { withCredentials: true });
         const token = response.data.token;
         setQrCode(`https://api.qrserver.com/v1/create-qr-code/?data=${token}&size=200x200`);
-      } catch (err: any) {
-        if (err.response?.status === 403) {
+      } catch (err: unknown) {
+        if (axios.isAxiosError(err) && err.response?.status === 403) {
           setError(err.response.data.message);
         } else {
           setError('Error generating QR code. Please try again later.');

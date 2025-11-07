@@ -42,7 +42,7 @@ const VerifyStudentQRPage = () => {
         controlsRef.current.stop();
       }
     };
-  }, []);
+  }, [isProcessing]);
 
   const handleVerify = async (token: string) => {
     try {

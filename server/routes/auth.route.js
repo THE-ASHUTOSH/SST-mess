@@ -14,6 +14,10 @@ router.get(
   "/google/callback",
   passport.authenticate("google", { session: false }),
   async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
     const token = generateToken({
       id: req.user.id,
       email: req.user.email,

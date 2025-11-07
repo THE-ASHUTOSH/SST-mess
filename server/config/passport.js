@@ -13,6 +13,22 @@ passport.use(
       passReqToCallback: true,
     },
     async (req,accessToken, refreshToken, profile, done) => {
+      try {
+        const email = profile.emails?.[0]?.value || "";
+        const domain = email.split("@")[1];
+
+        // ✅ Allowed domains
+        const allowedDomains = ["sst.scaler.com", "scaler.com"];
+
+        if (!allowedDomains.includes(domain)) {
+          return done(null, { status: "unauthorized" }, {
+            message: "Access denied: unauthorized domain",
+          });
+        }
+      } catch (error) {
+        return done(error);
+      }
+
       // No DB — just pass the profile forward
       const user = {
         id: profile.id,

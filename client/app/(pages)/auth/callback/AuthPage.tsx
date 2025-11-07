@@ -24,6 +24,7 @@ export default function AuthPage() {
         );
 
         if (!response.ok) {
+          alert("Unauthorized access. Please log in again.");
           return redirect("/login");
         }
 

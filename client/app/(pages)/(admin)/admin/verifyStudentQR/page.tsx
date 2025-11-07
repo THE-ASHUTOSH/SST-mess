@@ -3,10 +3,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { BrowserQRCodeReader, IScannerControls } from '@zxing/browser';
+import LoadingAnimation from '@/components/common/LoadingAnimation';
 
 const VerifyStudentQRPage = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
 
@@ -19,6 +21,7 @@ const VerifyStudentQRPage = () => {
         if (videoRef.current) {
           controlsRef.current = await codeReader.decodeFromStream(stream, videoRef.current, (result, err) => {
             if (result) {
+              setIsProcessing(true);
               handleVerify(result.getText());
             }
             if (err) {
@@ -54,13 +57,18 @@ const VerifyStudentQRPage = () => {
       }
       setMessage('');
     }
+    setIsProcessing(false);
   };
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-center">
       <h1 className="text-4xl font-extrabold text-center mb-10 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-indigo-400 tracking-tight transform hover:scale-105 transition-transform duration-300">Verify Student QR</h1>
       <div className="w-full max-w-sm">
-        <video ref={videoRef} className="w-full border-2 border-gray-300 rounded-lg" />
+        {isProcessing ? (
+          <LoadingAnimation />
+        ) : (
+          <video ref={videoRef} className="w-full border-2 border-gray-300 rounded-lg" />
+        )}
         {message && <p className="text-green-500 mt-4">{message}</p>}
         {error && <p className="text-red-500 mt-4">{error}</p>}
       </div>

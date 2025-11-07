@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 
 export const generateQR = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.body.user._id;
     const lastMeal = await Meal.findOne({ user: userId }).sort({
       createdAt: -1,
     });
@@ -33,7 +33,7 @@ export const generateQR = async (req, res) => {
 
 export const getMealStatus = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.body.user._id;
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
     const meal = await Meal.findOne({

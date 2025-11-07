@@ -5,7 +5,9 @@ import jwt from "jsonwebtoken";
 export const generateQR = async (req, res) => {
   try {
     const userId = req.user._id;
-    const lastMeal = await Meal.findOne({ user: userId }).sort({ createdAt: -1 });
+    const lastMeal = await Meal.findOne({ user: userId }).sort({
+      createdAt: -1,
+    });
 
     if (lastMeal) {
       const now = new Date();
@@ -13,14 +15,39 @@ export const generateQR = async (req, res) => {
       const hours = Math.floor(diff / (1000 * 60 * 60));
 
       if (hours < 3) {
-        return res.status(403).json({ message: "You can only take one meal every 3 hours." });
+        return res
+          .status(403)
+          .json({ message: "You can only take one meal every 3 hours." });
       }
     }
 
-    const token = jwt.sign({ userId }, process.env.JWT_SECRET_KEY, { expiresIn: "15m" });
+    const token = jwt.sign({ userId }, process.env.JWT_SECRET_KEY, {
+      expiresIn: "15m",
+    });
     res.status(200).json({ token });
   } catch (error) {
     console.error("Error generating QR code:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getMealStatus = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+
+    const meal = await Meal.findOne({
+      user: userId,
+      createdAt: { $gte: fiveMinutesAgo },
+    });
+
+    if (meal) {
+      return res.status(200).json({ status: "scanned" });
+    }
+
+    return res.status(200).json({ status: "not_scanned" });
+  } catch (error) {
+    console.error("Error getting meal status:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -31,7 +58,9 @@ export const verifyQR = async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     const userId = decoded.userId;
 
-    const lastMeal = await Meal.findOne({ user: userId }).sort({ createdAt: -1 });
+    const lastMeal = await Meal.findOne({ user: userId }).sort({
+      createdAt: -1,
+    });
 
     if (lastMeal) {
       const now = new Date();
@@ -39,7 +68,11 @@ export const verifyQR = async (req, res) => {
       const hours = Math.floor(diff / (1000 * 60 * 60));
 
       if (hours < 3) {
-        return res.status(403).json({ message: "User has already taken a meal in the last 3 hours." });
+        return res
+          .status(403)
+          .json({
+            message: "User has already taken a meal in the last 3 hours.",
+          });
       }
     }
 
@@ -48,7 +81,9 @@ export const verifyQR = async (req, res) => {
 
     const user = await User.findById(userId);
 
-    res.status(200).json({ message: "Meal verified successfully.", user: user.name });
+    res
+      .status(200)
+      .json({ message: "Meal verified successfully.", user: user.name });
   } catch (error) {
     console.error("Error verifying QR code:", error);
     if (error.name === "JsonWebTokenError") {

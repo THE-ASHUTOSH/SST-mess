@@ -1,12 +1,14 @@
 "use client";
 
-import { useSearchParams, useRouter, redirect } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { useUser } from "@/context/UserContext";
 
 export default function AuthPage() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const router = useRouter();
+  const { setUser } = useUser();
 
   useEffect(() => {
     if (!token) return;
@@ -29,14 +31,15 @@ export default function AuthPage() {
         }
 
         const data = await response.json(); // contains user info
+        setUser(data.user);
         const userRole = data.user?.role;
         console.log("User role from callback:", userRole);
         router.push(
           userRole === "admin"
-          ? "/admin"
-          : userRole === "student"
-          ? "/student"
-          : "/login"
+            ? "/admin/dashboard"
+            : userRole === "student"
+            ? "/student/dashboard"
+            : "/login"
         );
       } catch {
         router.push("/login");
@@ -44,7 +47,7 @@ export default function AuthPage() {
     };
 
     verifyUser();
-  }, [token, router]);
+  }, [token, router, setUser]);
 
   return <h1>Redirecting...</h1>;
 }

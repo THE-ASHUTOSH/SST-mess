@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const mealSchema = new mongoose.Schema({
     breakfast: [{ type: String, trim: true }],
@@ -24,4 +24,4 @@ const menuSchema = new mongoose.Schema({
 
 const Menu = mongoose.model('Menu', menuSchema);
 
-module.exports = Menu;
+export default Menu;

@@ -2,6 +2,7 @@ import User from "../models/user.model.js";
 import VendorSection from "../models/vendorselectform.model.js";
 import VendorFeedback from "../models/vendorfeedbackform.model.js";
 import Vendor from "../models/vendor.model.js";
+import Menu from "../models/menu.model.js";
 import generateMenu from "../utils/generateMenu.js";
 async function vendorSelectionFrom(req, res) {
   const { name, room, vendor, user } = req.body;
@@ -54,12 +55,20 @@ async function addVendor(req, res) {
   }
 
   try {
+    let menuId = null;
+    if (req.file) {
+      const menuData = generateMenu(req.file.path);
+      const newMenu = new Menu(menuData);
+      await newMenu.save();
+      menuId = newMenu._id;
+    }
+
     const newVendor = new Vendor({
       name,
       description,
       price,
       menuUrl,
-      menuFile: req.file ? req.file.path : null,
+      menu: menuId,
     });
     await newVendor.save();
     return res
@@ -73,15 +82,25 @@ async function addVendor(req, res) {
 async function updateVendor(req, res) {
   const { id } = req.params;
   const { name, description, price, menuUrl } = req.body;
-  
-  
-  if (!name || !price || (!menuUrl && !req.file)) {
-    return res.status(400).json({ message: "All fields are required" });
+
+  if (!name || !price) {
+    return res.status(400).json({ message: "Name and price are required" });
   }
-  
-  const menu = generateMenu(req.file ? req.file.path : null);
-  
+
   try {
+    let menuId = null;
+    if (req.file) {
+      const menuData = generateMenu(req.file.path);
+      const newMenu = new Menu(menuData);
+      await newMenu.save();
+      menuId = newMenu._id;
+    }
+    //if the vendor containd the old menu then delete the old menu object
+    const existingVendor = await Vendor.findById(id);
+    if (existingVendor.menu) {
+      await Menu.findByIdAndDelete(existingVendor.menu);
+    }
+
     const updatedVendor = await Vendor.findByIdAndUpdate(
       id,
       {
@@ -89,7 +108,7 @@ async function updateVendor(req, res) {
         description,
         price,
         menuUrl,
-        menuFile: req.file ? req.file.path : null,
+        ...(menuId && { menu: menuId }),
       },
       { new: true }
     );

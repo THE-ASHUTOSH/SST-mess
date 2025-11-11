@@ -2,6 +2,7 @@ import User from "../models/user.model.js";
 import VendorSection from "../models/vendorselectform.model.js";
 import VendorFeedback from "../models/vendorfeedbackform.model.js";
 import Vendor from "../models/vendor.model.js";
+import generateMenu from "../utils/generateMenu.js";
 async function vendorSelectionFrom(req, res) {
   const { name, room, vendor, user } = req.body;
   try {
@@ -46,14 +47,20 @@ async function getVendors(req, res) {
 }
 
 async function addVendor(req, res) {
-  const { name, description, price, menu } = req.body;
+  const { name, description, price, menuUrl } = req.body;
 
-  if (!name || !price || !menu) {
+  if (!name || !price || (!menuUrl && !req.file)) {
     return res.status(400).json({ message: "All fields are required" });
   }
 
   try {
-    const newVendor = new Vendor({ name, description, price, menu });
+    const newVendor = new Vendor({
+      name,
+      description,
+      price,
+      menuUrl,
+      menuFile: req.file ? req.file.path : null,
+    });
     await newVendor.save();
     return res
       .status(201)
@@ -65,16 +72,25 @@ async function addVendor(req, res) {
 
 async function updateVendor(req, res) {
   const { id } = req.params;
-  const { name, description, price, menu } = req.body;
-
-  if (!name || !price || !menu) {
+  const { name, description, price, menuUrl } = req.body;
+  
+  
+  if (!name || !price || (!menuUrl && !req.file)) {
     return res.status(400).json({ message: "All fields are required" });
   }
-
+  
+  const menu = generateMenu(req.file ? req.file.path : null);
+  
   try {
     const updatedVendor = await Vendor.findByIdAndUpdate(
       id,
-      { name, description, price, menu },
+      {
+        name,
+        description,
+        price,
+        menuUrl,
+        menuFile: req.file ? req.file.path : null,
+      },
       { new: true }
     );
     return res

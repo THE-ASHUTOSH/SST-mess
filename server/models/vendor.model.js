@@ -12,9 +12,15 @@ const vendorSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
-    menu: {
+    menuUrl: {
         type: String,
-        required: true,
+    },
+    menu: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Menu",
+    },
+    createdAt: {
+        type: Date,
     },
     updatedAt: {
         type: Date,

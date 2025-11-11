@@ -10,8 +10,9 @@ const AddVendor = () => {
     name: '',
     description: '',
     price: '',
-    menu: ''
+    menuUrl: ''
   })
+  const [menuFile, setMenuFile] = useState<File | null>(null);
 
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [showErrorPopup, setShowErrorPopup] = useState(false);
@@ -25,23 +26,29 @@ const AddVendor = () => {
     }))
   }
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setMenuFile(e.target.files[0]);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true);
     try {
       const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/addVendor`;
-      const requestBody = JSON.stringify({
-        name: formData.name,
-        description: formData.description,
-        price: formData.price,
-        menu: formData.menu
-      });
+      
+      const requestBody = new FormData();
+      requestBody.append('name', formData.name);
+      requestBody.append('description', formData.description);
+      requestBody.append('price', formData.price);
+      requestBody.append('menuUrl', formData.menuUrl);
+      if (menuFile) {
+        requestBody.append('menuFile', menuFile);
+      }
 
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: requestBody,
         credentials: 'include'
       });
@@ -117,18 +124,31 @@ const AddVendor = () => {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="menu" className="text-sm font-medium text-gray-300">
-                Menu
+              <label htmlFor="menuUrl" className="text-sm font-medium text-gray-300">
+                Menu URL
               </label>
               <textarea
-                id="menu"
-                name="menu"
-                value={formData.menu}
+                id="menuUrl"
+                name="menuUrl"
+                value={formData.menuUrl}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 bg-gray-900/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-300 text-white placeholder-gray-500"
-                placeholder="Enter menu items"
+                placeholder="Enter menu URL"
                 rows={3}
-                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="menuFile" className="text-sm font-medium text-gray-300">
+                Menu File
+              </label>
+              <input
+                type="file"
+                id="menuFile"
+                name="menuFile"
+                onChange={handleFileChange}
+                className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 transition-all duration-300"
+                accept=".csv"
               />
             </div>
 

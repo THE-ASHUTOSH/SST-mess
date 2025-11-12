@@ -40,8 +40,8 @@ async function vendorFeedbackForm(req, res) {
 
 async function getVendors(req, res) {
   try {
-    const vendor = await Vendor.find();
-    res.status(200).json({ success: true, vendor });
+    const vendors = await Vendor.find().populate("menu").lean();
+    res.status(200).json({ success: true, vendor: vendors });
   } catch (err) {
     res.status(400).json({ success: false, err });
   }
@@ -55,27 +55,39 @@ async function addVendor(req, res) {
   }
 
   try {
-    let menuId = null;
-    if (req.file) {
-      const menuData = generateMenu(req.file.path);
-      const newMenu = new Menu(menuData);
-      await newMenu.save();
-      menuId = newMenu._id;
-    }
-
     const newVendor = new Vendor({
       name,
       description,
       price,
       menuUrl,
-      menu: menuId,
     });
+
+    let menuId = null;
+    try {
+      if (req.file) {
+        const menuData = generateMenu(req.file.path);
+        const newMenu = new Menu({
+          ...menuData,
+          vendor: newVendor._id,
+        });
+        await newMenu.save();
+        menuId = newMenu._id;
+      }
+    } catch (menuError) {
+      return res
+        .status(500)
+        .json({ message: "Error processing menu file", menuError });
+    }
+
+    newVendor.menu = menuId;
     await newVendor.save();
     return res
       .status(201)
       .json({ message: "Vendor added successfully", vendor: newVendor });
   } catch (error) {
     return res.status(500).json({ message: "Error adding vendor", error });
+  }finally{
+    fs.unlinkSync(req.file.path);
   }
 }
 
@@ -91,14 +103,12 @@ async function updateVendor(req, res) {
     let menuId = null;
     if (req.file) {
       const menuData = generateMenu(req.file.path);
-      const newMenu = new Menu(menuData);
-      await newMenu.save();
-      menuId = newMenu._id;
-    }
-    //if the vendor containd the old menu then delete the old menu object
-    const existingVendor = await Vendor.findById(id);
-    if (existingVendor.menu) {
-      await Menu.findByIdAndDelete(existingVendor.menu);
+      const updatedMenu = await Menu.findOneAndUpdate(
+        { vendor: id },
+        { ...menuData, vendor: id },
+        { new: true, upsert: true }
+      );
+      menuId = updatedMenu._id;
     }
 
     const updatedVendor = await Vendor.findByIdAndUpdate(
@@ -117,6 +127,8 @@ async function updateVendor(req, res) {
       .json({ message: "Vendor updated successfully", vendor: updatedVendor });
   } catch (error) {
     return res.status(500).json({ message: "Error updating vendor", error });
+  } finally {
+    fs.unlinkSync(req.file.path);
   }
 }
 

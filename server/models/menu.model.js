@@ -7,12 +7,12 @@ const mealSchema = new mongoose.Schema({
 }, { _id: false });
 
 const menuSchema = new mongoose.Schema({
-    // vendor: {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: 'Vendor',
-    //     required: true,
-    //     unique: true
-    // },
+    vendor: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Vendor',
+        required: true,
+        unique: true
+    },
     monday: mealSchema,
     tuesday: mealSchema,
     wednesday: mealSchema,

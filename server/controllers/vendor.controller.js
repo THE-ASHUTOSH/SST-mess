@@ -138,6 +138,10 @@ async function getChoiceAnalysis(req, res) {
     const vendors = await Vendor.find().lean();
     const section = await VendorSection.find().populate("vendor").lean();
     const data = section.map((select) => {
+      //if vendor not found, return null
+      if (!select.vendor) {
+        return { ...select, vendor: null }; // or handle differently if needed
+      }
       const vendor = vendors.find(
         (v) => v._id.toString() === select.vendor._id.toString()
       );

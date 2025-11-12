@@ -2,24 +2,31 @@ import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
 
 async function verifyAndSendDetails(req, res) {
+    console.time('verifyAndSendDetails');
     try {
         if (!req.cookies?.token) {
+            console.timeEnd('verifyAndSendDetails');
             return res.status(402).json({ message: "Unauthorized" });
         }
 
+        console.time('jwtVerify');
         const payload = jwt.verify(req.cookies.token, process.env.JWT_SECRET_KEY);
+        console.timeEnd('jwtVerify');
 
-        // Try to fetch the user from DB to get the role and other persisted fields
+        console.time('dbUserFindOne');
         const dbUser = await User.findOne({ email: payload.email }).select('-__v').lean();
+        console.timeEnd('dbUserFindOne');
 
         if (!dbUser) {
-            // If user not in DB, return payload as fallback
+            console.timeEnd('verifyAndSendDetails');
             return res.status(401).json({ message: 'Unauthorized' });
         }
 
+        console.timeEnd('verifyAndSendDetails');
         return res.status(200).json({ user: dbUser });
     } catch (err) {
         console.error('verifyAndSendDetails error', err);
+        console.timeEnd('verifyAndSendDetails');
         return res.status(401).json({ message: 'Unauthorized' });
     }
 }

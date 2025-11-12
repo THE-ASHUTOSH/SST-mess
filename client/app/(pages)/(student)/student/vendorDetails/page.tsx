@@ -3,12 +3,22 @@ import React, { useState, useEffect } from "react";
 import EventCard from "@/components/common/EventCard";
 import LoadingSpinner from "@/components/common/LoadingAnimation";
 
+interface DailyMenuItem {
+  breakfast: string[];
+  lunch: string[];
+  dinner: string[];
+}
+
+interface VendorMenu {
+  [key: string]: DailyMenuItem;
+}
+
 interface Vendor {
   _id: string;
   name: string;
   price: number;
   description: string;
-  menu: object | null;
+  menu: VendorMenu | null;
   menuUrl: string;
 }
 
@@ -18,7 +28,7 @@ const VendorDetail = () => {
   const [selectedMenuUrl, setSelectedMenuUrl] = useState<string | null>(null);
   const [showViewer, setShowViewer] = useState<boolean>(false);
   const [showTodayMenu, setShowTodayMenu] = useState<boolean>(false);
-  const [selectedVendorMenu, setSelectedVendorMenu] = useState<any>(null);
+  const [selectedVendorMenu, setSelectedVendorMenu] = useState<VendorMenu | null>(null);
 
   useEffect(() => {
     async function loadVendors() {
@@ -53,7 +63,7 @@ const VendorDetail = () => {
     loadVendors();
   }, []);
 
-  const handleViewTodayMenuClick = (menu: any) => {
+  const handleViewTodayMenuClick = (menu: VendorMenu | null) => {
     setSelectedVendorMenu(menu);
     setShowTodayMenu(true);
   };

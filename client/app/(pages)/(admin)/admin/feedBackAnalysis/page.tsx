@@ -17,7 +17,14 @@ interface Feedback {
   vendor: Vendor;
   user: string;
   feedback: string;
-  rating: number;
+  ratings: {
+    hygiene: number;
+    quantity: number;
+    timeliness: number;
+    variety: number;
+    staff: number;
+    overall: number;
+  };
   date: string;
 }
 
@@ -27,6 +34,7 @@ const FeedbackAnalysis = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedVendor, setSelectedVendor] = useState<string>("");
   const [selectedRating, setSelectedRating] = useState<string>("");
+  const [selectedChart, setSelectedChart] = useState<string>("overall");
 
   useEffect(() => {
     const fetchFeedbackData = async () => {
@@ -51,7 +59,7 @@ const FeedbackAnalysis = () => {
 
   const filteredFeedback = feedbackData.filter(feedback => {
     const vendorMatch = !selectedVendor || feedback.vendor?.name === selectedVendor;
-    const ratingMatch = !selectedRating || feedback.rating === parseInt(selectedRating, 10);
+    const ratingMatch = !selectedRating || feedback.ratings.overall === parseInt(selectedRating, 10);
     return vendorMatch && ratingMatch;
   });
 
@@ -63,7 +71,7 @@ const FeedbackAnalysis = () => {
         if (!vendorRatings[vendorName]) {
           vendorRatings[vendorName] = { totalRating: 0, count: 0 };
         }
-        vendorRatings[vendorName].totalRating += feedback.rating;
+        vendorRatings[vendorName].totalRating += feedback.ratings[selectedChart as keyof typeof feedback.ratings];
         vendorRatings[vendorName].count += 1;
       }
     });
@@ -124,6 +132,22 @@ const FeedbackAnalysis = () => {
                 ))}
               </select>
             </div>
+            <div className="flex-1">
+              <label htmlFor="chart-filter" className="block text-sm font-medium text-gray-300 mb-2">Chart</label>
+              <select
+                id="chart-filter"
+                value={selectedChart}
+                onChange={(e) => setSelectedChart(e.target.value)}
+                className="w-full px-4 py-2 bg-gray-900/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-300 text-white"
+              >
+                <option value="overall">Overall</option>
+                <option value="hygiene">Hygiene</option>
+                <option value="quantity">Quantity</option>
+                <option value="timeliness">Timeliness</option>
+                <option value="variety">Variety</option>
+                <option value="staff">Staff</option>
+              </select>
+            </div>
           </CardContent>
         </Card>
 
@@ -165,7 +189,12 @@ const FeedbackAnalysis = () => {
                 <thead className="sticky top-0 bg-gray-800/80 backdrop-blur-sm">
                   <tr>
                     <th className="py-2 px-4 border-b border-gray-700 text-left">Vendor</th>
-                    <th className="py-2 px-4 border-b border-gray-700 text-left">Rating</th>
+                    <th className="py-2 px-4 border-b border-gray-700 text-left">Hygiene</th>
+                    <th className="py-2 px-4 border-b border-gray-700 text-left">Quantity</th>
+                    <th className="py-2 px-4 border-b border-gray-700 text-left">Timeliness</th>
+                    <th className="py-2 px-4 border-b border-gray-700 text-left">Variety</th>
+                    <th className="py-2 px-4 border-b border-gray-700 text-left">Staff</th>
+                    <th className="py-2 px-4 border-b border-gray-700 text-left">Overall</th>
                     <th className="py-2 px-4 border-b border-gray-700 text-left">Feedback</th>
                     <th className="py-2 px-4 border-b border-gray-700 text-left">Date</th>
                   </tr>
@@ -175,14 +204,19 @@ const FeedbackAnalysis = () => {
                     filteredFeedback.map((feedback) => (
                       <tr key={feedback._id}>
                         <td className="py-2 px-4">{feedback.vendor ? feedback.vendor.name : "Vendor not found"}</td>
-                        <td className="py-2 px-4">{feedback.rating}</td>
+                        <td className="py-2 px-4">{feedback.ratings.hygiene}</td>
+                        <td className="py-2 px-4">{feedback.ratings.quantity}</td>
+                        <td className="py-2 px-4">{feedback.ratings.timeliness}</td>
+                        <td className="py-2 px-4">{feedback.ratings.variety}</td>
+                        <td className="py-2 px-4">{feedback.ratings.staff}</td>
+                        <td className="py-2 px-4">{feedback.ratings.overall}</td>
                         <td className="py-2 px-4">{feedback.feedback}</td>
                         <td className="py-2 px-4">{new Date(feedback.date).toLocaleDateString()}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={4} className="text-center py-4 text-gray-400">No feedback submitted yet.</td>
+                      <td colSpan={9} className="text-center py-4 text-gray-400">No feedback submitted yet.</td>
                     </tr>
                   )}
                 </tbody>

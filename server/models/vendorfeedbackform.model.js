@@ -14,9 +14,13 @@ const vendorFeedbackFormSchema = new mongoose.Schema({
     feedback: {
         type: String,
     },
-    rating: {
-        type: Number,
-        required: true,
+    ratings: {
+        hygiene: { type: Number, required: true },
+        quantity: { type: Number, required: true },
+        timeliness: { type: Number, required: true },
+        variety: { type: Number, required: true },
+        staff: { type: Number, required: true },
+        overall: { type: Number, required: true },
     },
     date: {
         type: Date,

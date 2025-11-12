@@ -22,11 +22,11 @@ async function vendorSelectionFrom(req, res) {
 }
 
 async function vendorFeedbackForm(req, res) {
-  const { rating, vendor, feedback, user } = req.body;
+  const { ratings, vendor, feedback, user } = req.body;
   // console.log(vendor)
   try {
     const VendorFeedbackForm = await new VendorFeedback({
-      rating,
+      ratings,
       vendor,
       feedback,
       user,

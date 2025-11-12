@@ -10,7 +10,7 @@ const router = Router();
 
 router.route("/getVendors").get(getVendors);
 router.route("/vendorSelectionForm").post(adduserdetails, vendorSelectionFrom);
-router.route("/vendorFeedbackForm").post(adduserdetails,addVendordetails,vendorFeedbackForm);
+router.route("/vendorFeedbackForm").post(adduserdetails,vendorFeedbackForm);
 router.route("/addVendor").post(adduserdetails, upload.single('menuFile'), addVendor);
 router.route("/updateVendor/:id").put(adduserdetails, upload.single('menuFile'), updateVendor);
 router.route("/getChoiceAnalysis").get(getChoiceAnalysis);

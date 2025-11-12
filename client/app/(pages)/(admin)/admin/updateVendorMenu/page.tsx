@@ -10,7 +10,7 @@ interface Vendor {
   name: string;
   price: number;
   description: string;
-  menu: string;
+  menuUrl: string;
 }
 
 const UpdateVendorMenu = () => {
@@ -60,7 +60,7 @@ const UpdateVendorMenu = () => {
         name: vendor.name,
         description: vendor.description,
         price: vendor.price.toString(),
-        menuUrl: vendor.menu
+        menuUrl: vendor.menuUrl
       });
     }
   }, [selectedVendor, vendors]);

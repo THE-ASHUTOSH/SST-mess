@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
+import VendorSelection from "../models/vendorselectform.model.js";
 
 async function verifyAndSendDetails(req, res) {
     console.time('verifyAndSendDetails');
@@ -63,4 +64,21 @@ async function verifyAndSetCookies(req, res) {
     });
 }
 
-export { verifyAndSendDetails, verifyAndSetCookies };
+async function getLatestVendorSelection(req, res) {
+    try {
+        const latestSelection = await VendorSelection.findOne({ user: req.user._id })
+            .sort({ createdAt: -1 })
+            .populate('vendor');
+
+        if (!latestSelection) {
+            return res.status(404).json({ message: "No vendor selection found" });
+        }
+
+        return res.status(200).json({ latestSelection });
+    } catch (error) {
+        console.error('Error fetching latest vendor selection:', error);
+        return res.status(500).json({ message: 'Server error' });
+    }
+}
+
+export { verifyAndSendDetails, verifyAndSetCookies, getLatestVendorSelection };

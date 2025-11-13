@@ -2,20 +2,20 @@
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import Image from 'next/image';
+import { useQRCode } from 'next-qrcode';
 
 const GetFoodPage = () => {
-  const [qrCode, setQrCode] = useState('');
+  const [token, setToken] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [scanned, setScanned] = useState(false);
+  const { Canvas } = useQRCode();
 
   useEffect(() => {
     const fetchQrCode = async () => {
       try {
         const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/meal/generate-qr`, { withCredentials: true });
-        const token = response.data.token;
-        setQrCode(`https://api.qrserver.com/v1/create-qr-code/?data=${token}&size=200x200`);
+        setToken(response.data.token);
       } catch (err: unknown) {
         if (axios.isAxiosError(err) && err.response?.status === 403) {
           setError(err.response.data.message);
@@ -32,7 +32,7 @@ const GetFoodPage = () => {
   useEffect(() => {
     let interval: NodeJS.Timeout;
 
-    if (qrCode && !scanned) {
+    if (token && !scanned) {
       interval = setInterval(async () => {
         try {
           const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/meal/status`, { withCredentials: true });
@@ -51,7 +51,7 @@ const GetFoodPage = () => {
         clearInterval(interval);
       }
     };
-  }, [qrCode, scanned]);
+  }, [token, scanned]);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-center">
@@ -60,9 +60,21 @@ const GetFoodPage = () => {
       </h1>
       {loading && <p>Loading...</p>}
       {error && <p className="text-red-500">{error}</p>}
-      {qrCode && !error && !scanned && (
+      {token && !error && !scanned && (
         <div className="flex flex-col items-center">
-          <Image src={qrCode} alt="QR Code" width={200} height={200} />
+          <Canvas
+            text={token}
+            options={{
+              errorCorrectionLevel: 'M',
+              margin: 3,
+              scale: 4,
+              width: 200,
+              color: {
+                dark: '#000000',
+                light: '#FFFFFF',
+              },
+            }}
+          />
           <p className="mt-4 text-gray-500">Scan this QR code to get your food.</p>
         </div>
       )}

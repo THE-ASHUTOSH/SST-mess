@@ -2,49 +2,71 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { BrowserQRCodeReader, IScannerControls } from '@zxing/browser';
+import { Html5QrcodeScanner } from 'html5-qrcode';
 import LoadingAnimation from '@/components/common/LoadingAnimation';
 
 const VerifyStudentQRPage = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const controlsRef = useRef<IScannerControls | null>(null);
+  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+
 
   useEffect(() => {
-    const codeReader = new BrowserQRCodeReader();
+    // Do not run on server
+    if (typeof window === 'undefined') {
+      return;
+    }
 
-    const startScanning = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        if (videoRef.current) {
-          controlsRef.current = await codeReader.decodeFromStream(stream, videoRef.current, (result, err) => {
-            if (result) {
-              setIsProcessing(true);
-              handleVerify(result.getText());
-            }
-            if (err) {
-              // You can choose to handle errors here, e.g., if no QR code is found
-            }
-          });
-        }
-      } catch (err) {
-        console.error('Error accessing camera:', err);
-        setError('Error accessing camera. Please make sure you have a camera connected and have granted permission.');
+    if (isProcessing) {
+      if (scannerRef.current) {
+        scannerRef.current.clear();
+        scannerRef.current = null;
       }
+      return;
+    }
+
+    if (scannerRef.current) {scannerRef.current.clear()
+      return; // Scanner already running
+    }
+
+    // The scanner instance is created and stored in the ref
+    const scanner = new Html5QrcodeScanner(
+      'qr-code-full-region',
+      {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        rememberLastUsedCamera: true,
+        supportedScanTypes: [],
+      },
+      false
+    );
+
+
+    scannerRef.current = scanner;
+
+    const onScanSuccess = (decodedText: string) => {
+      handleVerify(decodedText);
     };
 
-    startScanning();
+    const onScanFailure = (errorMessage: string) => {
+      // handle scan failure, usually better to ignore and keep scanning.
+    };
 
+    scanner.render(onScanSuccess, onScanFailure);
+    
+
+    // Cleanup function to clear the scanner on component unmount
     return () => {
-      if (controlsRef.current) {
-        controlsRef.current.stop();
+      if (scannerRef.current) {
+        scannerRef.current.clear();
+        scannerRef.current = null;
       }
     };
-  }, [isProcessing]);
+  }, [isProcessing]); // Rerun effect if isProcessing changes
 
   const handleVerify = async (token: string) => {
+    setIsProcessing(true);
     try {
       const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/meal/verify-qr`, { token }, { withCredentials: true });
       setMessage(`Meal verified for ${response.data.user}.`);
@@ -57,7 +79,8 @@ const VerifyStudentQRPage = () => {
       }
       setMessage('');
     }
-    setIsProcessing(false);
+    // Do not set isProcessing back to false, to show the result message
+    // and prevent the scanner from reappearing automatically.
   };
 
   return (
@@ -67,7 +90,7 @@ const VerifyStudentQRPage = () => {
         {isProcessing ? (
           <LoadingAnimation />
         ) : (
-          <video ref={videoRef} className="w-full border-2 border-gray-300 rounded-lg" />
+          <div id="qr-code-full-region"></div>
         )}
         {message && <p className="text-green-500 mt-4">{message}</p>}
         {error && <p className="text-red-500 mt-4">{error}</p>}

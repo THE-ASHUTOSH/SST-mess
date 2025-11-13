@@ -1,13 +1,36 @@
 import Meal from "../models/meal.model.js";
 import User from "../models/user.model.js";
+import VendorSelection from "../models/vendorselectform.model.js";
 import jwt from "jsonwebtoken";
 
 export const generateQR = async (req, res) => {
   try {
     const userId = req.user._id;
+
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+    const selection = await VendorSelection.findOne({
+      user: userId,
+      date: {
+        $gte: startOfMonth,
+        $lte: endOfMonth,
+      },
+    });
+
+
+    if (!selection) {
+      return res
+        .status(403)
+        .json({ message: "Mess not opted in for this month." });
+    }
+
     const lastMeal = await Meal.findOne({ user: userId }).sort({
       createdAt: -1,
     });
+
+
 
     if (lastMeal) {
       const now = new Date();
@@ -21,7 +44,7 @@ export const generateQR = async (req, res) => {
       }
     }
 
-    const token = jwt.sign({ userId }, process.env.JWT_SECRET_KEY, {
+    const token = jwt.sign({ userId, vendor: selection.vendor}, process.env.JWT_SECRET_KEY, {
       expiresIn: "15m",
     });
     res.status(200).json({ token });
@@ -75,6 +98,8 @@ export const verifyQR = async (req, res) => {
           });
       }
     }
+
+
 
     const meal = new Meal({ user: userId });
     await meal.save();

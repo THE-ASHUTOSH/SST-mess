@@ -66,9 +66,20 @@ async function verifyAndSetCookies(req, res) {
 
 async function getLatestVendorSelection(req, res) {
     try {
-        const latestSelection = await VendorSelection.findOne({ user: req.user._id })
-            .sort({ createdAt: -1 })
-            .populate('vendor');
+        // const latestSelection = await VendorSelection.findOne({ user: req.user._id })
+        //     .sort({ createdAt: -1 })
+        //     .populate('vendor');
+        const today = new Date();
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        
+        const latestSelection = await VendorSelection.findOne({
+              user: req.user._id,
+              date: {
+                $gte: startOfMonth,
+                $lte: endOfMonth,
+              },
+            }).sort({ createdAt: -1 }).populate('vendor');
 
         if (!latestSelection) {
             return res.status(404).json({ message: "No vendor selection found" });

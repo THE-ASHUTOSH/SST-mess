@@ -17,7 +17,7 @@ export const generateQR = async (req, res) => {
         $gte: startOfMonth,
         $lte: endOfMonth,
       },
-    });
+    }).sort({ createdAt: -1 });
 
 
     if (!selection) {
@@ -79,7 +79,7 @@ export const verifyQR = async (req, res) => {
   try {
     const { token, vendorId } = req.body;
     if (!vendorId) {
-      return res.status(400).json({ message: "Vendor ID is required." });
+      return res.status(400).json({ message: "You are not opted in" });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);

@@ -77,9 +77,18 @@ export const getMealStatus = async (req, res) => {
 
 export const verifyQR = async (req, res) => {
   try {
-    const { token } = req.body;
+    const { token, vendorId } = req.body;
+    if (!vendorId) {
+      return res.status(400).json({ message: "Vendor ID is required." });
+    }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     const userId = decoded.userId;
+    const userVendor = decoded.vendor;
+
+    if (userVendor.toString() !== vendorId) {
+      return res.status(403).json({ message: "This student is not assigned to your vendor." });
+    }
 
     const lastMeal = await Meal.findOne({ user: userId }).sort({
       createdAt: -1,

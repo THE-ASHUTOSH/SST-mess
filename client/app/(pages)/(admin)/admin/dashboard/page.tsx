@@ -21,7 +21,9 @@ const Dashboard = () => {
         <EventCard title="FeedBack Analysis" redirectUrl="/admin/feedBackAnalysis">
             <p>Analyze the feedback received for vendors</p>
         </EventCard>
-        
+        <EventCard title="Controls" redirectUrl="/admin/adminControls">
+            <p>Manage various administrative controls</p>
+        </EventCard>
     
       </div>
     </div>

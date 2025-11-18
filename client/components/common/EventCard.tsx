@@ -1,13 +1,15 @@
-"use client"
-import React ,{ReactNode} from 'react' 
-import { Card, CardHeader } from '@/components/ui/card'
-import Link from 'next/link'
+"use client";
+import React, { ReactNode } from "react";
+import { Card, CardHeader } from "@/components/ui/card";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 interface CardProps {
-    title: string;
-    description?: string;
-    logoUrl?: string;
-    children?: ReactNode;
-    redirectUrl?: string;
+  title: string;
+  description?: string;
+  logoUrl?: string;
+  children?: ReactNode;
+  redirectUrl?: string;
+  enabled?: boolean;
 }
 const EventCard: React.FC<CardProps> = ({
   title,
@@ -15,9 +17,15 @@ const EventCard: React.FC<CardProps> = ({
   logoUrl,
   children,
   redirectUrl,
+  enabled = true,
 }: CardProps) => {
   const cardContent = (
-    <Card className="w-full h-full bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-[#ff6b6b]/30 transform hover:-translate-y-2 transition-all duration-300 group">
+    <Card
+      className={cn(
+        "w-full h-full bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-[#ff6b6b]/30 transform hover:-translate-y-2 transition-all duration-300 group",
+        !enabled && "grayscale pointer-events-none"
+      )}
+    >
       <CardHeader className="p-6 bg-gradient-to-br from-gray-800/80 to-gray-900/80 border-b border-gray-700/50">
         <h1 className="text-xl font-semibold bg-gradient-to-r from-[#4facfe] via-[#00f2fe] to-[#7b4dff] bg-clip-text text-transparent group-hover:from-[#ff6b6b] group-hover:via-[#ffd93d] group-hover:to-[#6c5ce7] transition-all duration-500">
           {title}
@@ -30,11 +38,11 @@ const EventCard: React.FC<CardProps> = ({
     </Card>
   );
 
-  if (redirectUrl) {
+  if (redirectUrl && enabled) {
     return <Link href={redirectUrl}>{cardContent}</Link>;
   }
 
   return cardContent;
 };
 
-export default EventCard
+export default EventCard;

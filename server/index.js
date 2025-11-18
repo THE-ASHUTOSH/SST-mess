@@ -10,6 +10,7 @@ import userRouter from "./routes/user.route.js";
 import mealRouter from "./routes/meal.route.js";
 import { adduserdetails } from "./middlewares/user.middleware.js";
 import cookieParser from "cookie-parser";
+import controlRouter from "./routes/controls.route.js";
 
 dotenv.config({ quiet: true });
 
@@ -36,7 +37,7 @@ app.get("/heathcheck", (req, res) => {
 
 app.use("/auth", authRouter);
 app.use("/user", userRouter);
-
+app.use("/controls", controlRouter);
 app.use("/vendor", vendorRoute);
 app.use("/meal", adduserdetails, mealRouter);
 connectDB();

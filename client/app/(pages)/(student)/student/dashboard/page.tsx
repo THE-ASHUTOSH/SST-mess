@@ -57,7 +57,7 @@ const Dashboard = () => {
         <EventCard title="Select Vendor" redirectUrl="/student/selectVendor">
           <p>Select the vendor you want to order from</p>
         </EventCard>
-        <EventCard title="Feedback" redirectUrl="/student/feedback">
+        <EventCard title="Feedback" redirectUrl="/student/feedback" enabled={false}>
           <p>Your feedback is very important to us</p>
         </EventCard>
       </div>

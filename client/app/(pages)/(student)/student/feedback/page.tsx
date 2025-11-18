@@ -84,11 +84,6 @@ const Feedback = () => {
     setHoverRatings((prev) => ({ ...prev, [category]: value }));
   };
 
-  const averageRating = useMemo(() => {
-    const total = Object.values(ratings).reduce((acc, curr) => acc + curr, 0);
-    return total / Object.keys(ratings).length;
-  }, [ratings]);
-
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -98,7 +93,7 @@ const Feedback = () => {
     const requestBody = JSON.stringify({
       vendor: selectedVendor,
       ratings,
-      feedback: averageRating < 2 ? feedback : "",
+      feedback: feedback.trim(),
     });
 
     try {
@@ -191,13 +186,13 @@ const Feedback = () => {
               ))}
             </div>
 
-            {averageRating > 0 && averageRating < 2 && (
+            
               <div className="space-y-2 animate-fade-in-up">
                 <label
                   htmlFor="feedback"
                   className="block text-sm font-medium text-gray-300"
                 >
-                  Additional Comments (Required due to low rating)
+                  Additional Comments 
                 </label>
                 <textarea
                   id="feedback"
@@ -206,10 +201,9 @@ const Feedback = () => {
                   onChange={(e) => setFeedback(e.target.value)}
                   placeholder="Please share specific details to help us improve..."
                   className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-300 text-white placeholder-gray-500 resize-none"
-                  required
                 />
               </div>
-            )}
+            
 
             <button
               type="submit"

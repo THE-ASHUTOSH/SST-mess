@@ -4,17 +4,24 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import LoadingAnimation from '@/components/common/LoadingAnimation';
+interface VerifiedUser {
+  _id: string;
+  name: string;
+  email: string;
+  picture: string;
+}
 
 interface Vendor {
   _id: string;
   name: string;
 }
 
+
 const VerifyStudentQRPage = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [verifiedUser, setVerifiedUser] = useState<any>(null);
+  const [verifiedUser, setVerifiedUser] = useState<VerifiedUser | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [selectedVendor, setSelectedVendor] = useState<string>('');
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);

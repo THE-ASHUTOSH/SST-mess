@@ -89,7 +89,7 @@ const Header = () => {
             {user ? (
               <>
                 <div className="flex items-center gap-3 px-3 py-2">
-                  <img src={user.picture || '/avatar_placeholder.png'} alt="avatar" className="h-10 w-10 rounded-full object-cover" />
+                  <img src={user.picture || '/avatar_placeholder.png'} alt="avatar" className="h-10 w-10 rounded-full object-cover" referrerPolicy="no-referrer" />
                   <div className="flex flex-col">
                     <span className="text-sm font-medium text-white">{user.name}</span>
                     <span className="text-xs text-gray-400">{user.email}</span>

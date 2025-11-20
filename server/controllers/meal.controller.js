@@ -117,7 +117,7 @@ export const verifyQR = async (req, res) => {
 
     res
       .status(200)
-      .json({ message: "Meal verified successfully.", user: user.name });
+      .json({ message: "Meal verified successfully.", user: user });
   } catch (error) {
     console.error("Error verifying QR code:", error);
     if (error.name === "JsonWebTokenError") {

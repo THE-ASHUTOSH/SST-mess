@@ -14,6 +14,7 @@ const VerifyStudentQRPage = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [verifiedUser, setVerifiedUser] = useState<any>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [selectedVendor, setSelectedVendor] = useState<string>('');
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
@@ -100,7 +101,9 @@ const VerifyStudentQRPage = () => {
     setIsProcessing(true);
     try {
       const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/meal/verify-qr`, { token, vendorId: selectedVendor }, { withCredentials: true });
-      setMessage(`Meal verified for ${response.data.user}.`);
+      console.log('Meal verified:', response.data);
+      setMessage(`Meal verified for ${response.data.user.name}.`);
+      setVerifiedUser(response.data.user);
       setError('');
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response?.data?.message) {
@@ -114,7 +117,8 @@ const VerifyStudentQRPage = () => {
         setMessage('');
         setError('');
         setIsProcessing(false);
-      }, 3000);
+        setVerifiedUser(null);
+      }, 5000);
     }
   };
 
@@ -143,9 +147,18 @@ const VerifyStudentQRPage = () => {
           <div id={scannerContainerId} style={{ display: isProcessing ? 'none' : 'block' }}></div>
           {isProcessing && (
               <div className="flex flex-col items-center justify-center h-full mt-4">
-                  {message && <p className="text-green-500 text-xl text-center">{message}</p>}
-                  {error && <p className="text-red-500 text-xl text-center">{error}</p>}
-                  {!message && !error && <LoadingAnimation />}
+                  {verifiedUser ? (
+                    <div className="text-center">
+                      <img src={verifiedUser.picture} alt={verifiedUser.name} className="w-32 h-32 mx-auto mb-4 border-4 border-purple-500" referrerPolicy='no-referrer'/>
+                      <p className="text-green-500 text-xl">{message}</p>
+                    </div>
+                  ) : (
+                    <>
+                      {message && <p className="text-green-500 text-xl text-center">{message}</p>}
+                      {error && <p className="text-red-500 text-xl text-center">{error}</p>}
+                      {!message && !error && <LoadingAnimation />}
+                    </>
+                  )}
               </div>
           )}
         </div>

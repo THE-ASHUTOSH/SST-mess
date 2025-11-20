@@ -54,7 +54,7 @@ const AdminControlsPage = () => {
                         Admin Controls
                     </h1>
 
-                    {isLoading ? (
+                    {isLoading || isSubmitting ? (
                         <div className="flex justify-center items-center h-24">
                             <LoadingAnimation />
                         </div>

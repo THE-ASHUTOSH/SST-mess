@@ -14,6 +14,8 @@ interface LatestSelection {
 const Dashboard = () => {
   const [latestSelection, setLatestSelection] = useState<LatestSelection | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isFeedbackEnabled, setIsFeedbackEnabled] = useState(false);
+  console.log("feedback",isFeedbackEnabled)
 
   useEffect(() => {
     const fetchLatestSelection = async () => {
@@ -29,7 +31,20 @@ const Dashboard = () => {
       }
     };
 
+    const fetchFeedbackStatus = async () => {
+      try {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/controls/feedback-toggle`, {
+          withCredentials: true,
+        });
+        setIsFeedbackEnabled(response.data.enabled);
+        // console.log("response",response.data.enabled)
+      } catch (error) {
+        console.error('Error fetching feedback status:', error);
+      }
+    };
+
     fetchLatestSelection();
+    fetchFeedbackStatus();
   }, []);
 
   return (
@@ -57,7 +72,7 @@ const Dashboard = () => {
         <EventCard title="Select Vendor" redirectUrl="/student/selectVendor">
           <p>Select the vendor you want to order from</p>
         </EventCard>
-        <EventCard title="Feedback" redirectUrl="/student/feedback" enabled={false}>
+        <EventCard title="Feedback" redirectUrl="/student/feedback" enabled={isFeedbackEnabled}>
           <p>Your feedback is very important to us</p>
         </EventCard>
       </div>

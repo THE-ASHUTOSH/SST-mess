@@ -12,7 +12,7 @@ const userModel = new mongoose.Schema({
     },
     role:{
         type:String,
-        enum:['admin','student'],
+        enum:['admin','student','vendor'],
         default:'student',
     },
     batch:{

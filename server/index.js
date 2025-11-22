@@ -11,6 +11,7 @@ import mealRouter from "./routes/meal.route.js";
 import { adduserdetails } from "./middlewares/user.middleware.js";
 import cookieParser from "cookie-parser";
 import controlRouter from "./routes/controls.route.js";
+import adminRouter from "./routes/admin.route.js";
 
 dotenv.config({ quiet: true });
 
@@ -40,6 +41,7 @@ app.use("/user", userRouter);
 app.use("/controls", controlRouter);
 app.use("/vendor", vendorRoute);
 app.use("/meal", adduserdetails, mealRouter);
+app.use("/admin", adminRouter);
 connectDB();
 
 // app.get("/addvendor",async(req,res)=>{

@@ -1,15 +1,24 @@
 import mongoose from "mongoose";
 
 const mealSchema = new mongoose.Schema({
-  user: {
+  forUser: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
   },
-  createdAt: {
+  byUser: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  mealType: {
+    type: String,
+    enum: ["breakfast", "lunch", "dinner"],
+    required: true,
+  },
+  date: {
     type: Date,
-    default: Date.now,
-    expires: 10800, // 3 hours in seconds
+    required: true,
   },
 });
 

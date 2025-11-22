@@ -11,19 +11,25 @@ const vendorSelectionSchema = new mongoose.Schema({
         ref: "User",
         required: true,
     },
-    roomNo:{
-        type: String,
-        required: true,
-    },
     vendor: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Vendor",
         required: true,
     },
-    date: {
-        type: Date,
-        default: Date.now,
+    preference:{
+        type: String,
+        enum: ["vegetarian", "non-vegetarian", ],
+        default: 'vegetarian',
     },
+    forMonth:{
+        type: Date,
+        required: true,
+    },
+    dateofEntry: {
+        type: Date,
+        required: true,
+    
+    }
 },
 {
     timestamps: true,

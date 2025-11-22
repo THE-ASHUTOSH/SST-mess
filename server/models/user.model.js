@@ -15,6 +15,9 @@ const userModel = new mongoose.Schema({
         enum:['admin','student'],
         default:'student',
     },
+    batch:{
+        type:String,
+    },
     picture:{
         type:String,
     },

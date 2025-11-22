@@ -26,6 +26,11 @@ const vendorSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
+    mealsOptions:{
+        breakfast:{ type: Boolean, default: true },
+        lunch: { type: Boolean, default: true },
+        dinner: { type: Boolean, default: true },
+    }
 }, { timestamps: true });
 
 export default mongoose.model("Vendor", vendorSchema);

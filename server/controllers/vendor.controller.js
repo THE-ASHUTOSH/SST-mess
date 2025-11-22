@@ -6,22 +6,22 @@ import Menu from "../models/menu.model.js";
 import generateMenu from "../utils/generateMenu.js";
 import fs from "fs";
 
-async function vendorSelectionFrom(req, res) {
-  const { name, room, vendor, user } = req.body;
-  try {
-    const student = user;
-    const vendormod = await Vendor.findById(vendor);
-    const vendorSection = await VendorSection.create({
-      name,
-      roomNo: room,
-      vendor: vendormod,
-      user: student,
-    });
-    res.status(200).json({ success: true, vendorSection });
-  } catch (err) {
-    res.status(400).json({ success: false, err });
-  }
-}
+// async function vendorSelectionFrom(req, res) {
+//   const { name, room, vendor, user } = req.body;
+//   try {
+//     const student = user;
+//     const vendormod = await Vendor.findById(vendor);
+//     const vendorSection = await VendorSection.create({
+//       name,
+//       roomNo: room,
+//       vendor: vendormod,
+//       user: student,
+//     });
+//     res.status(200).json({ success: true, vendorSection });
+//   } catch (err) {
+//     res.status(400).json({ success: false, err });
+//   }
+// }
 
 async function vendorFeedbackForm(req, res) {
   const { ratings, vendor, feedback, user } = req.body;
@@ -187,7 +187,7 @@ async function getFeedbackAnalysis(req, res) {
 }
 
 export {
-  vendorSelectionFrom,
+  // vendorSelectionFrom,
   vendorFeedbackForm,
   getVendors,
   addVendor,

@@ -1,3 +1,4 @@
+import { now } from "mongoose";
 import Meal from "../models/meal.model.js";
 import User from "../models/user.model.js";
 import VendorSelection from "../models/vendorselectform.model.js";
@@ -7,17 +8,25 @@ export const generateQR = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const today = new Date();
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    const month = now().getMonth();
+    const year = now().getFullYear(); 
+
+    const hours = now().getHours();
+    let mealType;
+    if(hours >=7 && hours <10){
+      mealType = "breakfast";
+    }else if(hours >=12 && hours <15){
+      mealType = "lunch";
+    }else if(hours >=19 && hours <22){
+      mealType = "dinner";
+    }else{
+      return res.status(403).json({ message: "This student is not assigned to your vendor." });
+    }
 
     const selection = await VendorSelection.findOne({
       user: userId,
-      date: {
-        $gte: startOfMonth,
-        $lte: endOfMonth,
-      },
-    }).sort({ createdAt: -1 });
+      forMonth: { $gte: new Date(year, month, 1), $lt: new Date(year, month + 1, 1) },
+    });
 
 
     if (!selection) {
@@ -26,22 +35,30 @@ export const generateQR = async (req, res) => {
         .json({ message: "Mess not opted in for this month." });
     }
 
-    const lastMeal = await Meal.findOne({ user: userId }).sort({
-      createdAt: -1,
+    await selection.populate("vendor");
+    if(selection.vendor.mealsOptions && !selection.vendor.mealsOptions[mealType]==false){
+      return res
+        .status(403)
+        .json({ message: `Vendor does not offer ${mealType}.` });
+    }
+
+    
+
+    const startOfDay = new Date(now().getFullYear(), now().getMonth(), now().getDate());
+    const endOfDay = new Date(now().getFullYear(), now().getMonth(), now().getDate() + 1);
+
+    const lastMeal = await Meal.findOne({
+      forUser: userId,
+      mealType,
+      date: { $gte: startOfDay, $lt: endOfDay },
     });
 
 
 
     if (lastMeal) {
-      const now = new Date();
-      const diff = now.getTime() - lastMeal.createdAt.getTime();
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-
-      if (hours < 3) {
-        return res
-          .status(403)
-          .json({ message: "You can only take one meal every 3 hours." });
-      }
+      return res
+        .status(403)
+        .json({ message: "You have already scanned for this meal." });
     }
 
     const token = jwt.sign({ userId, vendor: selection.vendor}, process.env.JWT_SECRET_KEY, {
@@ -57,12 +74,29 @@ export const generateQR = async (req, res) => {
 export const getMealStatus = async (req, res) => {
   try {
     const userId = req.user._id;
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+
+    const hours = now().getHours();
+    let mealType;
+    if(hours >=7 && hours <10){
+      mealType = "breakfast";
+    }else if(hours >=12 && hours <15){
+      mealType = "lunch";
+    }else if(hours >=19 && hours <22){
+      mealType = "dinner";
+    }else{
+      return res.status(403).json({ message: "This student is not assigned to your vendor." });
+    }
+    
+
+    const startOfDay = new Date(now().getFullYear(), now().getMonth(), now().getDate());
+    const endOfDay = new Date(now().getFullYear(), now().getMonth(), now().getDate() + 1);
 
     const meal = await Meal.findOne({
-      user: userId,
-      createdAt: { $gte: fiveMinutesAgo },
+      forUser: userId,
+      mealType,
+      date: { $gte: startOfDay, $lt: endOfDay },
     });
+
 
     if (meal) {
       return res.status(200).json({ status: "scanned" });
@@ -75,49 +109,63 @@ export const getMealStatus = async (req, res) => {
   }
 };
 
+
 export const verifyQR = async (req, res) => {
   try {
+    const byUser = req.user._id;
     const { token, vendorId } = req.body;
     if (!vendorId) {
       return res.status(400).json({ message: "You are not opted in" });
     }
-
+    
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    const userId = decoded.userId;
+    const forUserId = decoded.userId;
     const userVendor = decoded.vendor;
 
     if (userVendor.toString() !== vendorId) {
       return res.status(403).json({ message: "This student is not assigned to your vendor." });
     }
 
-    const lastMeal = await Meal.findOne({ user: userId }).sort({
-      createdAt: -1,
-    });
-
-    if (lastMeal) {
-      const now = new Date();
-      const diff = now.getTime() - lastMeal.createdAt.getTime();
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-
-      if (hours < 3) {
-        return res
-          .status(403)
-          .json({
-            message: "User has already taken a meal in the last 3 hours.",
-          });
-      }
+    const hours = now().getHours();
+    let mealType;
+    if(hours >=7 && hours <10){
+      mealType = "breakfast";
+    }else if(hours >=12 && hours <15){
+      mealType = "lunch";
+    }else if(hours >=19 && hours <22){
+      mealType = "dinner";
+    }else{
+      return res.status(403).json({ message: "This student is not assigned to your vendor." });
     }
 
+    const startOfDay = new Date(now().getFullYear(), now().getMonth(), now().getDate());
+    const endOfDay = new Date(now().getFullYear(), now().getMonth(), now().getDate() + 1);
 
+    const existingMeal = await Meal.findOne({
+      forUser: forUserId,
+      mealType,
+      date: { $gte: startOfDay, $lt: endOfDay },
+    });
 
-    const meal = new Meal({ user: userId });
+    if (existingMeal) {
+      return res
+        .status(403)
+        .json({ message: `User has already taken ${mealType} today.` });
+    }
+
+    const meal = new Meal({
+      forUser: forUserId,
+      byUser,
+      mealType,
+    });
+
     await meal.save();
-
-    const user = await User.findById(userId);
+    
+    const foruser = await User.findById(forUserId);
 
     res
       .status(200)
-      .json({ message: "Meal verified successfully.", user: user });
+      .json({ message: "Meal verified successfully.", user: foruser });
   } catch (error) {
     console.error("Error verifying QR code:", error);
     if (error.name === "JsonWebTokenError") {

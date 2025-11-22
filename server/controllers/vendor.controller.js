@@ -4,6 +4,8 @@ import VendorFeedback from "../models/vendorfeedbackform.model.js";
 import Vendor from "../models/vendor.model.js";
 import Menu from "../models/menu.model.js";
 import generateMenu from "../utils/generateMenu.js";
+import fs from "fs";
+
 async function vendorSelectionFrom(req, res) {
   const { name, room, vendor, user } = req.body;
   try {
@@ -48,18 +50,20 @@ async function getVendors(req, res) {
 }
 
 async function addVendor(req, res) {
-  const { name, description, price, menuUrl } = req.body;
+  const { name, description, price, menuUrl, mealsOptions } = req.body;
 
-  if (!name || !price || (!menuUrl && !req.file)) {
+  if (!name || !price) {
     return res.status(400).json({ message: "All fields are required" });
   }
 
   try {
+    const parsedMealsOptions = mealsOptions ? JSON.parse(mealsOptions) : undefined;
     const newVendor = new Vendor({
       name,
       description,
       price,
       menuUrl,
+      mealsOptions: parsedMealsOptions,
     });
 
     let menuId = null;
@@ -86,20 +90,24 @@ async function addVendor(req, res) {
       .json({ message: "Vendor added successfully", vendor: newVendor });
   } catch (error) {
     return res.status(500).json({ message: "Error adding vendor", error });
-  }finally{
-    fs.unlinkSync(req.file.path);
+    } finally {
+      if (req.file) {
+        fs.unlinkSync(req.file.path);
+      }
+    }
   }
-}
 
 async function updateVendor(req, res) {
   const { id } = req.params;
-  const { name, description, price, menuUrl } = req.body;
+  const { name, description, price, menuUrl, mealsOptions } = req.body;
 
   if (!name || !price) {
     return res.status(400).json({ message: "Name and price are required" });
   }
 
   try {
+    const parsedMealsOptions = mealsOptions ? JSON.parse(mealsOptions) : undefined;
+
     let menuId = null;
     if (req.file) {
       const menuData = generateMenu(req.file.path);
@@ -118,6 +126,7 @@ async function updateVendor(req, res) {
         description,
         price,
         menuUrl,
+        ...(parsedMealsOptions && { mealsOptions: parsedMealsOptions }),
         ...(menuId && { menu: menuId }),
       },
       { new: true }
@@ -128,7 +137,9 @@ async function updateVendor(req, res) {
   } catch (error) {
     return res.status(500).json({ message: "Error updating vendor", error });
   } finally {
-    fs.unlinkSync(req.file.path);
+    if (req.file) {
+      fs.unlinkSync(req.file.path);
+    }
   }
 }
 

@@ -11,6 +11,11 @@ interface Vendor {
   price: number;
   description: string;
   menuUrl: string;
+  mealsOptions: {
+    breakfast: boolean;
+    lunch: boolean;
+    dinner: boolean;
+  };
 }
 
 const UpdateVendorMenu = () => {
@@ -22,6 +27,11 @@ const UpdateVendorMenu = () => {
     price: '',
     menuUrl: ''
   })
+  const [mealsOptions, setMealsOptions] = useState({
+    breakfast: true,
+    lunch: true,
+    dinner: true
+  });
   const [menuFile, setMenuFile] = useState<File | null>(null);
 
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
@@ -62,6 +72,9 @@ const UpdateVendorMenu = () => {
         price: vendor.price.toString(),
         menuUrl: vendor.menuUrl
       });
+      if (vendor.mealsOptions) {
+        setMealsOptions(vendor.mealsOptions);
+      }
     }
   }, [selectedVendor, vendors]);
 
@@ -76,6 +89,14 @@ const UpdateVendorMenu = () => {
       }))
     }
   }
+
+  const handleMealsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setMealsOptions(prev => ({
+      ...prev,
+      [name]: checked
+    }));
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -98,6 +119,7 @@ const UpdateVendorMenu = () => {
       requestBody.append('description', formData.description);
       requestBody.append('price', formData.price);
       requestBody.append('menuUrl', formData.menuUrl);
+      requestBody.append('mealsOptions', JSON.stringify(mealsOptions));
       if (menuFile) {
         requestBody.append('menuFile', menuFile);
       }
@@ -201,6 +223,41 @@ const UpdateVendorMenu = () => {
                   />
                 </div>
 
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300">Allowed Meals</label>
+                  <div className="flex items-center space-x-4">
+                    <label className="flex items-center space-x-2 text-gray-300">
+                      <input
+                        type="checkbox"
+                        name="breakfast"
+                        checked={mealsOptions.breakfast}
+                        onChange={handleMealsChange}
+                        className="form-checkbox h-5 w-5 text-purple-600 bg-gray-800 border-gray-600 rounded focus:ring-purple-500"
+                      />
+                      <span>Breakfast</span>
+                    </label>
+                    <label className="flex items-center space-x-2 text-gray-300">
+                      <input
+                        type="checkbox"
+                        name="lunch"
+                        checked={mealsOptions.lunch}
+                        onChange={handleMealsChange}
+                        className="form-checkbox h-5 w-5 text-purple-600 bg-gray-800 border-gray-600 rounded focus:ring-purple-500"
+                      />
+                      <span>Lunch</span>
+                    </label>
+                    <label className="flex items-center space-x-2 text-gray-300">
+                      <input
+                        type="checkbox"
+                        name="dinner"
+                        checked={mealsOptions.dinner}
+                        onChange={handleMealsChange}
+                        className="form-checkbox h-5 w-5 text-purple-600 bg-gray-800 border-gray-600 rounded focus:ring-purple-500"
+                      />
+                      <span>Dinner</span>
+                    </label>
+                  </div>
+                </div>
                 <div className="space-y-2">
                   <label htmlFor="menuUrl" className="text-sm font-medium text-gray-300">
                     Menu URL

@@ -8,7 +8,6 @@ const userModel = new mongoose.Schema({
     },
     roll:{
         type:String,
-        required:false
     },
     role:{
         type:String,

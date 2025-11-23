@@ -75,7 +75,7 @@ async function getLatestVendorSelection(req, res) {
         
         const latestSelection = await VendorSelection.findOne({
               user: req.user._id,
-              date: {
+              forMonth: {
                 $gte: startOfMonth,
                 $lte: endOfMonth,
               },

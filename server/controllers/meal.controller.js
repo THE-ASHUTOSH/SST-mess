@@ -1,6 +1,7 @@
 import { now } from "mongoose";
 import Meal from "../models/meal.model.js";
 import User from "../models/user.model.js";
+import Vendor from "../models/vendor.model.js";
 import VendorSelection from "../models/vendorselectform.model.js";
 import jwt from "jsonwebtoken";
 
@@ -13,14 +14,14 @@ export const generateQR = async (req, res) => {
 
     const hours = now().getHours();
     let mealType;
-    if(hours >=7 && hours <10){
+    if(hours >=2 && hours <10){
       mealType = "breakfast";
     }else if(hours >=12 && hours <15){
       mealType = "lunch";
     }else if(hours >=19 && hours <22){
       mealType = "dinner";
     }else{
-      return res.status(403).json({ message: "This student is not assigned to your vendor." });
+      return res.status(403).json({ message: "Wrong meal time." });
     }
 
     const selection = await VendorSelection.findOne({
@@ -36,7 +37,8 @@ export const generateQR = async (req, res) => {
     }
 
     await selection.populate("vendor");
-    if(selection.vendor.mealsOptions && !selection.vendor.mealsOptions[mealType]==false){
+    console.log(selection.vendor.mealsOptions);
+    if(selection.vendor.mealsOptions && !selection.vendor.mealsOptions[mealType]==true){
       return res
         .status(403)
         .json({ message: `Vendor does not offer ${mealType}.` });
@@ -61,7 +63,7 @@ export const generateQR = async (req, res) => {
         .json({ message: "You have already scanned for this meal." });
     }
 
-    const token = jwt.sign({ userId, vendor: selection.vendor}, process.env.JWT_SECRET_KEY, {
+    const token = jwt.sign({ userId, vendorId: selection.vendor._id}, process.env.JWT_SECRET_KEY, {
       expiresIn: "15m",
     });
     res.status(200).json({ token });
@@ -120,7 +122,9 @@ export const verifyQR = async (req, res) => {
     
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     const forUserId = decoded.userId;
-    const userVendor = decoded.vendor;
+    const userVendorId = decoded.vendorId;
+
+    const userVendor = await Vendor.findById(userVendorId);
     console.log("Decoded vendor:", userVendor);
     console.log("Provided vendorId:", vendorId);
 

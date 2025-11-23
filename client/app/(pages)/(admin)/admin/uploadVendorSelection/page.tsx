@@ -92,6 +92,7 @@ const UploadVendorSelectionPage = () => {
                                     onChange={handleFileChange}
                                     className="w-full px-4 py-2 bg-gray-900/50 border border-gray-700 rounded-lg text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     accept=".xlsx, .csv"
+                                    required
                                 />
                             </div>
                             <Button

@@ -2,10 +2,6 @@ import mongoose from "mongoose";
 
 
 const vendorSelectionSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: true,
-    },
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
@@ -18,7 +14,7 @@ const vendorSelectionSchema = new mongoose.Schema({
     },
     preference:{
         type: String,
-        enum: ["vegetarian", "non-vegetarian", ],
+        enum: ["Vegetarian", "Non-Vegetarian", ],
         default: 'vegetarian',
     },
     hostel:{

@@ -2,6 +2,7 @@ import xlsx from "xlsx";
 import User from "../models/user.model.js";
 import Vendor from "../models/vendor.model.js";
 import VendorSelection from "../models/vendorselectform.model.js";
+import fs from "fs";
 
 const uploadVendorSelection = async (req, res) => {
     try {
@@ -23,37 +24,73 @@ const uploadVendorSelection = async (req, res) => {
         const sheet = workbook.Sheets[sheetName];
         const data = xlsx.utils.sheet_to_json(sheet);
 
-        console.log(data);
+        const issues = [];
 
-        // for (const row of data) {
-        //     const { email, vendorName, preference } = row;
+        // Optimization: Fetch all vendors at once
+        const allVendors = await Vendor.find({});
+        const vendorsMap = new Map(allVendors.map(vendor => [vendor.name, vendor]));
 
-        //     const user = await User.findOne({ email });
-        //     if (!user) {
-        //         console.log(`User with email ${email} not found`);
-        //         continue;
-        //     }
+        for (const row of data) {
+            try {
+                const email = row['Email Address'];
+                const vendorNameString = row['Please select the below options according to your preference'];
+                const preference = row['Choose your preference'];
 
-        //     const vendor = await Vendor.findOne({ name: vendorName });
-        //     if (!vendor) {
-        //         console.log(`Vendor with name ${vendorName} not found`);
-        //         continue;
-        //     }
+                if (!email || !vendorNameString || !preference) {
+                    issues.push({ row, error: 'Missing required fields' });
+                    continue;
+                }
 
-        //     const newVendorSelection = new VendorSelection({
-        //         user: user._id,
-        //         vendor: vendor._id,
-        //         preference,
-        //         forMonth: new Date(month),
-        //         dateofEntry: new Date(),
-        //     });
+                const vendorName = vendorNameString;
 
-        //     await newVendorSelection.save();
-        // }
+                let user = await User.findOne({ email });
+                if (!user) {
+                    user = new User({
+                        email: email,
+                        name: row['Full Name'],
+                        batch: row['Batch'],
+                    });
+                    await user.save();
+                    console.log(`Created new user with email ${email}`);
+                }
+
+                const vendor = vendorsMap.get(vendorName);
+                if (!vendor) {
+                    console.log(`Vendor with name ${vendorName} not found`);
+                    issues.push({ row, error: `Vendor with name ${vendorName} not found` });
+                    continue;
+                }
+
+                const newVendorSelection = new VendorSelection({
+                    user: user._id,
+                    vendor: vendor._id,
+                    preference,
+                    forMonth: new Date(month),
+                    dateofEntry: new Date(),
+                });
+
+                await newVendorSelection.save();
+            } catch (error) {
+                console.error('Error processing row:', row, error);
+                issues.push({ row, error: error.message });
+            }
+        }
+
+        fs.unlinkSync(file.path);
+
+        if (issues.length > 0) {
+            return res.status(400).json({
+                message: "Vendor selection uploaded with some issues",
+                issues,
+            });
+        }
 
         res.status(200).json({ message: "Vendor selection uploaded successfully" });
     } catch (error) {
         console.error("Error uploading vendor selection:", error);
+        if (req.file) {
+            fs.unlinkSync(req.file.path);
+        }
         res.status(500).json({ message: "Internal server error" });
     }
 };

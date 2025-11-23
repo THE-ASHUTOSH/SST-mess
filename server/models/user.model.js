@@ -17,10 +17,6 @@ const userModel = new mongoose.Schema({
     picture:{
         type:String,
     },
-    hostel:{
-        type:String,
-        enum:["Velankani Micro Campus","Neeladri Micro Campus"]
-    },
     batch:{
         type:String,
     },

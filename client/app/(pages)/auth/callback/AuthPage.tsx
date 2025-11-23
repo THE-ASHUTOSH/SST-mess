@@ -37,6 +37,8 @@ export default function AuthPage() {
         router.push(
           userRole === "admin"
             ? "/admin/dashboard"
+            : userRole === "vendor"
+            ? "/vendorUser/dashboard"
             : userRole === "student"
             ? "/student/dashboard"
             : "/login"

@@ -121,8 +121,10 @@ export const verifyQR = async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     const forUserId = decoded.userId;
     const userVendor = decoded.vendor;
+    console.log("Decoded vendor:", userVendor);
+    console.log("Provided vendorId:", vendorId);
 
-    if (userVendor.toString() !== vendorId) {
+    if (userVendor.toString() !== vendorId.toString()) {
       return res.status(403).json({ message: "This student is not assigned to your vendor." });
     }
 
@@ -135,7 +137,7 @@ export const verifyQR = async (req, res) => {
     }else if(hours >=19 && hours <22){
       mealType = "dinner";
     }else{
-      return res.status(403).json({ message: "This student is not assigned to your vendor." });
+      return res.status(403).json({ message: "Wrong meal time" });
     }
 
     const startOfDay = new Date(now().getFullYear(), now().getMonth(), now().getDate());

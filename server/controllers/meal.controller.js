@@ -8,8 +8,8 @@ import jwt from "jsonwebtoken";
 export const generateQR = async (req, res) => {
   try {
     const userId = req.user._id;
-    const now = new Date();
-    const istTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+    const nowtime = new Date();
+    const istTime = new Date(nowtime.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
 
 
     const month = istTime.getMonth();
@@ -79,8 +79,8 @@ export const generateQR = async (req, res) => {
 export const getMealStatus = async (req, res) => {
   try {
     const userId = req.user._id;
-    const now = new Date();
-    const istTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+    const nowtime = new Date();
+    const istTime = new Date(nowtime.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
 
     const hours = now().getHours();
     const indianHours = istTime.getHours();
@@ -123,8 +123,8 @@ export const verifyQR = async (req, res) => {
   try {
     const byUser = req.user._id;
     const { token, vendorId } = req.body;
-    const now = new Date();
-    const istTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+    const nowtime = new Date();
+    const istTime = new Date(nowtime.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
     if (!vendorId) {
       return res.status(400).json({ message: "Vendor ID is required" });
     }

@@ -12,8 +12,8 @@ export const generateQR = async (req, res) => {
     const istTime = new Date(nowtime.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
 
 
-    const month = istTime.getMonth();
-    const year = istTime.getFullYear(); 
+    const month = now().getMonth();
+    const year = now().getFullYear(); 
     const hours = now().getHours();
 
     const indianHours = istTime.getHours();

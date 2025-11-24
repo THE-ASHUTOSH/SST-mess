@@ -14,14 +14,15 @@ export const generateQR = async (req, res) => {
 
     const month = istTime.getMonth();
     const year = istTime.getFullYear(); 
+    const hours = now().getHours();
 
-    const hours = istTime.getHours();
+    const indianHours = istTime.getHours();
     let mealType;
-    if(hours >=7 && hours <10){
+    if(indianHours >=7 && indianHours <10){
       mealType = "breakfast";
-    }else if(hours >=12 && hours <15){
+    }else if(indianHours >=12 && indianHours <15){
       mealType = "lunch";
-    }else if(hours >=19 && hours <22){
+    }else if(indianHours >=19 && indianHours <22){
       mealType = "dinner";
     }else{
       return res.status(403).json({ message: "Wrong meal time." });
@@ -81,22 +82,22 @@ export const getMealStatus = async (req, res) => {
     const now = new Date();
     const istTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
 
-
-    const hours = istTime.getHours();
+    const hours = now().getHours();
+    const indianHours = istTime.getHours();
     let mealType;
-    if(hours >=7 && hours <10){
+    if(indianHours >=7 && indianHours <10){
       mealType = "breakfast";
-    }else if(hours >=12 && hours <15){
+    }else if(indianHours >=12 && indianHours <15){
       mealType = "lunch";
-    }else if(hours >=19 && hours <22){
+    }else if(indianHours >=19 && indianHours <22){
       mealType = "dinner";
     }else{
       return res.status(403).json({ message: "Wrong meal time." });
     }
     
 
-    const startOfDay = new Date(istTime.getFullYear(), istTime.getMonth(), istTime.getDate());
-    const endOfDay = new Date(istTime.getFullYear(), istTime.getMonth(), istTime.getDate() + 1);
+    const startOfDay = new Date(now().getFullYear(), now().getMonth(), now().getDate());
+    const endOfDay = new Date(now().getFullYear(), now().getMonth(), now().getDate() + 1);
 
 
     const meal = await Meal.findOne({
@@ -124,8 +125,6 @@ export const verifyQR = async (req, res) => {
     const { token, vendorId } = req.body;
     const now = new Date();
     const istTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
-
-
     if (!vendorId) {
       return res.status(400).json({ message: "Vendor ID is required" });
     }
@@ -142,20 +141,21 @@ export const verifyQR = async (req, res) => {
       return res.status(403).json({ message: "This student is not assigned to your vendor." });
     }
 
-    const hours = istTime.getHours();
+    const hours = now().getHours();
+    const indianHours = istTime.getHours();
     let mealType;
-    if(hours >=7 && hours <10){
+    if(indianHours >=7 && indianHours <10){
       mealType = "breakfast";
-    }else if(hours >=12 && hours <15){
+    }else if(indianHours >=12 && indianHours <15){
       mealType = "lunch";
-    }else if(hours >=19 && hours <22){
+    }else if(indianHours >=19 && indianHours <22){
       mealType = "dinner";
     }else{
       return res.status(403).json({ message: "Wrong meal time" });
     }
 
-    const startOfDay = new Date(istTime.getFullYear(), istTime.getMonth(), istTime.getDate());
-    const endOfDay = new Date(istTime.getFullYear(), istTime.getMonth(), istTime.getDate() + 1);
+    const startOfDay = new Date(now().getFullYear(), now().getMonth(), now().getDate());
+    const endOfDay = new Date(now().getFullYear(), now().getMonth(), now().getDate() + 1);
 
     const existingMeal = await Meal.findOne({
       forUser: forUserId,

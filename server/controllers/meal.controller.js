@@ -14,7 +14,7 @@ export const generateQR = async (req, res) => {
 
     const hours = now().getHours();
     let mealType;
-    if(hours >=2 && hours <10){
+    if(hours >=7 && hours <10){
       mealType = "breakfast";
     }else if(hours >=12 && hours <15){
       mealType = "lunch";
@@ -46,18 +46,17 @@ export const generateQR = async (req, res) => {
 
     
 
-    const startOfDay = new Date(now().getFullYear(), now().getMonth(), now().getDate());
-    const endOfDay = new Date(now().getFullYear(), now().getMonth(), now().getDate() + 1);
-
-    const lastMeal = await Meal.findOne({
+    // const startOfDay = new Date(now().getFullYear(), now().getMonth(), now().getDate());
+    // const endOfDay = new Date(now().getFullYear(), now().getMonth(), now().getDate() + 1);
+    const date = new Date();
+    const currentMeal = await Meal.findOne({
       forUser: userId,
       mealType,
-      date: { $gte: startOfDay, $lt: endOfDay },
+      date: date,
     });
 
 
-
-    if (lastMeal) {
+    if (currentMeal) {
       return res
         .status(403)
         .json({ message: "You have already scanned for this meal." });
@@ -86,12 +85,13 @@ export const getMealStatus = async (req, res) => {
     }else if(hours >=19 && hours <22){
       mealType = "dinner";
     }else{
-      return res.status(403).json({ message: "This student is not assigned to your vendor." });
+      return res.status(403).json({ message: "Wrong meal time." });
     }
     
 
     const startOfDay = new Date(now().getFullYear(), now().getMonth(), now().getDate());
     const endOfDay = new Date(now().getFullYear(), now().getMonth(), now().getDate() + 1);
+
 
     const meal = await Meal.findOne({
       forUser: userId,
@@ -117,7 +117,7 @@ export const verifyQR = async (req, res) => {
     const byUser = req.user._id;
     const { token, vendorId } = req.body;
     if (!vendorId) {
-      return res.status(400).json({ message: "You are not opted in" });
+      return res.status(400).json({ message: "Vendor ID is required" });
     }
     
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
@@ -125,10 +125,10 @@ export const verifyQR = async (req, res) => {
     const userVendorId = decoded.vendorId;
 
     const userVendor = await Vendor.findById(userVendorId);
-    console.log("Decoded vendor:", userVendor);
+    console.log("Decoded vendorId:", userVendorId);
     console.log("Provided vendorId:", vendorId);
 
-    if (userVendor.toString() !== vendorId.toString()) {
+    if (userVendorId.toString() !== vendorId.toString()) {
       return res.status(403).json({ message: "This student is not assigned to your vendor." });
     }
 

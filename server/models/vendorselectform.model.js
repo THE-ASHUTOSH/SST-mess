@@ -2,17 +2,9 @@ import mongoose from "mongoose";
 
 
 const vendorSelectionSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: true,
-    },
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-        required: true,
-    },
-    roomNo:{
-        type: String,
         required: true,
     },
     vendor: {
@@ -20,10 +12,24 @@ const vendorSelectionSchema = new mongoose.Schema({
         ref: "Vendor",
         required: true,
     },
-    date: {
-        type: Date,
-        default: Date.now,
+    preference:{
+        type: String,
+        enum: ["Vegetarian", "Non-Vegetarian", ],
+        default: 'vegetarian',
     },
+    hostel:{
+        type:String,
+        enum:["Velankani Micro Campus","Neeladri Micro Campus"]
+    },
+    forMonth:{
+        type: Date,
+        required: true,
+    },
+    dateofEntry: {
+        type: Date,
+        required: true,
+    
+    }
 },
 {
     timestamps: true,

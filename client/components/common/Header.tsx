@@ -49,7 +49,7 @@ const Header = () => {
             ) : (
               <div className="flex items-center gap-3">
                 {/* Profile / Dashboard link */}
-                <Link href={user.role === 'admin' ? '/admin/dashboard' : '/student/dashboard'} className="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-800">
+                <Link href={user.role === 'admin' ? '/admin/dashboard' : user.role === 'vendor' ? '/vendorUser/dashboard' : '/student/dashboard'} className="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-800">
                   <img src={user.picture || '/avatar_placeholder.png'} alt="avatar" className="h-8 w-8 rounded-full object-cover" />
                   <span className="text-sm">{user.name?.split(' ')[0]}</span>
                 </Link>
@@ -98,7 +98,7 @@ const Header = () => {
 
                 <div className="mt-4 space-y-2">
                   <Link
-                    href={user.role === 'admin' ? '/admin/dashboard' : '/student/dashboard'}
+                    href={user.role === 'admin' ? '/admin/dashboard' : user.role === 'vendor' ? '/vendorUser/dashboard' : '/student/dashboard'}
                     className="block w-full text-center px-4 py-2 rounded-lg text-base font-medium text-white hover:bg-gray-800"
                     onClick={() => setIsMenuOpen(false)}
                   >

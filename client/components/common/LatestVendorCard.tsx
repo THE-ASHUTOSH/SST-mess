@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-const LatestVendorCard = ({ vendorName, date }: { vendorName: string; date: string }) => {
+const LatestVendorCard = ({ vendorName }: { vendorName: string; }) => {
   return (
     <Card className="mb-4 bg-transparent text-white rounded-lg shadow-lg">
       <CardHeader>
@@ -10,7 +10,7 @@ const LatestVendorCard = ({ vendorName, date }: { vendorName: string; date: stri
       </CardHeader>
       <CardContent className='bg-gradient-to-r from-[#4facfe] via-[#00f2fe] to-[#7b4dff] bg-clip-text text-transparent'>
         <p className="text-lg">
-          You selected <strong>{vendorName}</strong> on {new Date(date).toLocaleDateString()}.
+          You selected <strong>{vendorName}</strong>.
         </p>
       </CardContent>
     </Card>

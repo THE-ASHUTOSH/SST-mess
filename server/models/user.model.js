@@ -8,14 +8,16 @@ const userModel = new mongoose.Schema({
     },
     roll:{
         type:String,
-        required:false
     },
     role:{
         type:String,
-        enum:['admin','student'],
+        enum:['admin','student','vendor'],
         default:'student',
     },
     picture:{
+        type:String,
+    },
+    batch:{
         type:String,
     },
     name:{

@@ -57,7 +57,6 @@ const Dashboard = () => {
       ) : latestSelection ? (
         <LatestVendorCard
           vendorName={latestSelection.vendor.name}
-          date={latestSelection.createdAt}
         />
       ) : (
         <p>No vendor selection found.</p>
@@ -69,9 +68,9 @@ const Dashboard = () => {
         <EventCard title="Menu" redirectUrl="/student/vendorDetails">
           <p>Get the menu of all the vendors here</p>
         </EventCard>
-        <EventCard title="Select Vendor" redirectUrl="/student/selectVendor">
+        {/* <EventCard title="Select Vendor" redirectUrl="/student/selectVendor">
           <p>Select the vendor you want to order from</p>
-        </EventCard>
+        </EventCard> */}
         <EventCard title="Feedback" redirectUrl="/student/feedback" enabled={isFeedbackEnabled}>
           <p>Your feedback is very important to us</p>
         </EventCard>

@@ -17,6 +17,7 @@ const LoginPage = () => {
     if (!loading && user) {
       // redirect to appropriate dashboard
       if (user.role === 'admin') router.push('/admin/dashboard');
+      else if (user.role === 'vendor') router.push('/vendorUser/dashboard');
       else router.push('/student/dashboard');
     }
   }, [user, loading, router]);

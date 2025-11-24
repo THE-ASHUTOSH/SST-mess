@@ -30,6 +30,13 @@ const uploadVendorSelection = async (req, res) => {
         const allVendors = await Vendor.find({});
         const vendorsMap = new Map(allVendors.map(vendor => [vendor.name, vendor]));
 
+        const forMonthDate = new Date(month);
+        const existingSelections = await VendorSelection.find({ forMonth: forMonthDate });
+        const existingUserSelections = new Set(existingSelections.map(sel => sel.user.toString()));
+
+        const duplicates = [];
+        const newEntries = [];
+
         for (const row of data) {
             try {
                 const email = row['Email Address'];
@@ -54,10 +61,15 @@ const uploadVendorSelection = async (req, res) => {
                     console.log(`Created new user with email ${email}`);
                 }
 
+                if (existingUserSelections.has(user._id.toString())) {
+                    duplicates.push({ email, vendorName: vendorNameString });
+                    continue;
+                }
+
                 const vendor = vendorsMap.get(vendorName);
                 if (!vendor) {
                     console.log(`Vendor with name ${vendorName} not found`);
-                    issues.push({ row, error: `Vendor with name ${vendorName} not found` });
+                    issues.push({ row, error: `Vendor with name '${vendorName}' not found` });
                     continue;
                 }
 
@@ -65,11 +77,15 @@ const uploadVendorSelection = async (req, res) => {
                     user: user._id,
                     vendor: vendor._id,
                     preference,
-                    forMonth: new Date(month),
+                    forMonth: forMonthDate,
                     dateofEntry: new Date(),
                 });
 
                 await newVendorSelection.save();
+            
+                newEntries.push({ email, vendorName: vendorNameString });
+                existingUserSelections.add(user._id.toString()); // Add to set to prevent duplicates from the same file
+
             } catch (error) {
                 console.error('Error processing row:', row, error);
                 issues.push({ row, error: error.message });
@@ -77,21 +93,23 @@ const uploadVendorSelection = async (req, res) => {
         }
 
         fs.unlinkSync(file.path);
-
-        if (issues.length > 0) {
-            return res.status(400).json({
-                message: "Vendor selection uploaded with some issues",
-                issues,
-            });
-        }
-
-        res.status(200).json({ message: "Vendor selection uploaded successfully" });
+        console.log(duplicates.length + " duplicates found.");
+        console.log(issues.length + " issues found.");
+        console.log(newEntries.length + " new entries added.");
+        res.status(200).json({
+            message: "Vendor selection upload processed.",
+            newEntries: newEntries.length,
+            duplicates: duplicates.length,
+            issues,
+        });
     } catch (error) {
         console.error("Error uploading vendor selection:", error);
         if (req.file) {
             fs.unlinkSync(req.file.path);
         }
         res.status(500).json({ message: "Internal server error" });
+    }finally{
+        
     }
 };
 

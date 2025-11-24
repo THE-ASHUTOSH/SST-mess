@@ -46,6 +46,7 @@ const UploadVendorSelectionPage = () => {
             );
 
             setSuccess(response.data.message);
+            console.log("response",response.data);
         } catch (err) {
             setError('Failed to upload vendor selection.');
             console.error(err);

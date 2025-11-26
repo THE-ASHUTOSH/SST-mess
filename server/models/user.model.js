@@ -17,6 +17,9 @@ const userModel = new mongoose.Schema({
     picture:{
         type:String,
     },
+    hostel:{
+        type:String,
+    },
     batch:{
         type:String,
     },

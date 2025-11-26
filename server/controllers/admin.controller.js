@@ -42,8 +42,11 @@ const uploadVendorSelection = async (req, res) => {
                 const email = row['Email Address'];
                 const vendorNameString = row['Please select the below options according to your preference'];
                 const preference = row['Choose your preference'];
+                const hostel = row['Hostel'];
+                const batch = row['Batch'];
 
-                if (!email || !vendorNameString || !preference) {
+
+                if (!email || !vendorNameString || !preference || !hostel || !batch) {
                     issues.push({ row, error: 'Missing required fields' });
                     continue;
                 }
@@ -51,11 +54,20 @@ const uploadVendorSelection = async (req, res) => {
                 const vendorName = vendorNameString;
 
                 let user = await User.findOne({ email });
+                if(user && (!user.hostel||user.hostel !== hostel || !user.batch || user.batch !== batch) ){
+                    user.hostel = hostel;
+                    user.batch = batch;
+                    await user.save();
+                    console.log(`Updated user ${email} with hostel and batch info`);
+                }
+
+
                 if (!user) {
                     user = new User({
                         email: email,
                         name: row['Full Name'],
-                        batch: row['Batch'],
+                        batch: batch,
+                        hostel: hostel,
                     });
                     await user.save();
                     console.log(`Created new user with email ${email}`);
@@ -109,7 +121,7 @@ const uploadVendorSelection = async (req, res) => {
         }
         res.status(500).json({ message: "Internal server error" });
     }finally{
-        
+        console.log("Upload vendor selection process completed.");
     }
 };
 

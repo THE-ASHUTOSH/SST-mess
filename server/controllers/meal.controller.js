@@ -50,13 +50,13 @@ export const generateQR = async (req, res) => {
 
     
 
-    // const startOfDay = new Date(now().getFullYear(), now().getMonth(), now().getDate());
-    // const endOfDay = new Date(now().getFullYear(), now().getMonth(), now().getDate() + 1);
+    const startOfDay = new Date(now().getFullYear(), now().getMonth(), now().getDate());
+    const endOfDay = new Date(now().getFullYear(), now().getMonth(), now().getDate() + 1);
     const date = new Date();
     const currentMeal = await Meal.findOne({
       forUser: userId,
       mealType,
-      date: date,
+      date: { $gte: startOfDay, $lt: endOfDay },
     });
 
 

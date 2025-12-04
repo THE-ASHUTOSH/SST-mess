@@ -156,7 +156,7 @@ const Feedback = () => {
 
             <button
               type="submit"
-              disabled={!isFormComplete || isSubmitting|| isFeedbackEnabled}
+              disabled={!isFormComplete || isSubmitting|| !isFeedbackEnabled}
               className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${isFormComplete && !isSubmitting
                   ? "bg-gradient-to-r from-blue-500 to-purple-500 hover:from-purple-500 hover:to-blue-500 text-white hover:shadow-lg hover:shadow-purple-500/20 hover:-translate-y-0.5"
                   : "bg-gray-700 text-gray-400 cursor-not-allowed"

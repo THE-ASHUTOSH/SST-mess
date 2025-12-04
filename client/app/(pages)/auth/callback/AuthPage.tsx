@@ -33,7 +33,7 @@ export default function AuthPage() {
         const data = await response.json(); // contains user info
         setUser(data.user);
         const userRole = data.user?.role;
-        console.log("User role from callback:", userRole);
+        // console.log("User role from callback:", userRole);
         router.push(
           userRole === "admin"
             ? "/admin/dashboard"

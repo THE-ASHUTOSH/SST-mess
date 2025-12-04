@@ -31,7 +31,7 @@ const VerifyStudentQRPage = () => {
     const fetchVendors = async () => {
       try {
         const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/getVendors`, { withCredentials: true });
-        console.log('Vendors fetched:', response.data.vendor);
+        // console.log('Vendors fetched:', response.data.vendor);
         if (Array.isArray(response.data.vendor)) {
           setVendors(response.data.vendor);
         } else {
@@ -108,7 +108,7 @@ const VerifyStudentQRPage = () => {
     setIsProcessing(true);
     try {
       const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/meal/verify-qr`, { token, vendorId: selectedVendor }, { withCredentials: true });
-      console.log('Meal verified:', response.data);
+      // console.log('Meal verified:', response.data);
       setMessage(`Meal verified for ${response.data.user.name}.`);
       setVerifiedUser(response.data.user);
       setError('');

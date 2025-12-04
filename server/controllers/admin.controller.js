@@ -94,6 +94,7 @@ const uploadVendorSelection = async (req, res) => {
                 });
 
                 await newVendorSelection.save();
+                console.log(`Created vendor selection for user ${email} with vendor ${vendorName}`);
             
                 newEntries.push({ email, vendorName: vendorNameString });
                 existingUserSelections.add(user._id.toString()); // Add to set to prevent duplicates from the same file

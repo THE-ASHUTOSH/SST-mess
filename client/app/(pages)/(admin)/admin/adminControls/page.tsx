@@ -39,7 +39,7 @@ const AdminControlsPage = () => {
             setFeedbackEnabled(response.data.enabled);
         } catch (err) {
             setError('Failed to toggle feedback status.');
-            console.error(err);
+            // console.error(err);
         } finally {
             setIsSubmitting(false);
         }

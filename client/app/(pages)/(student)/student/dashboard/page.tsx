@@ -15,7 +15,7 @@ const Dashboard = () => {
   const [latestSelection, setLatestSelection] = useState<LatestSelection | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFeedbackEnabled, setIsFeedbackEnabled] = useState(false);
-  console.log("feedback",isFeedbackEnabled)
+  // console.log("feedback",isFeedbackEnabled)
 
   useEffect(() => {
     const fetchLatestSelection = async () => {
@@ -25,7 +25,7 @@ const Dashboard = () => {
         });
         setLatestSelection(response.data.latestSelection);
       } catch (error) {
-        console.error('Error fetching latest vendor selection:', error);
+        // console.error('Error fetching latest vendor selection:', error);
       } finally {
         setLoading(false);
       }
@@ -39,7 +39,7 @@ const Dashboard = () => {
         setIsFeedbackEnabled(response.data.enabled);
         // console.log("response",response.data.enabled)
       } catch (error) {
-        console.error('Error fetching feedback status:', error);
+        // console.error('Error fetching feedback status:', error);
       }
     };
 

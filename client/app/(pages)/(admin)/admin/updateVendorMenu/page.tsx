@@ -56,7 +56,7 @@ const UpdateVendorMenu = () => {
         const data = await response.json();
         setVendors(data.vendor);
       } catch (err) {
-        console.log(err);
+        // console.log(err);
       }
     }
 
@@ -138,7 +138,7 @@ const UpdateVendorMenu = () => {
       setShowSuccessPopup(true);
     } catch (error) {
       setShowErrorPopup(true);
-      console.error('Fetch operation failed:', error);
+      // console.error('Fetch operation failed:', error);
     } finally {
       setIsSubmitting(false);
     }

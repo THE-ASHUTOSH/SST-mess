@@ -6,12 +6,12 @@ import { useRouter } from "next/navigation";
 const Protected: React.FC<{children: React.ReactNode}> = ({children}) => {
     const { user, loading } = useUser();
     const router = useRouter();
-    console.log("Protected component rendered with user:", user, "and loading:", loading);
+    // console.log("Protected component rendered with user:", user, "and loading:", loading);
     useEffect(() => {
             if (!loading && (!user || user.role !== "student")) {
                 router.replace('/login');
             }
-            console.log("Loading from student", loading);
+            // console.log("Loading from student", loading);
         }, [loading, user, router]);
 
     // While verifying, you may display a blank or a loader

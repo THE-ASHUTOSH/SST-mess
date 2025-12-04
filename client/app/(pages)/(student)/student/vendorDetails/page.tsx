@@ -51,10 +51,10 @@ const VendorDetail = () => {
         }
 
         const data = await response.json();
-        console.log(data.vendor);
+        // console.log(data.vendor);
         setVendors(data.vendor);
       } catch (err) {
-        console.error("Failed to fetch vendors:", err);
+        // console.error("Failed to fetch vendors:", err);
       } finally {
         setLoading(false);
       }
@@ -116,7 +116,7 @@ const VendorDetail = () => {
 
   const dailyMenu = selectedVendorMenu ? selectedVendorMenu[dayOfWeek] : null;
   // console.log("Selected Vendor Menu:", selectedVendorMenu);
-  console.log("Daily Menu:", dailyMenu);
+  // console.log("Daily Menu:", dailyMenu);
 
 
   return (

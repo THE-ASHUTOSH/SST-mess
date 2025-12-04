@@ -70,7 +70,7 @@ const Feedback = () => {
           setVendors([]);
         }
       } catch (error) {
-        console.error("Error fetching vendors:", error);
+        // console.error("Error fetching vendors:", error);
       }
     };
     fetchVendors();

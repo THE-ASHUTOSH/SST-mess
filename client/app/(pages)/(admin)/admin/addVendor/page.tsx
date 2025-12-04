@@ -75,7 +75,7 @@ const AddVendor = () => {
       setShowSuccessPopup(true);
     } catch (error) {
       setShowErrorPopup(true);
-      console.error('Fetch operation failed:', error);
+      // console.error('Fetch operation failed:', error);
     } finally {
       setIsSubmitting(false);
     }

@@ -1,8 +1,10 @@
 "use client";
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import LoadingSpinner from "@/components/common/LoadingAnimation";
+import { useDashboard } from "@/context/DashboardContext";
+import LatestVendorCard from "@/components/common/LatestVendorCard";
 
 interface StarRatingProps {
   rating: number;
@@ -20,13 +22,8 @@ interface Ratings {
   overall: number;
 }
 
-interface Vendor {
-  _id: string;
-  name: string;
-}
-
-
 const Feedback = () => {
+  const { latestSelection, isFeedbackEnabled,loading } = useDashboard();
   const [ratings, setRatings] = useState<Ratings>({
     hygiene: 0,
     quantity: 0,
@@ -47,34 +44,6 @@ const Feedback = () => {
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [showErrorPopup, setShowErrorPopup] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [selectedVendor, setSelectedVendor] = useState("");
-
-  // Fetch vendors on component mount
-  useEffect(() => {
-    const fetchVendors = async () => {
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/getVendors`,
-          {
-            credentials: "include",
-          }
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch vendors");
-        }
-        const data = await response.json();
-        if (Array.isArray(data.vendor)) {
-          setVendors(data.vendor);
-        } else {
-          setVendors([]);
-        }
-      } catch (error) {
-        // console.error("Error fetching vendors:", error);
-      }
-    };
-    fetchVendors();
-  }, []);
 
   const handleRatingChange = (category: string, value: number) => {
     setRatings((prev) => ({ ...prev, [category]: value }));
@@ -84,14 +53,14 @@ const Feedback = () => {
     setHoverRatings((prev) => ({ ...prev, [category]: value }));
   };
 
-  // Handle form submission
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!latestSelection) return;
     setIsSubmitting(true);
 
     const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/vendorFeedbackForm`;
     const requestBody = JSON.stringify({
-      vendor: selectedVendor,
+      vendor: latestSelection.vendor._id,
       ratings,
       feedback: feedback.trim(),
     });
@@ -134,7 +103,7 @@ const Feedback = () => {
   ];
 
   const isFormComplete =
-    Object.values(ratings).every((r) => r > 0) && selectedVendor;
+    Object.values(ratings).every((r) => r > 0) && latestSelection;
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-4 animate-fade-in-up">
@@ -143,33 +112,15 @@ const Feedback = () => {
           <h1 className="text-3xl font-bold mb-8 text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-indigo-400">
             Your Feedback
           </h1>
+          {loading ? (
+            <LoadingSpinner />
+          ) : latestSelection ? (
+            <LatestVendorCard vendorName={latestSelection.vendor.name} />
+          ) : (
+            <p>No vendor selection found.</p>
+          )}
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="space-y-4">
-              <label
-                htmlFor="vendor"
-                className="block text-sm font-medium text-gray-300"
-              >
-                Select a Vendor
-              </label>
-              <select
-                id="vendor"
-                value={selectedVendor}
-                onChange={(e) => setSelectedVendor(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-300 text-white placeholder-gray-500"
-                required
-              >
-                <option value="" disabled>
-                  Choose a vendor
-                </option>
-                {vendors.map((vendor) => (
-                  <option key={vendor._id} value={vendor._id}>
-                    {vendor.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
+          <form onSubmit={handleSubmit} className="space-y-8 mt-8">
             <div className="space-y-6">
               {feedbackCategories.map(({ id, label }) => (
                 <div key={id} className="space-y-3">
@@ -186,28 +137,26 @@ const Feedback = () => {
               ))}
             </div>
 
-            
-              <div className="space-y-2 animate-fade-in-up">
-                <label
-                  htmlFor="feedback"
-                  className="block text-sm font-medium text-gray-300"
-                >
-                  Additional Comments 
-                </label>
-                <textarea
-                  id="feedback"
-                  rows={4}
-                  value={feedback}
-                  onChange={(e) => setFeedback(e.target.value)}
-                  placeholder="Please share specific details to help us improve..."
-                  className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-300 text-white placeholder-gray-500 resize-none"
-                />
-              </div>
-            
+            <div className="space-y-2 animate-fade-in-up">
+              <label
+                htmlFor="feedback"
+                className="block text-sm font-medium text-gray-300"
+              >
+                Additional Comments
+              </label>
+              <textarea
+                id="feedback"
+                rows={4}
+                value={feedback}
+                onChange={(e) => setFeedback(e.target.value)}
+                placeholder="Please share specific details to help us improve..."
+                className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-300 text-white placeholder-gray-500 resize-none"
+              />
+            </div>
 
             <button
               type="submit"
-              disabled={!isFormComplete || isSubmitting}
+              disabled={!isFormComplete || isSubmitting|| isFeedbackEnabled}
               className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${isFormComplete && !isSubmitting
                   ? "bg-gradient-to-r from-blue-500 to-purple-500 hover:from-purple-500 hover:to-blue-500 text-white hover:shadow-lg hover:shadow-purple-500/20 hover:-translate-y-0.5"
                   : "bg-gray-700 text-gray-400 cursor-not-allowed"

@@ -1,51 +1,11 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import EventCard from '@/components/common/EventCard';
 import LatestVendorCard from '@/components/common/LatestVendorCard';
-import axios from 'axios';
-
-interface LatestSelection {
-  vendor: {
-    name: string;
-  };
-  createdAt: string;
-}
+import { useDashboard } from '@/context/DashboardContext';
 
 const Dashboard = () => {
-  const [latestSelection, setLatestSelection] = useState<LatestSelection | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isFeedbackEnabled, setIsFeedbackEnabled] = useState(false);
-  // console.log("feedback",isFeedbackEnabled)
-
-  useEffect(() => {
-    const fetchLatestSelection = async () => {
-      try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user/latest-vendor`, {
-          withCredentials: true,
-        });
-        setLatestSelection(response.data.latestSelection);
-      } catch (error) {
-        // console.error('Error fetching latest vendor selection:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const fetchFeedbackStatus = async () => {
-      try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/controls/feedback-toggle`, {
-          withCredentials: true,
-        });
-        setIsFeedbackEnabled(response.data.enabled);
-        // console.log("response",response.data.enabled)
-      } catch (error) {
-        // console.error('Error fetching feedback status:', error);
-      }
-    };
-
-    fetchLatestSelection();
-    fetchFeedbackStatus();
-  }, []);
+  const { latestSelection, loading, isFeedbackEnabled } = useDashboard();
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -71,7 +31,7 @@ const Dashboard = () => {
         {/* <EventCard title="Select Vendor" redirectUrl="/student/selectVendor">
           <p>Select the vendor you want to order from</p>
         </EventCard> */}
-        <EventCard title="Feedback" redirectUrl="/student/feedback" enabled={isFeedbackEnabled}>
+        <EventCard title="Feedback" redirectUrl="/student/feedback" enabled={isFeedbackEnabled && latestSelection !== null}>
           <p>Your feedback is very important to us</p>
         </EventCard>
       </div>
@@ -80,3 +40,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+

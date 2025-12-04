@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-const LatestVendorCard = ({ vendorName }: { vendorName: string; }) => {
+const LatestVendorCard = ({ vendorName }: { vendorName: string }) => {
   return (
     <Card className="mb-4 bg-transparent text-white rounded-lg shadow-lg">
       <CardHeader>

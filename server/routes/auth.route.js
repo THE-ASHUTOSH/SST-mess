@@ -60,7 +60,6 @@ router.get(
 
     res.cookie("token", token, {
       path : "/",
-      domain : process.env.CLIENT_URL,
       httpOnly: true,
       secure: true,
       sameSite: "none",

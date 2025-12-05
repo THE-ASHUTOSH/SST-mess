@@ -11,9 +11,16 @@ export default function AuthPage() {
   const { setUser } = useUser();
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      // Handle case where token is not present
+      router.push("/login");
+      return;
+    }
 
-    const verifyUser = async () => {
+    // Set the cookie
+    document.cookie = `token=${token}; path=/; max-age=${8 * 60 * 60}; SameSite=None; Secure`;
+
+    const fetchUserDetails = async () => {
       try {
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/verifyandsetcookies`,
@@ -33,7 +40,6 @@ export default function AuthPage() {
         const data = await response.json(); // contains user info
         setUser(data.user);
         const userRole = data.user?.role;
-        // console.log("User role from callback:", userRole);
         router.push(
           userRole === "admin"
             ? "/admin/dashboard"
@@ -48,7 +54,7 @@ export default function AuthPage() {
       }
     };
 
-    verifyUser();
+    fetchUserDetails();
   }, [token, router, setUser]);
 
   return <h1>Redirecting...</h1>;

@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, PieLabelRenderProps } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import LoadingAnimation from "@/components/common/LoadingAnimation";
 
@@ -81,14 +81,26 @@ const ChoiceAnalysis = () => {
   const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
   const RADIAN = Math.PI / 180;
-  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, value }: any) => {
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  const renderCustomizedLabel = (props: PieLabelRenderProps) => {
+    const {
+        cx = 0,
+        cy = 0,
+        midAngle = 0,
+        innerRadius = 0,
+        outerRadius = 0,
+        percent = 0,
+        value = 0
+    } = props;
+
+    if (!cx || !cy) return null;
+
+    const radius = (innerRadius as number) + ((outerRadius as number) - (innerRadius as number)) * 0.5;
+    const x = (cx as number) + radius * Math.cos(-(midAngle as number) * RADIAN);
+    const y = (cy as number) + radius * Math.sin(-(midAngle as number) * RADIAN);
 
     return (
-      <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
-        {`${(percent * 100).toFixed(0)}% (${value})`}
+      <text x={x} y={y} fill="white" textAnchor={x > (cx as number) ? 'start' : 'end'} dominantBaseline="central">
+        {`${((percent as number) * 100).toFixed(0)}% (${value})`}
       </text>
     );
   };

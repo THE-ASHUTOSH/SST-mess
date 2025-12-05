@@ -18,7 +18,7 @@ export default function AuthPage() {
     }
 
     // Set the cookie
-    document.cookie = `token=${token}; path=/; max-age=${8 * 60 * 60}; SameSite=None; Secure`;
+    document.cookie = `token=${token}; path=/; max-age=${8 * 60 * 60}; SameSite=None; Secure; HttpOnly`;
 
     const fetchUserDetails = async () => {
       try {

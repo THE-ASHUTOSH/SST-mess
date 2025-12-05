@@ -58,6 +58,16 @@ router.get(
       maxAge: 8 * 60 * 60 * 1000,
     });
 
+    res.cookie("token", token, {
+      path : "/",
+      domain : process.env.CLIENT_URL,
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      maxAge: 8 * 60 * 60 * 1000,
+    });
+
+
     const userfound = await User.findOne({ email: req.user.email });
 
     const DEFAULT_ROLL = "00000";

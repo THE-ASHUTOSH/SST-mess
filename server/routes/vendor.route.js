@@ -13,7 +13,7 @@ router.route("/getVendors").get(getVendors);
 router.route("/vendorFeedbackForm").post(adduserdetails,vendorFeedbackForm);
 router.route("/addVendor").post(adduserdetails, upload.single('menuFile'), addVendor);
 router.route("/updateVendor/:id").put(adduserdetails, upload.single('menuFile'), updateVendor);
-router.route("/getChoiceAnalysis").get(getChoiceAnalysis);
+router.route("/getChoiceAnalysis").post(getChoiceAnalysis);
 router.route("/getFeedbackAnalysis").get(getFeedbackAnalysis);
 
 

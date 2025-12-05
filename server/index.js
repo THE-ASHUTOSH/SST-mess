@@ -12,6 +12,7 @@ import { adduserdetails } from "./middlewares/user.middleware.js";
 import cookieParser from "cookie-parser";
 import controlRouter from "./routes/controls.route.js";
 import adminRouter from "./routes/admin.route.js";
+import User from "./models/user.model.js";
 
 dotenv.config({ quiet: true });
 
@@ -55,6 +56,21 @@ connectDB();
 //         await vendor.save();
 //         res.send("Vendor Added Successfully");
 // }catch(err){
+//         console.log(err);
+//         res.send(err);
+//     }
+// });
+
+// app.get("/adduserindb", async (req, res) => {
+//     try {
+//         const user = new User({
+//             name: "Uinworld",
+//             email: "uw_cffms@sst.scaler.com ",
+//             role: "vendor",
+//         });
+//         await user.save();
+//         res.send("User Added Successfully");
+//     } catch (err) {
 //         console.log(err);
 //         res.send(err);
 //     }

@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import LoadingAnimation from "@/components/common/LoadingAnimation";
 
@@ -25,11 +25,20 @@ const ChoiceAnalysis = () => {
   const [choiceData, setChoiceData] = useState<Choice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [month, setMonth] = useState(new Date().getMonth() + 1);
 
   useEffect(() => {
     const fetchChoiceData = async () => {
+      setLoading(true);
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/getChoiceAnalysis`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/getChoiceAnalysis`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ month, year }),
+        });
         if (!res.ok) {
           throw new Error("Failed to fetch choice analysis data");
         }
@@ -43,7 +52,7 @@ const ChoiceAnalysis = () => {
     };
 
     fetchChoiceData();
-  }, []);
+  }, [month, year]);
 
   const getChartData = () => {
     const vendorCounts: { [key: string]: number } = {};
@@ -56,7 +65,7 @@ const ChoiceAnalysis = () => {
 
     return Object.keys(vendorCounts).map((vendorName) => ({
       name: vendorName,
-      count: vendorCounts[vendorName],
+      value: vendorCounts[vendorName],
     }));
   };
 
@@ -69,6 +78,20 @@ const ChoiceAnalysis = () => {
   }
 
   const chartData = getChartData();
+  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
+
+  const RADIAN = Math.PI / 180;
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, value }: any) => {
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
+        {`${(percent * 100).toFixed(0)}% (${value})`}
+      </text>
+    );
+  };
 
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center p-4 bg-gray-900 text-white animate-fade-in-up">
@@ -76,6 +99,16 @@ const ChoiceAnalysis = () => {
         <h1 className="text-3xl font-bold mb-6 text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-indigo-400">
           Choice Analysis
         </h1>
+
+        <div className="flex justify-center gap-4 mb-4">
+          <select value={year} onChange={(e) => setYear(parseInt(e.target.value))} className="bg-gray-800 text-white p-2 rounded">
+            {Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - 3 + i).map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+          <select value={month} onChange={(e) => setMonth(parseInt(e.target.value))} className="bg-gray-800 text-white p-2 rounded">
+            {Array.from({ length: 12 }, (_, i) => i + 1).map(m => <option key={m} value={m}>{new Date(0, m-1).toLocaleString('default', { month: 'long' })}</option>)}
+          </select>
+        </div>
+
         <Card className="w-full bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl overflow-hidden shadow-lg">
           <CardHeader>
             <CardTitle className="text-white">Vendor Selections</CardTitle>
@@ -83,34 +116,30 @@ const ChoiceAnalysis = () => {
           <CardContent>
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={400}>
-                <BarChart
-                  data={chartData}
-                  margin={{
-                    top: 20,
-                    right: 30,
-                    left: 20,
-                    bottom: 5,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#4A5568" />
-                  <XAxis dataKey="name" tick={{ fill: '#E2E8F0' }} />
-                  <YAxis tick={{ fill: '#E2E8F0' }} />
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={renderCustomizedLabel}
+                    outerRadius={150}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
                   <Tooltip
                     contentStyle={{
                       backgroundColor: 'rgba(31, 41, 55, 0.8)',
                       borderColor: '#4A5568',
-                      color: '#E2E8F0',
+                      color: 'white',
                     }}
                   />
                   <Legend wrapperStyle={{ color: '#E2E8F0' }}/>
-                  <Bar dataKey="count" fill="url(#colorUv)" />
-                  <defs>
-                    <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#8884d8" stopOpacity={0.2}/>
-                    </linearGradient>
-                  </defs>
-                </BarChart>
+                </PieChart>
               </ResponsiveContainer>
             ) : (
               <p className="text-center text-gray-400">No choice data available to display.</p>

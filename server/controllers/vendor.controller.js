@@ -144,23 +144,29 @@ async function updateVendor(req, res) {
 }
 
 async function getChoiceAnalysis(req, res) {
-  // Implementation for choice analysis
   try {
-    const vendors = await Vendor.find().lean();
-    const section = await VendorSection.find().populate("vendor").lean();
-    // const data = section.map((select) => {
-    //   //if vendor not found, return null
-    //   if (!select.vendor) {
-    //     return { ...select, vendor: null }; // or handle differently if needed
-    //   }
-    //   const vendor = vendors.find(
-    //     (v) => v._id.toString() === select.vendor._id.toString()
-    //   );
-    //   return { ...select, vendor };
-    // });
+    let { month, year } = req.body; // month is 1-indexed
+
+    if (month === undefined || year === undefined) {
+      const today = new Date();
+      month = today.getMonth() + 1; // 1-indexed
+      year = today.getFullYear();
+    }
+
+    // month-1 because Date object is 0-indexed for months
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 1);
+
+    const section = await VendorSection.find({
+      forMonth: {
+        $gte: startDate,
+        $lt: endDate,
+      },
+    }).populate("vendor").lean();
+
     res.status(200).json({ success: true, data: section });
   } catch (err) {
-    res.status(400).json({ success: false, err });
+    res.status(400).json({ success: false, err: err.message });
   }
 }
 

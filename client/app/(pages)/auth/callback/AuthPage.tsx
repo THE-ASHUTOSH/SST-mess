@@ -3,7 +3,8 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useUser } from "@/context/UserContext";
-import axiosInstance from "../../../../lib/axiosInstance";
+import axiosInstance from '@/lib/axiosInstance';
+import { isAxiosError } from 'axios';/../../../lib/axiosInstance";
 
 export default function AuthPage() {
   const searchParams = useSearchParams();

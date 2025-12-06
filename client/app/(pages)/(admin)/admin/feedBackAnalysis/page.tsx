@@ -3,7 +3,8 @@ import React, { useEffect, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import LoadingAnimation from "@/components/common/LoadingAnimation";
-import axiosInstance from "../../../../../../lib/axiosInstance";
+import axiosInstance from '@/lib/axiosInstance';
+import { isAxiosError } from 'axios';/../../../../../lib/axiosInstance";
 
 interface Vendor {
   _id: string;

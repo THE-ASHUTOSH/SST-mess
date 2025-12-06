@@ -1,5 +1,6 @@
 "use client";
-import axiosInstance from "../lib/axiosInstance";
+import axiosInstance from '@/lib/axiosInstance';
+import { isAxiosError } from 'axios';/lib/axiosInstance";
 import React, { createContext, useState, useEffect, useContext } from "react";
 
 type User = {

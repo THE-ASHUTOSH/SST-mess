@@ -6,10 +6,10 @@ async function verifyAndSendDetails(req, res) {
     console.time('verifyAndSendDetails');
     try {
             let token = null;
-        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
-            token = req.headers.authorization.split(' ')[1];
-        } else if (req.cookies?.token) {
+        if (req.cookies?.token) {
             token = req.cookies.token;
+        }else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+            token = req.headers.authorization.split(' ')[1];
         }
 
         if (!token) {

@@ -1,20 +1,6 @@
 "use client"
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import axios from 'axios';
-import { getToken } from '../lib/auth';
-
-const axiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
-});
-
-axiosInstance.interceptors.request.use((config) => {
-  const token = getToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  config.withCredentials = true;
-  return config;
-});
+import axiosInstance from '../lib/axiosInstance';
 
 interface MealsOptions {
   breakfast: boolean;

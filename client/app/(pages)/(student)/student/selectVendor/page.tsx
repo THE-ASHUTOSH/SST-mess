@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import Link from 'next/link';
 import LoadingAnimation from '@/components/common/LoadingAnimation';
+import axiosInstance from '@/lib/axiosInstance';
+import { isAxiosError } from 'axios';
 interface Vendor {
   _id: string;
   name: string;
@@ -39,21 +41,8 @@ const SelectVendor = () => {
   useEffect(() => {
     async function loadVendors() {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/getVendors`, {
-          method: "GET",
-          credentials: "include", // equivalent to withCredentials: true
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        setvendors(data.vendor);
-        // console.log("Vendors fetched:", data.vendor);
+        const response = await axiosInstance.get(`/vendor/getVendors`);
+        setvendors(response.data.vendor);
       } catch (err) {
         // console.log(err);
       }
@@ -67,44 +56,13 @@ const SelectVendor = () => {
     setIsSubmitting(true);
     // Handle form submission here
     try {
-      const user = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/details`, { credentials: 'include' });
-      // console.log(await user.json());
-
-      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/vendorSelectionForm`;
-
-
-      const requestBody = JSON.stringify({
+      await axiosInstance.get(`/auth/details`);
+      await axiosInstance.post(`/vendor/vendorSelectionForm`, {
         name: formData.name,
         room: formData.room,
         vendor: formData.mess
       });
-
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: requestBody,
-
-
-          credentials: 'include'
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(`HTTP error! Status: ${response.status}. Details: ${errorData.message || 'Unknown error'}`);
-        }
-
-        // Process the successful response
-        const data = await response.json();
-        setShowSuccessPopup(true);
-        // console.log('Success:', data);
-
-      } catch (error) {
-        setShowErrorPopup(true);
-        console.error('Fetch operation failed:', error);
-      }
+      setShowSuccessPopup(true);
     } catch (error) {
       setShowErrorPopup(true);
       console.error(error);

@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from "react";
 import EventCard from "@/components/common/EventCard";
 import LoadingSpinner from "@/components/common/LoadingAnimation";
+import axiosInstance from '@/lib/axiosInstance';
+import { isAxiosError } from 'axios';
 
 interface DailyMenuItem {
   breakfast: string[];
@@ -33,26 +35,8 @@ const VendorDetail = () => {
   useEffect(() => {
     async function loadVendors() {
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/getVendors`,
-          {
-            method: "GET",
-
-            credentials: "include",
-
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        // console.log(data.vendor);
-        setVendors(data.vendor);
+        const response = await axiosInstance.get(`/vendor/getVendors`);
+        setVendors(response.data.vendor);
       } catch (err) {
         // console.error("Failed to fetch vendors:", err);
       } finally {

@@ -1,5 +1,5 @@
 "use client";
-import { getToken } from "../lib/auth";
+import axiosInstance from "../lib/axiosInstance";
 import React, { createContext, useState, useEffect, useContext } from "react";
 
 type User = {
@@ -31,32 +31,11 @@ useEffect(() => {
 
   const verify = async () => {
     try {
-      const token = getToken();
-      const headers: HeadersInit = {
-        "Content-Type": "application/json",
-      };
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/verifyanddetails`,
-        {
-          headers,
-          credentials: "include"
-        }
-      );
+      const res = await axiosInstance.get(`/auth/verifyanddetails`);
 
       if (!mounted) return;
 
-      if (!res.ok) {
-        setUser(null);
-        return;
-      }
-
-      const data = await res.json();
-      if (!mounted) return;
-
-      setUser(data.user ?? data);
+      setUser(res.data.user ?? res.data);
     } catch {
       if (mounted) setUser(null);
     } finally {

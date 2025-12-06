@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import LoadingAnimation from "@/components/common/LoadingAnimation";
+import axiosInstance from "../../../../../../lib/axiosInstance";
 
 interface Vendor {
   _id: string;
@@ -39,12 +40,8 @@ const FeedbackAnalysis = () => {
   useEffect(() => {
     const fetchFeedbackData = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/getFeedbackAnalysis`);
-        if (!res.ok) {
-          throw new Error("Failed to fetch feedback analysis data");
-        }
-        const data = await res.json();
-        setFeedbackData(data.data || []);
+        const res = await axiosInstance.get(`/vendor/getFeedbackAnalysis`);
+        setFeedbackData(res.data.data || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : "An unknown error occurred");
       } finally {

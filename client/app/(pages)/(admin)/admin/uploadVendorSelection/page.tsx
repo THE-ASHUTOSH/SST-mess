@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from 'react';
-import axios from 'axios';
+import axiosInstance from '@/lib/axiosInstance';
+import { isAxiosError } from 'axios';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import LoadingAnimation from '@/components/common/LoadingAnimation';
@@ -34,11 +35,10 @@ const UploadVendorSelectionPage = () => {
             formData.append('month', month);
             formData.append('vendor-selection', file);
 
-            const response = await axios.post(
-                `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/upload-vendor-selection`,
+            const response = await axiosInstance.post(
+                `/admin/upload-vendor-selection`,
                 formData,
                 {
-                    withCredentials: true,
                     headers: {
                         'Content-Type': 'multipart/form-data',
                     },

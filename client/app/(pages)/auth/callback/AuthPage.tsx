@@ -3,6 +3,7 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useUser } from "@/context/UserContext";
+import axiosInstance from "../../../../lib/axiosInstance";
 
 export default function AuthPage() {
   const searchParams = useSearchParams();
@@ -25,22 +26,12 @@ export default function AuthPage() {
 
     const fetchUserDetails = async () => {
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/verifyandsetcookies`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token }),
-            credentials: "include",
-          }
+        const response = await axiosInstance.post(
+          `/auth/verifyandsetcookies`,
+          { token }
         );
 
-        if (!response.ok) {
-          alert("Unauthorized access. Please log in again.");
-          return router.push("/login");
-        }
-
-        const data = await response.json(); // contains user info
+        const data = response.data; // contains user info
         setUser(data.user);
         const userRole = data.user?.role;
         router.push(
@@ -53,6 +44,7 @@ export default function AuthPage() {
             : "/login"
         );
       } catch {
+        alert("Unauthorized access. Please log in again.");
         router.push("/login");
       }
     };

@@ -4,6 +4,8 @@ import React, { useState } from 'react'
 import { Card } from '@/components/ui/card'
 import Link from 'next/link';
 import LoadingAnimation from '@/components/common/LoadingAnimation';
+import axiosInstance from '@/lib/axiosInstance';
+import { isAxiosError } from 'axios';
 
 const AddVendor = () => {
   const [formData, setFormData] = useState({
@@ -49,8 +51,6 @@ const AddVendor = () => {
     e.preventDefault()
     setIsSubmitting(true);
     try {
-      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/addVendor`;
-      
       const requestBody = new FormData();
       requestBody.append('name', formData.name);
       requestBody.append('description', formData.description);
@@ -61,16 +61,7 @@ const AddVendor = () => {
         requestBody.append('menuFile', menuFile);
       }
 
-      const response = await fetch(url, {
-        method: 'POST',
-        body: requestBody,
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`HTTP error! Status: ${response.status}. Details: ${errorData.message || 'Unknown error'}`);
-      }
+      await axiosInstance.post(`/vendor/addVendor`, requestBody);
 
       setShowSuccessPopup(true);
     } catch (error) {

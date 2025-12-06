@@ -1,5 +1,6 @@
 "use client"
 import React, { useState } from 'react'
+import axiosInstance from '@/lib/axiosInstance'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useUser } from '@/context/UserContext'
@@ -14,11 +15,7 @@ const Header = () => {
 
   async function handleLogout() {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      await axiosInstance.post(`/auth/logout`);
       document.cookie = "token=; path=/; max-age=0; SameSite=None; Secure;";
       localStorage.clear();
     } catch (err) {

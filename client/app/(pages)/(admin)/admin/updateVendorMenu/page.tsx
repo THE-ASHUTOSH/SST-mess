@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import Link from 'next/link';
 import LoadingAnimation from '@/components/common/LoadingAnimation';
+import axiosInstance from '@/lib/axiosInstance';
+import { isAxiosError } from 'axios';
 
 interface Vendor {
   _id: string;
@@ -41,20 +43,8 @@ const UpdateVendorMenu = () => {
   useEffect(() => {
     async function loadVendors() {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/getVendors`, {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        setVendors(data.vendor);
+        const response = await axiosInstance.get(`/vendor/getVendors`);
+        setVendors(response.data.vendor);
       } catch (err) {
         // console.log(err);
       }
@@ -112,8 +102,6 @@ const UpdateVendorMenu = () => {
     }
     setIsSubmitting(true);
     try {
-      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/updateVendor/${selectedVendor}`;
-      
       const requestBody = new FormData();
       requestBody.append('name', formData.name);
       requestBody.append('description', formData.description);
@@ -124,16 +112,7 @@ const UpdateVendorMenu = () => {
         requestBody.append('menuFile', menuFile);
       }
 
-      const response = await fetch(url, {
-        method: 'PUT',
-        body: requestBody,
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`HTTP error! Status: ${response.status}. Details: ${errorData.message || 'Unknown error'}`);
-      }
+      await axiosInstance.put(`/vendor/updateVendor/${selectedVendor}`, requestBody);
 
       setShowSuccessPopup(true);
     } catch (error) {

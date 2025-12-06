@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import axiosInstance from '@/lib/axiosInstance';
+import { isAxiosError } from 'axios';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import LoadingAnimation from '@/components/common/LoadingAnimation';
 interface VerifiedUser {
@@ -30,7 +31,7 @@ const VerifyStudentQRPage = () => {
   useEffect(() => {
     const fetchVendors = async () => {
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/getVendors`, { withCredentials: true });
+        const response = await axiosInstance.get(`/vendor/getVendors`);
         // console.log('Vendors fetched:', response.data.vendor);
         if (Array.isArray(response.data.vendor)) {
           setVendors(response.data.vendor);
@@ -107,13 +108,13 @@ const VerifyStudentQRPage = () => {
     }
     setIsProcessing(true);
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/meal/verify-qr`, { token, vendorId: selectedVendor }, { withCredentials: true });
+      const response = await axiosInstance.post(`/meal/verify-qr`, { token, vendorId: selectedVendor });
       // console.log('Meal verified:', response.data);
       setMessage(`Meal verified for ${response.data.user.name}.`);
       setVerifiedUser(response.data.user);
       setError('');
     } catch (err: unknown) {
-      if (axios.isAxiosError(err) && err.response?.data?.message) {
+      if (isAxiosError(err) && err.response?.data?.message) {
         setError(err.response.data.message);
       } else {
         setError('Error verifying QR code. Please try again later.');

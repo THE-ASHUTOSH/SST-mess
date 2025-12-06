@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosInstance from '@/lib/axiosInstance';
 import { useQRCode } from 'next-qrcode';
+import { isAxiosError } from 'axios';
 
 const GetFoodPage = () => {
   const [token, setToken] = useState('');
@@ -14,10 +15,10 @@ const GetFoodPage = () => {
   useEffect(() => {
     const fetchQrCode = async () => {
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/meal/generate-qr`, { withCredentials: true });
+        const response = await axiosInstance.get(`/meal/generate-qr`);
         setToken(response.data.token);
       } catch (err: unknown) {
-        if (axios.isAxiosError(err) && err.response?.status === 403) {
+        if (isAxiosError(err) && err.response?.status === 403) {
           setError(err.response.data.message);
         } else {
           setError('Error generating QR code. Please try again later.');
@@ -35,7 +36,7 @@ const GetFoodPage = () => {
     if (token && !scanned) {
       interval = setInterval(async () => {
         try {
-          const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/meal/status`, { withCredentials: true });
+          const response = await axiosInstance.get(`/meal/status`);
           if (response.data.status === 'scanned') {
             setScanned(true);
             clearInterval(interval);

@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import axiosInstance from "../../../../../lib/axiosInstance";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import LoadingSpinner from "@/components/common/LoadingAnimation";
@@ -58,29 +59,12 @@ const Feedback = () => {
     if (!latestSelection) return;
     setIsSubmitting(true);
 
-    const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/vendorFeedbackForm`;
-    const requestBody = JSON.stringify({
-      vendor: latestSelection.vendor._id,
-      ratings,
-      feedback: feedback.trim(),
-    });
-
     try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: requestBody,
-        credentials: "include",
+      await axiosInstance.post("/vendor/vendorFeedbackForm", {
+        vendor: latestSelection.vendor._id,
+        ratings,
+        feedback: feedback.trim(),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          `HTTP error! Status: ${response.status}. Details: ${errorData.message || "Unknown error"
-          }`
-        );
-      }
-
       setShowSuccessPopup(true);
     } catch (error) {
       setShowErrorPopup(true);

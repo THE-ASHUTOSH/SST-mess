@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, PieLabelRenderProps } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import LoadingAnimation from "@/components/common/LoadingAnimation";
+import axiosInstance from "../../../../../../lib/axiosInstance";
 
 interface Vendor {
   _id: string;
@@ -32,18 +33,8 @@ const ChoiceAnalysis = () => {
     const fetchChoiceData = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/vendor/getChoiceAnalysis`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ month, year }),
-        });
-        if (!res.ok) {
-          throw new Error("Failed to fetch choice analysis data");
-        }
-        const data = await res.json();
-        setChoiceData(data.data);
+        const res = await axiosInstance.post(`/vendor/getChoiceAnalysis`, { month, year });
+        setChoiceData(res.data.data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "An unknown error occurred");
       } finally {

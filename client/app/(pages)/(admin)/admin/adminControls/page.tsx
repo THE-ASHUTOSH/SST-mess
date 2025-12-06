@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosInstance from '@/lib/axiosInstance';
+import { isAxiosError } from 'axios';
 import { Card } from '@/components/ui/card';
 import LoadingAnimation from '@/components/common/LoadingAnimation';
 
@@ -15,9 +16,7 @@ const AdminControlsPage = () => {
         const fetchFeedbackStatus = async () => {
             try {
                 setIsLoading(true);
-                const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/controls/feedback-toggle`, {
-                    withCredentials: true,
-                });
+                const response = await axiosInstance.get(`/controls/feedback-toggle`);
                 setFeedbackEnabled(response.data.enabled);
             } catch (err) {
                 setError('Failed to fetch feedback status.');
@@ -33,9 +32,7 @@ const AdminControlsPage = () => {
     const handleToggleFeedback = async () => {
         try {
             setIsSubmitting(true);
-            const response = await axios.patch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/controls/feedback-toggle`, {}, {
-                withCredentials: true,
-            });
+            const response = await axiosInstance.patch(`/controls/feedback-toggle`, {});
             setFeedbackEnabled(response.data.enabled);
         } catch (err) {
             setError('Failed to toggle feedback status.');

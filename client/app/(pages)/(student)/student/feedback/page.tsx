@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import axiosInstance from '@/lib/axiosInstance';
-import { isAxiosError } from 'axios';/../../../../lib/axiosInstance";
+import { isAxiosError } from 'axios';
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import LoadingSpinner from "@/components/common/LoadingAnimation";

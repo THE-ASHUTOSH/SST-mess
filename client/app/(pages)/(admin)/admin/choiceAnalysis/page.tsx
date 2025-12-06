@@ -4,7 +4,7 @@ import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, PieLabelRend
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import LoadingAnimation from "@/components/common/LoadingAnimation";
 import axiosInstance from '@/lib/axiosInstance';
-import { isAxiosError } from 'axios';/../../../../../lib/axiosInstance";
+import { isAxiosError } from 'axios';
 
 interface Vendor {
   _id: string;

@@ -19,7 +19,8 @@ const Header = () => {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
       });
-      document.cookie = "token=; path=/; max-age=0; SameSite=None; Secure; HttpOnly";
+      document.cookie = "token=; path=/; max-age=0; SameSite=None; Secure;";
+      localStorage.clear();
     } catch (err) {
       console.error('Logout error', err);
     }

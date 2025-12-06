@@ -1,6 +1,20 @@
 "use client"
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
+import { getToken } from '../lib/auth';
+
+const axiosInstance = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
+});
+
+axiosInstance.interceptors.request.use((config) => {
+  const token = getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  config.withCredentials = true;
+  return config;
+});
 
 interface MealsOptions {
   breakfast: boolean;
@@ -57,9 +71,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const fetchLatestSelection = async () => {
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user/latest-vendor`, {
-          withCredentials: true,
-        });
+        const response = await axiosInstance.get(`/user/latest-vendor`);
         setLatestSelection(response.data.latestSelection);
       } catch (error) {
         // console.error('Error fetching latest vendor selection:', error);
@@ -70,9 +82,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
 
     const fetchFeedbackStatus = async () => {
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/controls/feedback-toggle`, {
-          withCredentials: true,
-        });
+        const response = await axiosInstance.get(`/controls/feedback-toggle`);
         setIsFeedbackEnabled(response.data.enabled);
       } catch (error) {
         // console.error('Error fetching feedback status:', error);

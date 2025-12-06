@@ -18,7 +18,10 @@ export default function AuthPage() {
     }
 
     // Set the cookie
-    document.cookie = `token=${token}; path=/; max-age=${8 * 60 * 60}; SameSite=None; Secure; HttpOnly`;
+    document.cookie = `token=${token}; path=/; max-age=${8 * 60 * 60}; SameSite=None; Secure;`;
+    localStorage.setItem("token", token);
+    const expiry = new Date().getTime() + 8 * 60 * 60 * 1000;
+    localStorage.setItem("expiry", expiry.toString());
 
     const fetchUserDetails = async () => {
       try {

@@ -25,6 +25,10 @@ router.get(
     }
 
     function parseScalerEmail(email) {
+      if (!email || typeof email !== "string") {
+        return { valid: false, error: "Invalid email format" };
+      }
+
       // Regex breakdown:
       // ^([a-zA-Z]+)\.   -> name before dot
       // (\d{2}bcs\d{5})  -> roll format
@@ -70,8 +74,9 @@ router.get(
     const userfound = await User.findOne({ email: req.user.email });
 
     const DEFAULT_ROLL = "00000";
-    const extractedRoll = parseScalerEmail(req.user.email).valid
-      ? parseScalerEmail(req.user.email).roll
+    const emailParseResult = parseScalerEmail(req.user.email);
+    const extractedRoll = emailParseResult.valid
+      ? emailParseResult.roll
       : null;
 
     try {

@@ -1,4 +1,5 @@
 "use client";
+import { getToken } from "../lib/auth";
 import React, { createContext, useState, useEffect, useContext } from "react";
 
 type User = {
@@ -30,10 +31,18 @@ useEffect(() => {
 
   const verify = async () => {
     try {
+      const token = getToken();
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/verifyanddetails`,
         {
-          credentials: "include",
+          headers,
+          credentials: "include"
         }
       );
 

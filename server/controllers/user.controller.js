@@ -5,13 +5,20 @@ import VendorSelection from "../models/vendorselectform.model.js";
 async function verifyAndSendDetails(req, res) {
     console.time('verifyAndSendDetails');
     try {
-        if (!req.cookies?.token) {
+            let token = null;
+        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+            token = req.headers.authorization.split(' ')[1];
+        } else if (req.cookies?.token) {
+            token = req.cookies.token;
+        }
+
+        if (!token) {
             console.timeEnd('verifyAndSendDetails');
-            return res.status(402).json({ message: "Unauthorized" });
+            return res.status(401).json({ message: 'Unauthorized' });
         }
 
         console.time('jwtVerify');
-        const payload = jwt.verify(req.cookies.token, process.env.JWT_SECRET_KEY);
+        const payload = jwt.verify(token, process.env.JWT_SECRET_KEY);
         console.timeEnd('jwtVerify');
 
         console.time('dbUserFindOne');

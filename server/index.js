@@ -11,6 +11,7 @@ import mealRouter from "./routes/meal.route.js";
 import { adduserdetails } from "./middlewares/user.middleware.js";
 import cookieParser from "cookie-parser";
 import controlRouter from "./routes/controls.route.js";
+import { apiLimiter, authLimiter } from "./middlewares/ratelimiter.middleware.js";
 import adminRouter from "./routes/admin.route.js";
 import User from "./models/user.model.js";
 
@@ -37,7 +38,9 @@ app.get("/heathcheck", (req, res) => {
     res.send("Healthy");
 });
 
-app.use("/auth", authRouter);
+app.use(apiLimiter);
+
+app.use("/auth", authLimiter, authRouter);
 app.use("/user", userRouter);
 app.use("/controls", controlRouter);
 app.use("/vendor", vendorRoute);

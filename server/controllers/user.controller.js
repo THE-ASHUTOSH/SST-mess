@@ -23,14 +23,14 @@ async function verifyAndSendDetails(req, res) {
 
         console.time('dbUserFindOne');
         const dbUser = await User.findOne({ email: payload.email }).select('-__v').lean();
+        console.log("User signed in",payload.email);
         console.timeEnd('dbUserFindOne');
 
         if (!dbUser) {
             console.timeEnd('verifyAndSendDetails');
             return res.status(401).json({ message: 'Unauthorized' });
         }
-
-        console.timeEnd('verifyAndSendDetails');
+     
         return res.status(200).json({ user: dbUser });
     } catch (err) {
         console.error('verifyAndSendDetails error', err);

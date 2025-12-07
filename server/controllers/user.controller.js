@@ -31,6 +31,7 @@ async function verifyAndSendDetails(req, res) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
      
+        console.timeEnd('verifyAndSendDetails');
         return res.status(200).json({ user: dbUser });
     } catch (err) {
         console.error('verifyAndSendDetails error', err);

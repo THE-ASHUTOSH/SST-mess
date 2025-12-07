@@ -126,7 +126,7 @@ const VerifyStudentQRPage = () => {
         setError('');
         setIsProcessing(false);
         setVerifiedUser(null);
-      }, 5000);
+      }, 3000);
     }
   };
 

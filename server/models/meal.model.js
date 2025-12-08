@@ -1,3 +1,4 @@
+import { text } from "body-parser";
 import mongoose from "mongoose";
 
 const mealSchema = new mongoose.Schema({
@@ -15,15 +16,15 @@ const mealSchema = new mongoose.Schema({
     type: String,
     enum: ["breakfast", "lunch", "dinner"],
     required: true,
-    index: true,
   },
   date: {
     type: Date,
     required: true,
     default: Date.now,
-    index: true,
   },
 });
+
+mealSchema.index({ forUser: 1, mealType: "text", date: -1 }, { unique: true });
 
 const Meal = mongoose.model("Meal", mealSchema);
 

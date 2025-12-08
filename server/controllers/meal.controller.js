@@ -5,6 +5,23 @@ import Vendor from "../models/vendor.model.js";
 import VendorSelection from "../models/vendorselectform.model.js";
 import jwt from "jsonwebtoken";
 
+function returnMealTypeByHour() {
+  const nowtime = new Date();
+  const istTime = new Date(nowtime.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+  const indianHours = istTime.getHours();
+    let mealType;
+    if(indianHours >=7 && indianHours <10){
+      mealType = "breakfast";
+    }else if(indianHours >=12 && indianHours <15){
+      mealType = "lunch";
+    }else if(indianHours >=19 && indianHours <22){
+      mealType = "dinner";
+    }else{
+      return res.status(403).json({ message: "Wrong meal time." });
+    }
+    return mealType;
+}
+
 export const generateQR = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -121,7 +138,8 @@ export const getMealStatus = async (req, res) => {
 
 export const verifyQR = async (req, res) => {
   try {
-    const byUser = req.user._id;
+    const byUserId = req.user._id;
+    
     const { token, vendorId } = req.body;
     const nowtime = new Date();
     const istTime = new Date(nowtime.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
@@ -141,7 +159,7 @@ export const verifyQR = async (req, res) => {
       return res.status(403).json({ message: "This student is not assigned to your vendor." });
     }
 
-    const hours = now().getHours();
+    // const hours = now().getHours();
     const indianHours = istTime.getHours();
     let mealType;
     if(indianHours >=7 && indianHours <10){
@@ -151,16 +169,16 @@ export const verifyQR = async (req, res) => {
     }else if(indianHours >=19 && indianHours <22){
       mealType = "dinner";
     }else{
-      return res.status(403).json({ message: "Wrong meal time" });
+      return res.status(403).json({ message: "Wrong meal time." });
     }
 
     const startOfDay = new Date(now().getFullYear(), now().getMonth(), now().getDate());
     const endOfDay = new Date(now().getFullYear(), now().getMonth(), now().getDate() + 1);
 
     const existingMeal = await Meal.findOne({
+      forUser: forUserId,
       mealType,
       date: { $gte: startOfDay, $lt: endOfDay },
-      forUser: forUserId,
     });
 
     if (existingMeal) {
@@ -171,7 +189,7 @@ export const verifyQR = async (req, res) => {
 
     const meal = new Meal({
       forUser: forUserId,
-      byUser,
+      byUserId,
       mealType,
     });
 

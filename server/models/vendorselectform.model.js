@@ -24,7 +24,6 @@ const vendorSelectionSchema = new mongoose.Schema({
     forMonth:{
         type: Date,
         required: true,
-        index:true,
     },
     dateofEntry: {
         type: Date,
@@ -34,5 +33,7 @@ const vendorSelectionSchema = new mongoose.Schema({
 {
     timestamps: true,
 });
+vendorSelectionSchema.index({ forMonth: -1 });
+vendorSelectionSchema.index({ vendor: 1 });
 
 export default mongoose.model("VendorSelection", vendorSelectionSchema);

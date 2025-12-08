@@ -24,11 +24,11 @@ const vendorSelectionSchema = new mongoose.Schema({
     forMonth:{
         type: Date,
         required: true,
+        index:true,
     },
     dateofEntry: {
         type: Date,
         required: true,
-    
     }
 },
 {

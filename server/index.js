@@ -38,9 +38,9 @@ app.get("/heathcheck", (req, res) => {
     res.send("Healthy");
 });
 
-app.use(apiLimiter);
+// app.use(apiLimiter);
 
-app.use("/auth", authLimiter, authRouter);
+app.use("/auth", authRouter);
 app.use("/user", userRouter);
 app.use("/controls", controlRouter);
 app.use("/vendor", vendorRoute);

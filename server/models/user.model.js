@@ -5,6 +5,7 @@ const userModel = new mongoose.Schema({
         type:String,
         required:true,
         unique:true,
+        index:true,
     },
     roll:{
         type:String,

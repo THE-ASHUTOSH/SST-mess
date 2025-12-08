@@ -15,11 +15,13 @@ const mealSchema = new mongoose.Schema({
     type: String,
     enum: ["breakfast", "lunch", "dinner"],
     required: true,
+    index: true,
   },
   date: {
     type: Date,
     required: true,
     default: Date.now,
+    index: true,
   },
 });
 

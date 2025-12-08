@@ -158,9 +158,9 @@ export const verifyQR = async (req, res) => {
     const endOfDay = new Date(now().getFullYear(), now().getMonth(), now().getDate() + 1);
 
     const existingMeal = await Meal.findOne({
-      forUser: forUserId,
       mealType,
       date: { $gte: startOfDay, $lt: endOfDay },
+      forUser: forUserId,
     });
 
     if (existingMeal) {

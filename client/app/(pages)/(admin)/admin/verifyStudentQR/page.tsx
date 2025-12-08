@@ -89,6 +89,9 @@ const VerifyStudentQRPage = () => {
           qrbox: { width: 250, height: 250 },
           rememberLastUsedCamera: true,
           supportedScanTypes: [],
+          videoConstraints: {
+            facingMode: 'environment' 
+          }
         },
         false
       );

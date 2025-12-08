@@ -11,6 +11,24 @@ const GetFoodPage = () => {
   const [loading, setLoading] = useState(true);
   const [scanned, setScanned] = useState(false);
   const { Canvas } = useQRCode();
+  const [qrWidth, setQrWidth] = useState(300);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const screenWidth = window.innerWidth;
+      // sm breakpoint is 640px. Below that, we want it to be responsive.
+      // The container has p-4 (1rem padding on each side), so 2rem total.
+      // Let's give it a bit more margin, say 2.5rem (40px) total from screen edges.
+      const newWidth = screenWidth < 640 ? screenWidth - 40 : 300;
+      setQrWidth(newWidth);
+    };
+
+    // Set initial size
+    handleResize();
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const fetchQrCode = async () => {
@@ -69,7 +87,7 @@ const GetFoodPage = () => {
               errorCorrectionLevel: 'M',
               margin: 3,
               scale: 4,
-              width: 200,
+              width: qrWidth,
               color: {
                 dark: '#000000',
                 light: '#FFFFFF',

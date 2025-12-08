@@ -133,7 +133,7 @@ export const verifyQR = async (req, res) => {
     const forUserId = decoded.userId;
     const userVendorId = decoded.vendorId;
 
-    const userVendor = await Vendor.findById(userVendorId);
+    // const userVendor = await Vendor.findById(userVendorId);
     console.log("Decoded vendorId:", userVendorId);
     console.log("Provided vendorId:", vendorId);
 

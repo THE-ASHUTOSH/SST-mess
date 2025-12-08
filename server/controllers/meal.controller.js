@@ -152,8 +152,8 @@ export const verifyQR = async (req, res) => {
     const userVendorId = decoded.vendorId;
 
     // const userVendor = await Vendor.findById(userVendorId);
-    console.log("Decoded vendorId:", userVendorId);
-    console.log("Provided vendorId:", vendorId);
+    // console.log("Decoded vendorId:", userVendorId);
+    // console.log("Provided vendorId:", vendorId);
 
     if (userVendorId.toString() !== vendorId.toString()) {
       return res.status(403).json({ message: "This student is not assigned to your vendor." });
@@ -189,13 +189,14 @@ export const verifyQR = async (req, res) => {
 
     const meal = new Meal({
       forUser: forUserId,
-      byUserId,
+      byUser: byUserId,
       mealType,
     });
 
     await meal.save();
     
     const foruser = await User.findById(forUserId);
+    console.log("meal verified for", foruser["name"]);
 
     res
       .status(200)

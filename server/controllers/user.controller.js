@@ -3,7 +3,7 @@ import User from "../models/user.model.js";
 import VendorSelection from "../models/vendorselectform.model.js";
 
 async function verifyAndSendDetails(req, res) {
-    console.time('verifyAndSendDetails');
+    // console.time('verifyAndSendDetails');
     try {
             let token = null;
         if (req.cookies?.token) {
@@ -13,29 +13,29 @@ async function verifyAndSendDetails(req, res) {
         }
 
         if (!token) {
-            console.timeEnd('verifyAndSendDetails');
+            // console.timeEnd('verifyAndSendDetails');
             return res.status(401).json({ message: 'Unauthorized' });
         }
 
-        console.time('jwtVerify');
+        // console.time('jwtVerify');
         const payload = jwt.verify(token, process.env.JWT_SECRET_KEY);
-        console.timeEnd('jwtVerify');
+        // console.timeEnd('jwtVerify');
 
-        console.time('dbUserFindOne');
+        // console.time('dbUserFindOne');
         const dbUser = await User.findOne({ email: payload.email }).select('-__v').lean();
         console.log("User signed in",payload.email);
-        console.timeEnd('dbUserFindOne');
+        // console.timeEnd('dbUserFindOne');
 
         if (!dbUser) {
-            console.timeEnd('verifyAndSendDetails');
+            // console.timeEnd('verifyAndSendDetails');
             return res.status(401).json({ message: 'Unauthorized' });
         }
      
-        console.timeEnd('verifyAndSendDetails');
+        // console.timeEnd('verifyAndSendDetails');
         return res.status(200).json({ user: dbUser });
     } catch (err) {
         console.error('verifyAndSendDetails error', err);
-        console.timeEnd('verifyAndSendDetails');
+        // console.timeEnd('verifyAndSendDetails');
         return res.status(401).json({ message: 'Unauthorized' });
     }
 }

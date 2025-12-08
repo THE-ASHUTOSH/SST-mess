@@ -32,9 +32,21 @@ const VerifyStudentQRPage = () => {
     const fetchVendors = async () => {
       try {
         const response = await axiosInstance.get(`/vendor/getVendors`);
-        // console.log('Vendors fetched:', response.data.vendor);
         if (Array.isArray(response.data.vendor)) {
-          setVendors(response.data.vendor);
+          // setVendors(response.data.vendor);
+          const fetchedVendors: Vendor[] = response.data.vendor;
+          const gaurasVendors = fetchedVendors.filter(v => v.name.includes("Gaura's Secret Recipe"));
+          const otherVendors = fetchedVendors.filter(v => !v.name.includes("Gaura's Secret Recipe"));
+
+          if (gaurasVendors.length > 0) {
+            const combinedGauraVendor: Vendor = {
+              _id: gaurasVendors.map(v => v._id).join(','),
+              name: "Gaura's Secret Recipe",
+            };
+            setVendors([combinedGauraVendor, ...otherVendors]);
+          } else {
+            setVendors(fetchedVendors);
+          }
         } else {
           setError('Failed to fetch vendors: Invalid data format.');
         }
@@ -108,7 +120,9 @@ const VerifyStudentQRPage = () => {
     }
     setIsProcessing(true);
     try {
-      const response = await axiosInstance.post(`/meal/verify-qr`, { token, vendorId: selectedVendor });
+      // const response = await axiosInstance.post(`/meal/verify-qr`, { token, vendorId: selectedVendor });
+      const vendorIds = selectedVendor.includes(',') ? selectedVendor.split(',') : [selectedVendor];
+      const response = await axiosInstance.post(`/meal/verify-qr`, { token, vendorId: vendorIds });
       // console.log('Meal verified:', response.data);
       setMessage(`Meal verified for ${response.data.user.name}.`);
       setVerifiedUser(response.data.user);

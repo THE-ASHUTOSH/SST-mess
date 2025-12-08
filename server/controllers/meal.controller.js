@@ -58,7 +58,7 @@ export const generateQR = async (req, res) => {
     }
 
     await selection.populate("vendor");
-    console.log(selection.vendor.mealsOptions);
+    console.log("qr generated for " + req.user.name + " for vendor " + selection.vendor.name);
     if(selection.vendor.mealsOptions && !selection.vendor.mealsOptions[mealType]==true){
       return res
         .status(403)
@@ -155,7 +155,12 @@ export const verifyQR = async (req, res) => {
     // console.log("Decoded vendorId:", userVendorId);
     // console.log("Provided vendorId:", vendorId);
 
-    if (userVendorId.toString() !== vendorId.toString()) {
+    const isVendorAuthorized = Array.isArray(vendorId)
+      ? vendorId.includes(userVendorId.toString())
+      : userVendorId.toString() === vendorId.toString();
+      console.log("info",vendorId, userVendorId, isVendorAuthorized);
+
+    if (!isVendorAuthorized) {
       return res.status(403).json({ message: "This student is not assigned to your vendor." });
     }
 

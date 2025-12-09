@@ -21,13 +21,14 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
+// Environment-aware CORS configuration
+const corsOrigins = process.env.NODE_ENV === 'production'
+    ? [process.env.CLIENT_URL].filter(Boolean)
+    : ["http://localhost:3000", "http://127.0.0.1:3000", process.env.CLIENT_URL].filter(Boolean);
+
 app.use(
     cors({
-        origin: [
-            "http://localhost:3000",
-            "http://127.0.0.1:3000",
-            process.env.CLIENT_URL,
-        ],
+        origin: corsOrigins,
         credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE","PATCH"],
         allowedHeaders: ["Content-Type", "Authorization"],
@@ -38,9 +39,11 @@ app.get("/heathcheck", (req, res) => {
     res.send("Healthy");
 });
 
-// app.use(apiLimiter);
+// Enable rate limiting to prevent DoS and brute force attacks
+app.use(apiLimiter);
 
-app.use("/auth", authRouter);
+// Apply stricter rate limiting to auth routes
+app.use("/auth", authLimiter, authRouter);
 app.use("/user", userRouter);
 app.use("/controls", controlRouter);
 app.use("/vendor", vendorRoute);

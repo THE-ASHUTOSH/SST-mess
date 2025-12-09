@@ -1,22 +1,36 @@
 import User from "../models/user.model.js";
 import VendorSelection from "../models/vendorselectform.model.js";
 import Vendor from "../models/vendor.model.js";
+
 async function addVendordetails(req, res, next) {
-    const {user} = req.body;
-    // const userMongo = await User.findById(user._id);
-    // console.log("user details from middleware:", req.body);
-    const vendorSelection = await VendorSelection.findOne({user:user._id});
-    const vendorMongo = await Vendor.findById(vendorSelection.vendor);
-    // console.log("vendor details from middleware:", vendorMongo);
-    try{
-        if(req.body){
+    try {
+        const { user } = req.body;
+        
+        if (!user || !user._id) {
+            return res.status(400).json({ message: "User information is required" });
+        }
+
+        const vendorSelection = await VendorSelection.findOne({ user: user._id });
+        
+        if (!vendorSelection) {
+            return res.status(404).json({ message: "No vendor selection found for this user" });
+        }
+
+        const vendorMongo = await Vendor.findById(vendorSelection.vendor);
+        
+        if (!vendorMongo) {
+            return res.status(404).json({ message: "Vendor not found" });
+        }
+
+        if (req.body) {
             req.body.vendor = vendorMongo;
         }
-    }catch(err){
-        console.log("err",err);
+        req.vendor = vendorMongo;
+        next();
+    } catch (err) {
+        console.error("Error in addVendordetails middleware:", err);
+        return res.status(500).json({ message: "Internal server error" });
     }
-    req.vendor = vendorMongo
-    next();
 }
 
-export{addVendordetails};
+export { addVendordetails };

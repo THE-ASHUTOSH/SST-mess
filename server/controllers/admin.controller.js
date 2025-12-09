@@ -109,6 +109,7 @@ const uploadVendorSelection = async (req, res) => {
         console.log(duplicates.length + " duplicates found.");
         console.log(issues.length + " issues found.");
         console.log(newEntries.length + " new entries added.");
+        console.log("By User : " + req.user.email);
         res.status(200).json({
             message: "Vendor selection upload processed.",
             newEntries: newEntries.length,

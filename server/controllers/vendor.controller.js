@@ -25,7 +25,6 @@ import fs from "fs";
 
 async function vendorFeedbackForm(req, res) {
   const { ratings, vendor, feedback, user } = req.body;
-  // console.log(vendor)
   try {
     const VendorFeedbackForm = await new VendorFeedback({
       ratings,
@@ -35,9 +34,9 @@ async function vendorFeedbackForm(req, res) {
     }).save();
     res.status(200).json({ success: true, VendorFeedbackForm });
   } catch (err) {
-    res.status(400).json({ success: false, err });
+    console.error("Feedback submission error:", err);
+    res.status(400).json({ success: false, message: "Failed to submit feedback" });
   }
-  // console.log({rating, vendor, feedback,user});
 }
 
 async function getVendors(req, res) {
@@ -45,7 +44,8 @@ async function getVendors(req, res) {
     const vendors = await Vendor.find().populate("menu").lean();
     res.status(200).json({ success: true, vendor: vendors });
   } catch (err) {
-    res.status(400).json({ success: false, err });
+    console.error("Get vendors error:", err);
+    res.status(400).json({ success: false, message: "Failed to fetch vendors" });
   }
 }
 
@@ -57,7 +57,16 @@ async function addVendor(req, res) {
   }
 
   try {
-    const parsedMealsOptions = mealsOptions ? JSON.parse(mealsOptions) : undefined;
+    // Validate JSON parsing for mealsOptions
+    let parsedMealsOptions;
+    if (mealsOptions) {
+      try {
+        parsedMealsOptions = JSON.parse(mealsOptions);
+      } catch {
+        return res.status(400).json({ message: "Invalid mealsOptions format - must be valid JSON" });
+      }
+    }
+    
     const newVendor = new Vendor({
       name,
       description,
@@ -78,9 +87,8 @@ async function addVendor(req, res) {
         menuId = newMenu._id;
       }
     } catch (menuError) {
-      return res
-        .status(500)
-        .json({ message: "Error processing menu file", menuError });
+      console.error("Menu processing error:", menuError);
+      return res.status(500).json({ message: "Error processing menu file" });
     }
 
     newVendor.menu = menuId;
@@ -89,13 +97,14 @@ async function addVendor(req, res) {
       .status(201)
       .json({ message: "Vendor added successfully", vendor: newVendor });
   } catch (error) {
-    return res.status(500).json({ message: "Error adding vendor", error });
-    } finally {
-      if (req.file) {
-        fs.unlinkSync(req.file.path);
-      }
+    console.error("Add vendor error:", error);
+    return res.status(500).json({ message: "Error adding vendor" });
+  } finally {
+    if (req.file) {
+      fs.unlinkSync(req.file.path);
     }
   }
+}
 
 async function updateVendor(req, res) {
   const { id } = req.params;
@@ -106,7 +115,15 @@ async function updateVendor(req, res) {
   }
 
   try {
-    const parsedMealsOptions = mealsOptions ? JSON.parse(mealsOptions) : undefined;
+    // Validate JSON parsing for mealsOptions
+    let parsedMealsOptions;
+    if (mealsOptions) {
+      try {
+        parsedMealsOptions = JSON.parse(mealsOptions);
+      } catch {
+        return res.status(400).json({ message: "Invalid mealsOptions format - must be valid JSON" });
+      }
+    }
 
     let menuId = null;
     if (req.file) {
@@ -135,7 +152,8 @@ async function updateVendor(req, res) {
       .status(200)
       .json({ message: "Vendor updated successfully", vendor: updatedVendor });
   } catch (error) {
-    return res.status(500).json({ message: "Error updating vendor", error });
+    console.error("Update vendor error:", error);
+    return res.status(500).json({ message: "Error updating vendor" });
   } finally {
     if (req.file) {
       fs.unlinkSync(req.file.path);
@@ -171,13 +189,12 @@ async function getChoiceAnalysis(req, res) {
 }
 
 async function getFeedbackAnalysis(req, res) {
-  // Implementation for feedback analysis
   try {
     const vendors = await Vendor.find().lean();
     const feedback = await VendorFeedback.find().populate("vendor").lean();
     const data = feedback.map((feed) => {
         if (!feed.vendor) {
-            return { ...feed, vendor: null }; // or handle differently if needed
+            return { ...feed, vendor: null };
         }
         
         const vendor = vendors.find(
@@ -188,7 +205,8 @@ async function getFeedbackAnalysis(req, res) {
     });
     res.status(200).json({ success: true, data });
   } catch (err) {
-    res.status(400).json({ success: false, err });
+    console.error("Feedback analysis error:", err);
+    res.status(400).json({ success: false, message: "Failed to fetch feedback analysis" });
   }
 }
 

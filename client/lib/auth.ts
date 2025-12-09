@@ -22,3 +22,58 @@ export function getToken(): string | null {
 
     return null;
 }
+
+/**
+ * Decode JWT payload without signature verification
+ * This is safe for frontend use - the backend always verifies the signature
+ * Returns null if token is invalid or missing
+ */
+export function decodeToken(): { 
+    id?: string; 
+    email?: string; 
+    name?: string; 
+    picture?: string; 
+    role?: string;
+    roll?: string;
+    exp?: number;
+} | null {
+    const token = getToken();
+    if (!token) return null;
+
+    try {
+        // JWT format: header.payload.signature
+        const parts = token.split('.');
+        if (parts.length !== 3) return null;
+
+        // Decode the payload (second part) from Base64
+        const payload = parts[1];
+        const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+        return JSON.parse(decoded);
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Get user info from JWT payload
+ * This is the single source of truth for user data on the frontend
+ */
+export function getUserFromToken() {
+    const decoded = decodeToken();
+    if (!decoded) return null;
+    
+    // Check if token is expired
+    if (decoded.exp && decoded.exp * 1000 < Date.now()) {
+        return null;
+    }
+
+    return {
+        id: decoded.id,
+        email: decoded.email,
+        name: decoded.name,
+        picture: decoded.picture,
+        role: decoded.role,
+        roll: decoded.roll,
+    };
+}
+

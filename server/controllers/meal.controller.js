@@ -9,18 +9,19 @@ function returnMealTypeByHour() {
   const nowtime = new Date();
   const istTime = new Date(nowtime.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
   const indianHours = istTime.getHours();
-    let mealType;
-    if(indianHours >=7 && indianHours <10){
-      mealType = "breakfast";
-    }else if(indianHours >=12 && indianHours <15){
-      mealType = "lunch";
-    }else if(indianHours >=19 && indianHours <22){
-      mealType = "dinner";
-    }else{
-      return res.status(403).json({ message: "Wrong meal time." });
-    }
-    return mealType;
+  
+  if (indianHours >= 7 && indianHours < 10) {
+    return "breakfast";
+  } else if (indianHours >= 12 && indianHours < 15) {
+    return "lunch";
+  } else if (indianHours >= 19 && indianHours < 22) {
+    return "dinner";
+  } else {
+    // Return null for invalid meal time - callers should handle this
+    return null;
+  }
 }
+
 
 export const generateQR = async (req, res) => {
   try {

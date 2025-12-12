@@ -28,6 +28,7 @@ const toggleFeedback = async (req, res) => {
         }
 
         await feedbackToggle.save();
+        console.log(`Feedback toggle set to ${feedbackToggle.enabled} by ${req.user.email}`);
         res.status(200).json({ enabled: feedbackToggle.enabled });
     } catch (error) {
         res.status(500).json({ message: 'Error toggling feedback toggle', error });

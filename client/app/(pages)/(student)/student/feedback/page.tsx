@@ -7,6 +7,8 @@ import Link from "next/link";
 import LoadingSpinner from "@/components/common/LoadingAnimation";
 import { useDashboard } from "@/context/DashboardContext";
 import LatestVendorCard from "@/components/common/LatestVendorCard";
+import SuccessPopup from "@/components/common/SuccessPopup";
+import ErrorPopup from "@/components/common/ErrorPopup";
 
 interface StarRatingProps {
   rating: number;
@@ -45,6 +47,7 @@ const Feedback = () => {
   const [feedback, setFeedback] = useState("");
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [showErrorPopup, setShowErrorPopup] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleRatingChange = (category: string, value: number) => {
@@ -68,6 +71,7 @@ const Feedback = () => {
       });
       setShowSuccessPopup(true);
     } catch (error) {
+      setErrorMessage("Unable to submit feedback. Please try again later.");
       setShowErrorPopup(true);
       console.error("Unable to submit feedback:", error);
     } finally {
@@ -151,94 +155,22 @@ const Feedback = () => {
             </button>
           </form>
         </div>
-
-        {/* Success Popup */}
-        {showSuccessPopup && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-90 p-4 backdrop-blur-3xl"
-            onClick={() => setShowSuccessPopup(false)}
-          >
-            <div
-              className="relative flex flex-col items-center gap-4 rounded-2xl bg-white p-8 shadow-2xl transform animate-in fade-in zoom-in duration-300"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-500">
-                <svg
-                  className="h-8 w-8 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={3}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </div>
-              <div className="text-center">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Success!
-                </h3>
-                <p className="text-gray-600">Form submitted successfully!</p>
-              </div>
-              <Link href="/student/dashboard">
-                <button
-                  className="mt-2 px-8 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 active:scale-95 transition-all duration-200 shadow-md"
-                  onClick={() => setShowSuccessPopup(false)}
-                >
-                  OK
-                </button>
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {/* Error Popup */}
-        {showErrorPopup && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-90 p-4 backdrop-blur-3xl"
-            onClick={() => setShowErrorPopup(false)}
-          >
-            <div
-              className="relative flex flex-col items-center gap-4 rounded-2xl bg-white p-8 shadow-2xl transform animate-in fade-in zoom-in duration-300"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500">
-                <svg
-                  className="h-8 w-8 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={3}
-                    d="M6 18 18 6M6 6l12 12"
-                  />
-                </svg>
-              </div>
-              <div className="text-center">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Error!
-                </h3>
-                <p className="text-gray-600">Something went wrong!</p>
-              </div>
-              <Link href="/student/dashboard">
-                <button
-                  className="mt-2 px-8 py-3 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 active:scale-95 transition-all duration-200 shadow-md"
-                  onClick={() => setShowErrorPopup(false)}
-                >
-                  OK
-                </button>
-              </Link>
-            </div>
-          </div>
-        )}
-
       </Card>
+
+      {showSuccessPopup && (
+        <SuccessPopup
+          onClose={() => setShowSuccessPopup(false)}
+          message="Form submitted successfully!"
+          link={{ href: "/student/dashboard", text: "OK" }}
+        />
+      )}
+
+      {showErrorPopup && (
+        <ErrorPopup
+          onClose={() => setShowErrorPopup(false)}
+          message={errorMessage}
+        />
+      )}
     </div>
   );
 };

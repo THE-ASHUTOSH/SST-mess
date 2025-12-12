@@ -58,7 +58,6 @@ export const generateQR = async (req, res) => {
     }
 
     await selection.populate("vendor");
-    console.log("qr generated for " + req.user.name + " for vendor " + selection.vendor.name);
     if(selection.vendor.mealsOptions && !selection.vendor.mealsOptions[mealType]==true){
       return res
         .status(403)
@@ -87,6 +86,8 @@ export const generateQR = async (req, res) => {
       expiresIn: "15m",
     });
     res.status(200).json({ token });
+    console.log("qr generated for " + req.user.name + " for vendor " + selection.vendor.name);
+
   } catch (error) {
     console.error("Error generating QR code:", error);
     res.status(500).json({ message: "Internal server error" });

@@ -136,7 +136,7 @@ router.get(
       token,
       expiresAt: Date.now() + 60 * 1000  // 60 seconds
     });
-
+    console.log("User logged in:", req.user.email);
     res.redirect(`${process.env.CLIENT_URL}/auth/callback?code=${authCode}`);  }
 );
 

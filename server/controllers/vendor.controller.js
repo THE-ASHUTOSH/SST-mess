@@ -50,6 +50,7 @@ async function getVendors(req, res) {
 }
 
 async function addVendor(req, res) {
+  console.log("Vendor addition triggered by user:", req.user.email);
   const { name, description, price, menuUrl, mealsOptions } = req.body;
 
   if (!name || !price) {
@@ -98,6 +99,7 @@ async function addVendor(req, res) {
   }
 
 async function updateVendor(req, res) {
+  console.log("Vendor update triggered by user:", req.user.email);
   const { id } = req.params;
   const { name, description, price, menuUrl, mealsOptions } = req.body;
 

@@ -5,6 +5,7 @@ import VendorSelection from "../models/vendorselectform.model.js";
 import fs from "fs";
 
 const uploadVendorSelection = async (req, res) => {
+    console.log("Menu Upload triggered by user:", req.user.email);
     try {
         const { month } = req.body;
         const file = req.file;

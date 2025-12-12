@@ -6,13 +6,21 @@ import { isAxiosError } from 'axios';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import LoadingAnimation from '@/components/common/LoadingAnimation';
+import SuccessPopup from '@/components/common/SuccessPopup';
+import ErrorPopup from '@/components/common/ErrorPopup';
 
 const UploadVendorSelectionPage = () => {
     const [month, setMonth] = useState('');
     const [file, setFile] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState<string | null>(null);
+    const [showErrorPopup, setShowErrorPopup] = useState(false);
+    const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [uploadResult, setUploadResult] = useState<{
+        newEntries: number;
+        duplicates: number;
+        issues: [];
+    } | null>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -22,14 +30,14 @@ const UploadVendorSelectionPage = () => {
 
     const handleUpload = async () => {
         if (!month || !file) {
-            setError('Please select a month and a file.');
+            setErrorMessage('Please select a month and a file.');
+            setShowErrorPopup(true);
             return;
         }
 
         try {
             setIsSubmitting(true);
-            setError(null);
-            setSuccess(null);
+            setUploadResult(null);
 
             const formData = new FormData();
             formData.append('month', month);
@@ -45,10 +53,16 @@ const UploadVendorSelectionPage = () => {
                 }
             );
 
-            setSuccess(response.data.message);
+            setUploadResult({
+                newEntries: response.data.newEntries,
+                duplicates: response.data.duplicates,
+                issues: response.data.issues,
+            });
+            setShowSuccessPopup(true);
             console.log("response",response.data);
         } catch (err) {
-            setError('Failed to upload vendor selection.');
+            setErrorMessage('Failed to upload vendor selection.');
+            setShowErrorPopup(true);
             console.error(err);
         } finally {
             setIsSubmitting(false);
@@ -69,8 +83,6 @@ const UploadVendorSelectionPage = () => {
                         </div>
                     ) : (
                         <div className="space-y-6">
-                            {error && <div className="text-center text-red-400">{error}</div>}
-                            {success && <div className="text-center text-green-400">{success}</div>}
                             <div className="space-y-2">
                                 <label htmlFor="month" className="text-sm font-medium text-gray-200">
                                     Month
@@ -107,6 +119,34 @@ const UploadVendorSelectionPage = () => {
                     )}
                 </div>
             </Card>
+            {showSuccessPopup && uploadResult && (
+                <SuccessPopup
+                    onClose={() => setShowSuccessPopup(false)}
+                    message="File uploaded successfully!"
+                    details={
+                        <div className="text-left mt-4">
+                            <p className="text-gray-600">New Entries: {uploadResult.newEntries}</p>
+                            <p className="text-gray-600">Duplicates: {uploadResult.duplicates}</p>
+                            {uploadResult.issues && uploadResult.issues.length > 0 && (
+                                <div>
+                                    <p className="text-gray-600">Issues:</p>
+                                    <ul className="list-disc list-inside text-red-500">
+                                        {uploadResult.issues.map((issue, index) => (
+                                            <li key={index}>{JSON.stringify(issue)}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    }
+                />
+            )}
+            {showErrorPopup && (
+                <ErrorPopup
+                    onClose={() => setShowErrorPopup(false)}
+                    message={errorMessage}
+                />
+            )}
         </div>
     );
 };

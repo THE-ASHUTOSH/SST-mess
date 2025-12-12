@@ -1,6 +1,5 @@
 "use client";
-import axiosInstance from '@/lib/axiosInstance';
-import { isAxiosError } from 'axios';
+import { getUserFromToken } from '@/lib/auth';
 import React, { createContext, useState, useEffect, useContext } from "react";
 
 type User = {
@@ -28,25 +27,19 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User>(null);
   const [loading, setLoading] = useState(true);
 useEffect(() => {
-  let mounted = true;
-
-  const verify = async () => {
-    try {
-      const res = await axiosInstance.get(`/auth/verifyanddetails`);
-
-      if (!mounted) return;
-
-      setUser(res.data.user ?? res.data);
-    } catch {
-      if (mounted) setUser(null);
-    } finally {
-      if (mounted) setLoading(false);
+    // Get user data directly from JWT payload
+    // The role in the JWT is cryptographically signed and cannot be tampered with
+    // Even if someone modifies it client-side, the backend will reject the request
+    const tokenUser = getUserFromToken();
+    
+    if (tokenUser) {
+      setUser(tokenUser);
+    } else {
+      setUser(null);
     }
-  };
-
-  verify();
-  return () => { mounted = false };
-}, []);
+    
+    setLoading(false);
+  }, []);
 
 
   return (

@@ -21,21 +21,20 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
+const corsOrigins = process.env.NODE_ENV === 'production'
+    ? [process.env.CLIENT_URL].filter(Boolean)
+    : ["http://localhost:3000", "http://127.0.0.1:3000", process.env.CLIENT_URL].filter(Boolean);
 app.use(
     cors({
-        origin: [
-            "http://localhost:3000",
-            "http://127.0.0.1:3000",
-            process.env.CLIENT_URL,
-        ],
+        origin: corsOrigins,
         credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE","PATCH"],
         allowedHeaders: ["Content-Type", "Authorization"],
     })
 );
 // Health route
-app.get("/heathcheck", (req, res) => {
-    res.send("Healthy");
+app.get("/healthcheck", (req, res) => {
+    res.send("Healthy"); 
 });
 
 // app.use(apiLimiter);

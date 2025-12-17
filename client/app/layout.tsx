@@ -31,7 +31,7 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gradient-to-br from-gray-900 via-[#1a1c2e] to-gray-950 text-white flex flex-col min-h-screen`}
         >
 
-          {children}
+          <h1 className="p-6 font-extrabold text-5xl">Under maintenance</h1>
         </body>
       </UserProvider>
     </html>

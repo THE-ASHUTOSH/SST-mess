@@ -35,7 +35,7 @@ const VendorDetail = () => {
   useEffect(() => {
     async function loadVendors() {
       try {
-        const response = await axiosInstance.get(`/vendor/getVendors`);
+        const response = await axiosInstance.get(`/api/vendor/getVendors`);
         setVendors(response.data.vendor);
       } catch (err) {
         // console.error("Failed to fetch vendors:", err);

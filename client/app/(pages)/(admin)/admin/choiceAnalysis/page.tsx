@@ -34,7 +34,7 @@ const ChoiceAnalysis = () => {
     const fetchChoiceData = async () => {
       setLoading(true);
       try {
-        const res = await axiosInstance.post(`/vendor/getChoiceAnalysis`, { month, year });
+        const res = await axiosInstance.post(`/api/vendor/choice-analysis`, { month, year });
         setChoiceData(res.data.data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "An unknown error occurred");
@@ -75,13 +75,13 @@ const ChoiceAnalysis = () => {
   const RADIAN = Math.PI / 180;
   const renderCustomizedLabel = (props: PieLabelRenderProps) => {
     const {
-        cx = 0,
-        cy = 0,
-        midAngle = 0,
-        innerRadius = 0,
-        outerRadius = 0,
-        percent = 0,
-        value = 0
+      cx = 0,
+      cy = 0,
+      midAngle = 0,
+      innerRadius = 0,
+      outerRadius = 0,
+      percent = 0,
+      value = 0
     } = props;
 
     if (!cx || !cy) return null;
@@ -109,7 +109,7 @@ const ChoiceAnalysis = () => {
             {Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - 3 + i).map(y => <option key={y} value={y}>{y}</option>)}
           </select>
           <select value={month} onChange={(e) => setMonth(parseInt(e.target.value))} className="bg-gray-800 text-white p-2 rounded">
-            {Array.from({ length: 12 }, (_, i) => i + 1).map(m => <option key={m} value={m}>{new Date(0, m-1).toLocaleString('default', { month: 'long' })}</option>)}
+            {Array.from({ length: 12 }, (_, i) => i + 1).map(m => <option key={m} value={m}>{new Date(0, m - 1).toLocaleString('default', { month: 'long' })}</option>)}
           </select>
         </div>
 
@@ -142,7 +142,7 @@ const ChoiceAnalysis = () => {
                       color: 'white',
                     }}
                   />
-                  <Legend wrapperStyle={{ color: '#E2E8F0' }}/>
+                  <Legend wrapperStyle={{ color: '#E2E8F0' }} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (

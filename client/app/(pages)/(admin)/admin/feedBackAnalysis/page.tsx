@@ -41,7 +41,7 @@ const FeedbackAnalysis = () => {
   useEffect(() => {
     const fetchFeedbackData = async () => {
       try {
-        const res = await axiosInstance.get(`/vendor/getFeedbackAnalysis`);
+        const res = await axiosInstance.get(`/api/vendor/feedback-analysis`);
         setFeedbackData(res.data.data || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : "An unknown error occurred");
@@ -162,12 +162,12 @@ const FeedbackAnalysis = () => {
                     <XAxis dataKey="name" tick={{ fill: '#E2E8F0' }} />
                     <YAxis tick={{ fill: '#E2E8F0' }} />
                     <Tooltip contentStyle={{ backgroundColor: 'rgba(31, 41, 55, 0.8)', borderColor: '#4A5568', color: '#E2E8F0' }} />
-                    <Legend wrapperStyle={{ color: '#E2E8F0' }}/>
+                    <Legend wrapperStyle={{ color: '#E2E8F0' }} />
                     <Bar dataKey="averageRating" fill="url(#colorRating)" />
                     <defs>
                       <linearGradient id="colorRating" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#82ca9d" stopOpacity={0.2}/>
+                        <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#82ca9d" stopOpacity={0.2} />
                       </linearGradient>
                     </defs>
                   </BarChart>

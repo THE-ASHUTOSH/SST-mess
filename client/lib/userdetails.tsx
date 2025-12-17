@@ -3,7 +3,7 @@ import { isAxiosError } from "axios";
 
 async function UserDetails() {
     try {
-        const response = await axiosInstance.get(`/auth/details`);
+        const response = await axiosInstance.get(`/api/user/me`);
         return response.data;
     } catch (err) {
         if (isAxiosError(err) && err.response?.status === 401) {

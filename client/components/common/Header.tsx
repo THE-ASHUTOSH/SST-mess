@@ -1,9 +1,9 @@
 "use client"
 import React, { useState } from 'react'
-import axiosInstance from '@/lib/axiosInstance'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useUser } from '@/context/UserContext'
+import { SignOutButton } from "@clerk/nextjs"
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -13,18 +13,6 @@ const Header = () => {
   const { user, setUser } = useUser();
   const router = useRouter();
 
-  async function handleLogout() {
-    try {
-      await axiosInstance.post(`/auth/logout`);
-      document.cookie = "token=; path=/; max-age=0; SameSite=None; Secure;";
-      localStorage.clear();
-    } catch (err) {
-      console.error('Logout error', err);
-    }
-    // Clear client-side state and redirect to login
-    setUser(null);
-    router.push('/login');
-  }
 
   return (
     <header className="bg-gray-900/90 backdrop-blur-md border-b border-gray-800/50 shadow-lg sticky top-0 z-50">
@@ -41,7 +29,7 @@ const Header = () => {
           {/* Auth Buttons - Desktop */}
           <div className="hidden md:flex items-center gap-4">
             {!user ? (
-              <Link href="/login" 
+              <Link href="/login"
                 className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-purple-500 hover:to-blue-500 text-white font-medium py-2 px-6 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 hover:-translate-y-0.5">
                 Login
               </Link>
@@ -54,9 +42,13 @@ const Header = () => {
                 </Link>
 
                 {/* Logout button */}
-                <button onClick={handleLogout} className="px-3 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white text-sm">
-                  Logout
-                </button>
+                <SignOutButton redirectUrl='/login'>
+                  <button
+                    onClick={() => setUser(null)}
+                    className="px-3 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white text-sm">
+                    Logout
+                  </button>
+                </SignOutButton>
               </div>
             )}
           </div>
@@ -104,21 +96,23 @@ const Header = () => {
                     Dashboard
                   </Link>
 
-                  <button
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      handleLogout();
-                    }}
-                    className="block w-full text-center px-4 py-2 rounded-lg bg-red-600 text-white"
-                  >
-                    Logout
-                  </button>
+                  <SignOutButton redirectUrl='/login'>
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setUser(null);
+                      }}
+                      className="block w-full text-center px-4 py-2 rounded-lg bg-red-600 text-white"
+                    >
+                      Logout
+                    </button>
+                  </SignOutButton>
                 </div>
               </>
             ) : (
               <div className="mt-6 pt-4 border-t border-gray-700/50 space-y-2">
-                <Link href="/login" 
-                  className="block w-full text-center px-4 py-2 rounded-lg text-base font-medium text-white bg-gradient-to-r from-blue-500 to-purple-500 hover:from-purple-500 hover:to-blue-500 transition-all duration-300 hover:shadow-md hover:shadow-purple-500/20" 
+                <Link href="/login"
+                  className="block w-full text-center px-4 py-2 rounded-lg text-base font-medium text-white bg-gradient-to-r from-blue-500 to-purple-500 hover:from-purple-500 hover:to-blue-500 transition-all duration-300 hover:shadow-md hover:shadow-purple-500/20"
                   onClick={() => setIsMenuOpen(false)}>
                   Login
                 </Link>

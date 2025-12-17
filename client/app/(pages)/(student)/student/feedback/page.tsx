@@ -27,7 +27,7 @@ interface Ratings {
 }
 
 const Feedback = () => {
-  const { latestSelection, isFeedbackEnabled,loading } = useDashboard();
+  const { latestSelection, isFeedbackEnabled, loading } = useDashboard();
   const [ratings, setRatings] = useState<Ratings>({
     hygiene: 0,
     quantity: 0,
@@ -64,7 +64,7 @@ const Feedback = () => {
     setIsSubmitting(true);
 
     try {
-      await axiosInstance.post("/vendor/vendorFeedbackForm", {
+      await axiosInstance.post("/api/vendor/vendorFeedbackForm", {
         vendor: latestSelection.vendor._id,
         ratings,
         feedback: feedback.trim(),
@@ -145,10 +145,10 @@ const Feedback = () => {
 
             <button
               type="submit"
-              disabled={!isFormComplete || isSubmitting|| !isFeedbackEnabled}
+              disabled={!isFormComplete || isSubmitting || !isFeedbackEnabled}
               className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-300 flex items-center justify-center ${isFormComplete && !isSubmitting
-                  ? "bg-gradient-to-r from-blue-500 to-purple-500 hover:from-purple-500 hover:to-blue-500 text-white hover:shadow-lg hover:shadow-purple-500/20 hover:-translate-y-0.5"
-                  : "bg-gray-700 text-gray-400 cursor-not-allowed"
+                ? "bg-gradient-to-r from-blue-500 to-purple-500 hover:from-purple-500 hover:to-blue-500 text-white hover:shadow-lg hover:shadow-purple-500/20 hover:-translate-y-0.5"
+                : "bg-gray-700 text-gray-400 cursor-not-allowed"
                 }`}
             >
               {isSubmitting ? <LoadingSpinner /> : "Submit Feedback"}
@@ -188,8 +188,8 @@ const StarRating = ({
           key={value}
           type="button"
           className={`transform transition-all duration-300 hover:scale-110 focus:outline-none ${(hoverRating || rating) >= value
-              ? "text-yellow-400"
-              : "text-gray-600"
+            ? "text-yellow-400"
+            : "text-gray-600"
             }`}
           onClick={() => onRatingChange(value)}
           onMouseEnter={() => onHoverChange(value)}

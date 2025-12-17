@@ -46,7 +46,7 @@ const UpdateVendorMenu = () => {
   useEffect(() => {
     async function loadVendors() {
       try {
-        const response = await axiosInstance.get(`/vendor/getVendors`);
+        const response = await axiosInstance.get(`/api/vendor/getVendors`);
         setVendors(response.data.vendor);
       } catch (err) {
         // console.log(err);
@@ -116,7 +116,7 @@ const UpdateVendorMenu = () => {
         requestBody.append('menuFile', menuFile);
       }
 
-      await axiosInstance.put(`/vendor/updateVendor/${selectedVendor}`, requestBody);
+      await axiosInstance.put(`/api/vendor/updateVendor/${selectedVendor}`, requestBody);
 
       setShowSuccessPopup(true);
     } catch (error) {

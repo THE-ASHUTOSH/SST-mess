@@ -31,7 +31,7 @@ const VerifyStudentQRPage = () => {
   useEffect(() => {
     const fetchVendors = async () => {
       try {
-        const response = await axiosInstance.get(`/vendor/getVendors`);
+        const response = await axiosInstance.get(`/api/vendor/getVendors`);
         if (Array.isArray(response.data.vendor)) {
           // setVendors(response.data.vendor);
           const fetchedVendors: Vendor[] = response.data.vendor;
@@ -90,7 +90,7 @@ const VerifyStudentQRPage = () => {
           rememberLastUsedCamera: true,
           supportedScanTypes: [],
           videoConstraints: {
-            facingMode: 'environment' 
+            facingMode: 'environment'
           }
         },
         false
@@ -125,7 +125,7 @@ const VerifyStudentQRPage = () => {
     try {
       // const response = await axiosInstance.post(`/meal/verify-qr`, { token, vendorId: selectedVendor });
       const vendorIds = selectedVendor.includes(',') ? selectedVendor.split(',') : [selectedVendor];
-      const response = await axiosInstance.post(`/meal/verify-qr`, { token, vendorId: vendorIds });
+      const response = await axiosInstance.post(`/api/meal/verify-qr`, { token, vendorId: vendorIds });
       // console.log('Meal verified:', response.data);
       setMessage(`Meal verified for ${response.data.user.name}.`);
       setVerifiedUser(response.data.user);
@@ -150,7 +150,7 @@ const VerifyStudentQRPage = () => {
   return (
     <div className="p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-center">
       <h1 className="text-4xl font-extrabold text-center mb-10 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-indigo-400 tracking-tight transform hover:scale-105 transition-transform duration-300">Verify Student QR</h1>
-      
+
       <div className="mb-4 w-full max-w-sm">
         <label htmlFor="vendor-select" className="block text-sm font-medium text-gray-700 mb-2">Select Vendor</label>
         <select
@@ -171,20 +171,20 @@ const VerifyStudentQRPage = () => {
         <div className="w-full max-w-sm" style={{ minHeight: '300px' }}>
           <div id={scannerContainerId} style={{ display: isProcessing ? 'none' : 'block' }}></div>
           {isProcessing && (
-              <div className="flex flex-col items-center justify-center h-full mt-4">
-                  {verifiedUser ? (
-                    <div className="text-center">
-                      <img src={verifiedUser.picture} alt={verifiedUser.name} className="w-32 h-32 mx-auto mb-4 border-4 border-purple-500" referrerPolicy='no-referrer'/>
-                      <p className="text-green-500 text-xl">{message}</p>
-                    </div>
-                  ) : (
-                    <>
-                      {message && <p className="text-green-500 text-xl text-center">{message}</p>}
-                      {error && <p className="text-red-500 text-xl text-center">{error}</p>}
-                      {!message && !error && <LoadingAnimation />}
-                    </>
-                  )}
-              </div>
+            <div className="flex flex-col items-center justify-center h-full mt-4">
+              {verifiedUser ? (
+                <div className="text-center">
+                  <img src={verifiedUser.picture} alt={verifiedUser.name} className="w-32 h-32 mx-auto mb-4 border-4 border-purple-500" referrerPolicy='no-referrer' />
+                  <p className="text-green-500 text-xl">{message}</p>
+                </div>
+              ) : (
+                <>
+                  {message && <p className="text-green-500 text-xl text-center">{message}</p>}
+                  {error && <p className="text-red-500 text-xl text-center">{error}</p>}
+                  {!message && !error && <LoadingAnimation />}
+                </>
+              )}
+            </div>
           )}
         </div>
       )}

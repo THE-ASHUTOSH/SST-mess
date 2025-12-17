@@ -33,7 +33,7 @@ const GetFoodPage = () => {
   useEffect(() => {
     const fetchQrCode = async () => {
       try {
-        const response = await axiosInstance.get(`/meal/generate-qr`);
+        const response = await axiosInstance.get(`/api/meal/generate-qr`);
         setToken(response.data.token);
       } catch (err: unknown) {
         if (isAxiosError(err) && err.response?.status === 403) {
@@ -54,7 +54,7 @@ const GetFoodPage = () => {
     if (token && !scanned) {
       interval = setInterval(async () => {
         try {
-          const response = await axiosInstance.get(`/meal/status`);
+          const response = await axiosInstance.get(`/api/meal/status`);
           if (response.data.status === 'scanned') {
             setScanned(true);
             clearInterval(interval);

@@ -31,7 +31,7 @@ const ChoiceAnalysis = () => {
   useEffect(() => {
     const fetchChoiceData = async () => {
       try {
-        const res = await axiosInstance.get(`/vendor/getChoiceAnalysis`);
+        const res = await axiosInstance.get(`/api/vendor/choice-analysis`);
         setChoiceData(res.data.data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "An unknown error occurred");
@@ -100,12 +100,12 @@ const ChoiceAnalysis = () => {
                       color: '#E2E8F0',
                     }}
                   />
-                  <Legend wrapperStyle={{ color: '#E2E8F0' }}/>
+                  <Legend wrapperStyle={{ color: '#E2E8F0' }} />
                   <Bar dataKey="count" fill="url(#colorUv)" />
                   <defs>
                     <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#8884d8" stopOpacity={0.2}/>
+                      <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#8884d8" stopOpacity={0.2} />
                     </linearGradient>
                   </defs>
                 </BarChart>

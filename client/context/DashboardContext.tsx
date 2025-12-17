@@ -57,7 +57,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const fetchLatestSelection = async () => {
       try {
-        const response = await axiosInstance.get(`/user/latest-vendor`);
+        const response = await axiosInstance.get(`/api/user/latest-vendor`);
         setLatestSelection(response.data.latestSelection);
       } catch (error) {
         // console.error('Error fetching latest vendor selection:', error);
@@ -68,7 +68,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
 
     const fetchFeedbackStatus = async () => {
       try {
-        const response = await axiosInstance.get(`/controls/feedback-toggle`);
+        const response = await axiosInstance.get(`/api/controls/feedback-toggle`);
         setIsFeedbackEnabled(response.data.enabled);
       } catch (error) {
         // console.error('Error fetching feedback status:', error);

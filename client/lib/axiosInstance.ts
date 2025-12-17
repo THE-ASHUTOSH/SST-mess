@@ -1,19 +1,23 @@
 import axios from 'axios';
-import { getToken } from './auth';
 
 const axiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: '', // Empty string means same origin (relative path) for Next.js API routes
 });
 
 axiosInstance.interceptors.request.use(
-  (config) => {
-    const token = getToken();
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
+  async (config) => {
+    // Try to get token from Clerk if available on window
+    if (typeof window !== 'undefined' && (window as any).Clerk) {
+      try {
+        const token = await (window as any).Clerk.session?.getToken();
+        if (token) {
+          config.headers['Authorization'] = `Bearer ${token}`;
+        }
+      } catch (e) {
+        console.error("Error getting Clerk token in axios interceptor", e);
+      }
     }
+
     config.withCredentials = true;
     return config;
   },

@@ -1,13 +1,12 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
 import Image from "next/image"
 import sstlogo from '@/public/sstlogo.png'
-import LoginButton from '../../../components/features/login/LoginBtn' 
 import { useUser } from '@/context/UserContext'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
+import { SignIn } from "@clerk/nextjs"
 
 const LoginPage = () => {
   const { user, loading } = useUser();
@@ -29,12 +28,19 @@ const LoginPage = () => {
       </div>
     );
   }
-  // console.log(" Student ");
+
+  if (user) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center">
+        <div className="text-white">Redirecting...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center">
-      <Card className="w-full max-w-sm mx-4 bg-gray-950 border-0 transition-all duration-300 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] p-6">
-        <CardHeader className="space-y-6">
+      <Card className="w-full max-w-md mx-4 bg-gray-950 border-0 transition-all duration-300 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] p-6 flex flex-col items-center">
+        <CardHeader className="space-y-6 w-full flex flex-col items-center">
           <div className="w-full flex justify-center">
             <Image
               src={sstlogo}
@@ -50,16 +56,20 @@ const LoginPage = () => {
             </CardDescription>
           </div>
         </CardHeader>
-        <CardContent className="space-y-5 pt-2">
-          
-            <LoginButton />
-
-          <div className="text-sm text-center text-gray-400">
-            By continuing, you agree to our{" "}
-            <a href="#" className="text-blue-500 hover:underline">Terms of Service</a>
-            {" "}and{" "}
-            <a href="#" className="text-blue-500 hover:underline">Privacy Policy</a>
-          </div>
+        <CardContent className="w-full flex justify-center pt-2">
+          <SignIn
+            appearance={{
+              elements: {
+                rootBox: "w-full",
+                card: "bg-transparent shadow-none border-0 ",
+                headerTitle: "hidden",
+                headerSubtitle: "hidden",
+                socialButtonsBlockButton: "bg-white text-black hover:bg-gray-200",
+                formButtonPrimary: "bg-blue-600 hover:bg-blue-700",
+                footerActionLink: "text-blue-400 hover:text-blue-300"
+              }
+            }}
+          />
         </CardContent>
       </Card>
     </div>

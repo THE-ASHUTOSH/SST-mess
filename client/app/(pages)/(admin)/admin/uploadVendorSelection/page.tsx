@@ -44,7 +44,7 @@ const UploadVendorSelectionPage = () => {
             formData.append('vendor-selection', file);
 
             const response = await axiosInstance.post(
-                `/admin/upload-vendor-selection`,
+                `/api/admin/upload-vendor-selection`,
                 formData,
                 {
                     headers: {
@@ -59,7 +59,7 @@ const UploadVendorSelectionPage = () => {
                 issues: response.data.issues,
             });
             setShowSuccessPopup(true);
-            console.log("response",response.data);
+            console.log("response", response.data);
         } catch (err) {
             setErrorMessage('Failed to upload vendor selection.');
             setShowErrorPopup(true);

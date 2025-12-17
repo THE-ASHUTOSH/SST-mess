@@ -64,7 +64,7 @@ const AddVendor = () => {
         requestBody.append('menuFile', menuFile);
       }
 
-      await axiosInstance.post(`/vendor/addVendor`, requestBody);
+      await axiosInstance.post(`/api/vendor/addVendor`, requestBody);
 
       setShowSuccessPopup(true);
     } catch (error) {

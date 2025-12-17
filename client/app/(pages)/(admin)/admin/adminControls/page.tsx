@@ -16,7 +16,7 @@ const AdminControlsPage = () => {
         const fetchFeedbackStatus = async () => {
             try {
                 setIsLoading(true);
-                const response = await axiosInstance.get(`/controls/feedback-toggle`);
+                const response = await axiosInstance.get(`/api/controls/feedback-toggle`);
                 setFeedbackEnabled(response.data.enabled);
             } catch (err) {
                 setError('Failed to fetch feedback status.');
@@ -32,7 +32,7 @@ const AdminControlsPage = () => {
     const handleToggleFeedback = async () => {
         try {
             setIsSubmitting(true);
-            const response = await axiosInstance.patch(`/controls/feedback-toggle`, {});
+            const response = await axiosInstance.patch(`/api/controls/feedback-toggle`, {});
             setFeedbackEnabled(response.data.enabled);
         } catch (err) {
             setError('Failed to toggle feedback status.');

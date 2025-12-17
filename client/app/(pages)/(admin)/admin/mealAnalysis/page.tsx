@@ -173,7 +173,7 @@ const MealAnalysisPage = () => {
               )}
               {/* Display loading, error, or no data message within this card content */}
               {(!mealAnalysis && !loading && !error && !dateToFetch) && (
-                <p className="text-gray-400">Select a date and click 'Check' to view meal analysis.</p>
+                <p className="text-gray-400">Select a date and click &apos;Check&apos; to view meal analysis.</p>
               )}
           </CardContent>
         </Card>

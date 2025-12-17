@@ -212,9 +212,86 @@ export const verifyQR = async (req, res) => {
     if (error.name === "JsonWebTokenError") {
       return res.status(401).json({ message: "Invalid QR code." });
     }
-    if (error.name === "TokenExpiredError") {
-      return res.status(401).json({ message: "QR code has expired." });
-    }
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const getMealAnalysisByDate = async (req, res) => {
+  try {
+    const { date, vendorId } = req.query;
+    console.log("Fetching meal analysis for date:", req.query);
+
+    if (!date) {
+      return res.status(400).json({ message: "Date is required for meal analysis." });
+    }
+
+    const selectedDate = new Date(date);
+    selectedDate.setHours(0, 0, 0, 0); // Set to start of the day
+
+    const startOfDay = selectedDate;
+    const endOfDay = new Date(selectedDate);
+    endOfDay.setDate(selectedDate.getDate() + 1); // Set to start of the next day
+
+    const month = selectedDate.getMonth();
+    const year = selectedDate.getFullYear();
+    const startOfMonth = new Date(year, month, 1);
+    const endOfMonth = new Date(year, month + 1, 1);
+
+    let studentIds = [];
+    if (vendorId) {
+      const vendorSelections = await VendorSelection.find({
+        vendor: vendorId,
+        forMonth: { $gte: startOfMonth, $lt: endOfMonth },
+      }).select('user'); // Select only the user field
+
+      studentIds = vendorSelections.map(selection => selection.user);
+
+      if (studentIds.length === 0) {
+        // If no students are found for the given vendor and month, return empty counts
+        return res.status(200).json({ breakfast: 0, lunch: 0, dinner: 0 });
+      }
+    }
+
+    const matchConditions = {
+      date: {
+        $gte: startOfDay,
+        $lt: endOfDay,
+      },
+    };
+
+    if (vendorId && studentIds.length > 0) {
+      matchConditions.forUser = { $in: studentIds };
+    }
+
+    const mealCounts = await Meal.aggregate([
+      {
+        $match: matchConditions,
+      },
+      {
+        $group: {
+          _id: "$mealType",
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          mealType: "$_id",
+          count: 1,
+        },
+      },
+    ]);
+
+    const formattedCounts = { breakfast: 0, lunch: 0, dinner: 0 };
+    mealCounts.forEach(item => {
+      formattedCounts[item.mealType] = item.count;
+    });
+
+    res.status(200).json(formattedCounts);
+  } catch (error) {
+    console.error("Error fetching meal analysis by date:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+

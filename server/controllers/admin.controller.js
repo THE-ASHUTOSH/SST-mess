@@ -38,14 +38,25 @@ const uploadVendorSelection = async (req, res) => {
         const duplicates = [];
         const newEntries = [];
 
+        let email, vendorNameString, preference, hostel, batch, name;
+
+        try{
+            email = row['Email Address'];
+            vendorNameString = row['Choose your preference'];
+            preference = row['Meal Option'];
+            hostel = row['Hostel'];
+            batch = row['Batch'];
+            name = row['Name'];
+        }catch{
+            res.status(400).json({ message: "Field mapping is incorrect" });
+            console.log("Field mapping is incorrect");
+            return
+        }
+        
+
+
         for (const row of data) {
             try {
-                const email = row['Email Address'];
-                const vendorNameString = row['Please select the below options according to your preference'];
-                const preference = row['Choose your preference'];
-                const hostel = row['Hostel'];
-                const batch = row['Batch'];
-
 
                 if (!email || !vendorNameString || !preference || !hostel || !batch) {
                     issues.push({ row, error: 'Missing required fields' });
@@ -65,8 +76,8 @@ const uploadVendorSelection = async (req, res) => {
 
                 if (!user) {
                     user = new User({
-                        email: email,
-                        name: row['Full Name'],
+                        email: email.toLowerCase(),
+                        name: name,
                         batch: batch,
                         hostel: hostel,
                     });
@@ -110,6 +121,7 @@ const uploadVendorSelection = async (req, res) => {
         console.log(duplicates.length + " duplicates found.");
         console.log(issues.length + " issues found.");
         console.log(newEntries.length + " new entries added.");
+        console.log("ERRORS:", issues);
         console.log("By User : " + req.user.email);
         res.status(200).json({
             message: "Vendor selection upload processed.",
@@ -119,12 +131,12 @@ const uploadVendorSelection = async (req, res) => {
         });
     } catch (error) {
         console.error("Error uploading vendor selection:", error);
-        if (req.file) {
-            fs.unlinkSync(req.file.path);
-        }
         res.status(500).json({ message: "Internal server error" });
     }finally{
         console.log("Upload vendor selection process completed.");
+        if (req.file) {
+            fs.unlinkSync(req.file.path);
+        }
     }
 };
 

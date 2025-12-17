@@ -27,6 +27,9 @@ const Dashboard = () => {
         <EventCard title="Upload Vendor Selection" redirectUrl="/admin/uploadVendorSelection">
             <p>Upload the vendor selection for the month</p>
         </EventCard>
+        <EventCard title="Meal Analysis" redirectUrl="/admin/mealAnalysis">
+            <p>Analyze the meal choices made by students</p>
+        </EventCard>
     
       </div>
     </div>

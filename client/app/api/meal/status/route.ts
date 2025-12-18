@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import connectDB from '@/lib/db';
-import Meal from '@/lib/models/meal.model';
+import { db } from '@/lib/db';
+import { meals } from '@/lib/db/schema';
 import { getDbUser } from '@/lib/auth-helper';
+import { and, eq, gte, lt } from 'drizzle-orm';
 
 export async function GET() {
     try {
@@ -10,13 +11,11 @@ export async function GET() {
             return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         }
 
-        await connectDB();
-
         const nowtime = new Date();
         const istTime = new Date(nowtime.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
         const indianHours = istTime.getHours();
 
-        let mealType;
+        let mealType: 'breakfast' | 'lunch' | 'dinner';
         if (indianHours >= 7 && indianHours < 10) {
             mealType = "breakfast";
         } else if (indianHours >= 12 && indianHours < 15) {
@@ -30,10 +29,13 @@ export async function GET() {
         const startOfDay = new Date(nowtime.getFullYear(), nowtime.getMonth(), nowtime.getDate());
         const endOfDay = new Date(nowtime.getFullYear(), nowtime.getMonth(), nowtime.getDate() + 1);
 
-        const meal = await Meal.findOne({
-            forUser: user._id,
-            mealType,
-            date: { $gte: startOfDay, $lt: endOfDay },
+        const meal = await db.query.meals.findFirst({
+            where: and(
+                eq(meals.forUserId, user.id),
+                eq(meals.mealType, mealType),
+                gte(meals.date, startOfDay),
+                lt(meals.date, endOfDay)
+            )
         });
 
         if (meal) {

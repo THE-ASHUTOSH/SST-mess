@@ -1,17 +1,18 @@
 import { currentUser } from "@clerk/nextjs/server";
-import connectDB from "./db";
-import User from "./models/user.model";
+import { db } from "./db";
+import { users } from "./db/schema";
+import { eq } from "drizzle-orm";
 
-// Define the User interface based on your Mongoose model
-interface IUser {
-    _id: string;
+// Define the User interface based on the SQL schema
+export interface IUser {
+    id: number;
     email: string;
-    role: 'admin' | 'student' | 'vendor';
+    role: 'admin' | 'student' | 'vendor'; // or string if relying on raw string
     name: string;
-    picture?: string;
-    roll?: string;
-    hostel?: string;
-    batch?: string;
+    picture?: string | null;
+    roll?: string | null;
+    hostel?: string | null;
+    batch?: string | null;
 }
 
 export async function getDbUser(): Promise<IUser | null> {
@@ -27,26 +28,21 @@ export async function getDbUser(): Promise<IUser | null> {
         return null;
     }
 
-    await connectDB();
+    const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
-    const user = await User.findOne({ email }).lean();
-
-    // If user doesn't exist in DB, we might want to create them or return null
-    // Ideally we should sync them on login/signup webhooks, but for now we can create on the fly or just return null
-    // Based on legacy auth.route.js, it was creating users on google callback.
-    // So let's auto-create if missing to maintain that behavior.
-
+    // If user doesn't exist in DB, create new one
     if (!user) {
-        const newUser = new User({
+        const [newUser] = await db.insert(users).values({
             email,
             name: `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || 'User',
             picture: clerkUser.imageUrl,
-            role: 'student', // Default role
-        });
-        await newUser.save();
-        return newUser.toObject();
+            role: 'student',
+        }).returning();
+
+        // Cast or map to IUser. Drizzle type should match mostly, but null vs undefined handling might be needed
+        return newUser as unknown as IUser;
     }
-    // console.log("DB User fetched:", user as unknown as IUser);
+
     return user as unknown as IUser;
 }
 
@@ -57,7 +53,7 @@ export async function requireRole(allowedRoles: string[]) {
         throw new Error("Unauthorized");
     }
 
-    if (!allowedRoles.includes(user.role)) {
+    if (!allowedRoles.includes(user.role || 'student')) {
         throw new Error("Forbidden");
     }
 

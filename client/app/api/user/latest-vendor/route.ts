@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import connectDB from '@/lib/db';
-import VendorSelection from '@/lib/models/vendorselectform.model';
+import { db } from '@/lib/db';
+import { vendorSelections } from '@/lib/db/schema';
 import { getDbUser } from '@/lib/auth-helper';
-import Vendor from '@/lib/models/vendor.model';
+import { and, eq, gte, lte, desc } from 'drizzle-orm';
 
 export async function GET() {
     try {
@@ -11,21 +11,21 @@ export async function GET() {
             return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         }
 
-        await connectDB();
-
         const today = new Date();
         const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
         const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
-        // console.log("Fetching latest vendor selection for user:", user._id);
-
-        const latestSelection = await VendorSelection.findOne({
-            user: user._id,
-            forMonth: {
-                $gte: startOfMonth,
-                $lte: endOfMonth,
-            },
-        }).sort({ createdAt: -1 }).populate({ path: 'vendor', model: Vendor });
+        const latestSelection = await db.query.vendorSelections.findFirst({
+            where: and(
+                eq(vendorSelections.userId, user.id),
+                gte(vendorSelections.forMonth, startOfMonth),
+                lte(vendorSelections.forMonth, endOfMonth)
+            ),
+            orderBy: [desc(vendorSelections.createdAt)],
+            with: {
+                vendor: true
+            }
+        });
 
         if (!latestSelection) {
             return NextResponse.json({ message: "No vendor selection found" }, { status: 404 });

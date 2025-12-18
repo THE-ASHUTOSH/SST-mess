@@ -1,30 +1,31 @@
 import { NextResponse } from 'next/server';
-import connectDB from '@/lib/db';
-import Vendor from '@/lib/models/vendor.model';
-import VendorFeedback from '@/lib/models/vendorfeedbackform.model';
+import { db } from '@/lib/db';
+// import { vendors, vendorFeedbacks } from '@/lib/db/schema'; // Not needed if using query builder
 import { requireRole } from '@/lib/auth-helper';
 
 export async function GET() {
     try {
         await requireRole(['admin']);
-        await connectDB();
 
-        const vendors = await Vendor.find().lean();
-        const feedback = await VendorFeedback.find().populate({ path: "vendor", model: Vendor }).lean();
-
-        const data = feedback.map((feed: any) => {
-            if (!feed.vendor) {
-                return { ...feed, vendor: null };
+        const feedback = await db.query.vendorFeedbacks.findMany({
+            with: {
+                vendor: true
             }
-
-            const vendor = vendors.find(
-                (v: any) => v._id.toString() === feed.vendor._id.toString()
-            );
-
-            return { ...feed, vendor };
         });
 
-        return NextResponse.json({ success: true, data });
+        // The original code returned a slightly manipulated structure (data = feedback where vendor is populated).
+        // Drizzle returns exactly that if relation exists.
+        // However, the original code had a manual mapping:
+        /*
+        feedback.map(feed => {
+             if (!feed.vendor) return { ...feed, vendor: null };
+             ... find vendor ...
+             return { ...feed, vendor };
+        })
+        */
+        // Drizzle already nests it. So `feedback` array contains objects like { ..., vendor: { ... } }.
+
+        return NextResponse.json({ success: true, data: feedback });
     } catch (err: any) {
         if (err.message === "Unauthorized") return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         if (err.message === "Forbidden") return NextResponse.json({ message: "Forbidden" }, { status: 403 });

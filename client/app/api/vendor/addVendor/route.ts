@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import connectDB from '@/lib/db';
-import Vendor from '@/lib/models/vendor.model';
-import Menu from '@/lib/models/menu.model';
+import { db } from '@/lib/db';
+import { vendors, menus } from '@/lib/db/schema';
 import { requireRole } from '@/lib/auth-helper';
 import generateMenu from '@/lib/utils/generateMenu';
 
@@ -22,38 +21,32 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "All fields are required" }, { status: 400 });
         }
 
-        await connectDB();
-
         const parsedMealsOptions = mealsOptions ? JSON.parse(mealsOptions) : undefined;
 
-        const newVendor = new Vendor({
+        const [newVendor] = await db.insert(vendors).values({
             name,
             description,
             price: Number(price),
             menuUrl,
-            mealsOptions: parsedMealsOptions,
-        });
+            breakfast: parsedMealsOptions?.breakfast,
+            lunch: parsedMealsOptions?.lunch,
+            dinner: parsedMealsOptions?.dinner,
+        }).returning();
 
-        let menuId = null;
         try {
             if (menuFile) {
                 const buffer = Buffer.from(await menuFile.arrayBuffer());
                 const csvContent = buffer.toString('utf-8');
                 const menuData = generateMenu(csvContent);
 
-                const newMenu = new Menu({
+                await db.insert(menus).values({
                     ...menuData,
-                    vendor: newVendor._id,
+                    vendorId: newVendor.id,
                 });
-                await newMenu.save();
-                menuId = newMenu._id;
             }
         } catch (menuError) {
             return NextResponse.json({ message: "Error processing menu file", menuError }, { status: 500 });
         }
-
-        newVendor.menu = menuId;
-        await newVendor.save();
 
         return NextResponse.json({ message: "Vendor added successfully", vendor: newVendor }, { status: 201 });
 

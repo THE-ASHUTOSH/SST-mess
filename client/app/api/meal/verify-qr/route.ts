@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server';
-import connectDB from '@/lib/db';
-import Meal from '@/lib/models/meal.model';
-import User from '@/lib/models/user.model';
+import { db } from '@/lib/db';
+import { meals, users } from '@/lib/db/schema';
 import { requireRole } from '@/lib/auth-helper';
 import jwt from 'jsonwebtoken';
+import { and, eq, gte, lt } from 'drizzle-orm';
 
 export async function POST(req: Request) {
     try {
-        // Enforce vendor role
-        // Original logic: requireVendor allowed 'vendor' and 'admin'
         const byUser = await requireRole(['vendor', 'admin']);
 
         const body = await req.json();
@@ -17,8 +15,6 @@ export async function POST(req: Request) {
         if (!vendorId) {
             return NextResponse.json({ message: "Vendor ID is required" }, { status: 400 });
         }
-
-        await connectDB();
 
         // Verify token from QR
         const decoded: any = jwt.verify(token, process.env.JWT_SECRET_KEY || 'default_secret');
@@ -39,7 +35,7 @@ export async function POST(req: Request) {
         const istTime = new Date(nowtime.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
         const indianHours = istTime.getHours();
 
-        let mealType;
+        let mealType: 'breakfast' | 'lunch' | 'dinner';
         if (indianHours >= 7 && indianHours < 10) {
             mealType = "breakfast";
         } else if (indianHours >= 12 && indianHours < 15) {
@@ -53,25 +49,31 @@ export async function POST(req: Request) {
         const startOfDay = new Date(nowtime.getFullYear(), nowtime.getMonth(), nowtime.getDate());
         const endOfDay = new Date(nowtime.getFullYear(), nowtime.getMonth(), nowtime.getDate() + 1);
 
-        const existingMeal = await Meal.findOne({
-            forUser: forUserId,
-            mealType,
-            date: { $gte: startOfDay, $lt: endOfDay },
+        // Check if already eaten
+        const existingMeal = await db.query.meals.findFirst({
+            where: and(
+                eq(meals.forUserId, Number(forUserId)), // Ensure ID is number
+                eq(meals.mealType, mealType),
+                gte(meals.date, startOfDay),
+                lt(meals.date, endOfDay)
+            )
         });
 
         if (existingMeal) {
             return NextResponse.json({ message: `User has already taken ${mealType} today.` }, { status: 403 });
         }
 
-        const meal = new Meal({
-            forUser: forUserId,
-            byUser: byUser._id,
-            mealType,
+        await db.insert(meals).values({
+            forUserId: Number(forUserId),
+            byUserId: byUser.id,
+            mealType: mealType,
+            // date will default to now
         });
 
-        await meal.save();
+        const foruser = await db.query.users.findFirst({
+            where: eq(users.id, Number(forUserId))
+        });
 
-        const foruser = await User.findById(forUserId);
         console.log("meal verified for", foruser?.name);
 
         return NextResponse.json({ message: "Meal verified successfully.", user: foruser });
@@ -84,7 +86,6 @@ export async function POST(req: Request) {
         if (error.name === "TokenExpiredError") {
             return NextResponse.json({ message: "QR code has expired." }, { status: 401 });
         }
-        // Handle auth helper error
         if (error.message === "Unauthorized") return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         if (error.message === "Forbidden") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
 

@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import connectDB from '@/lib/db';
-import User from '@/lib/models/user.model';
-import Vendor from '@/lib/models/vendor.model';
-import VendorSelection from '@/lib/models/vendorselectform.model';
+import { db } from '@/lib/db';
+import { users, vendors, vendorSelections } from '@/lib/db/schema';
 import { requireRole } from '@/lib/auth-helper';
 import * as xlsx from 'xlsx';
+import { eq } from 'drizzle-orm';
 
 export async function POST(req: Request) {
     try {
@@ -23,8 +22,6 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "Month not specified" }, { status: 400 });
         }
 
-        await connectDB();
-
         const buffer = await file.arrayBuffer();
         const workbook = xlsx.read(buffer, { type: 'buffer' });
 
@@ -34,18 +31,28 @@ export async function POST(req: Request) {
 
         const issues: any[] = [];
 
-        const allVendors = await Vendor.find({});
+        // Fetch all vendors to map name -> vendor
+        const allVendors = await db.select().from(vendors);
         const vendorsMap = new Map(allVendors.map(vendor => [vendor.name, vendor]));
 
         const forMonthDate = new Date(month);
-        const existingSelections = await VendorSelection.find({ forMonth: forMonthDate });
-        const existingUserSelections = new Set(existingSelections.map(sel => sel.user.toString()));
+
+        // Fetch existing selections for this month to check for duplicates
+        // We only really need the userIds to check usage
+        const existingSelections = await db.query.vendorSelections.findMany({
+            where: eq(vendorSelections.forMonth, forMonthDate),
+            with: {
+                user: true
+            }
+        });
+
+        // Use user.email as key or userId. 
+        // Logic: if user exists in existingSelections, avoid duplicate.
+        // We can map userId -> true
+        const existingUserIds = new Set(existingSelections.map(sel => sel.userId));
 
         const duplicates: any[] = [];
         const newEntries: any[] = [];
-
-        // Note: Field mapping check logic from original controller is assumed to be handled by data access below
-        // or we could add explicit headers check.
 
         for (const row of data) {
             try {
@@ -63,28 +70,32 @@ export async function POST(req: Request) {
                 }
 
                 const emailLower = email.toLowerCase();
-                let user = await User.findOne({ email: emailLower });
+
+                // Check if user exists
+                let [user] = await db.select().from(users).where(eq(users.email, emailLower)).limit(1);
 
                 if (user && (!user.hostel || user.hostel !== hostel || !user.batch || user.batch !== batch)) {
-                    user.hostel = hostel;
-                    user.batch = batch;
-                    await user.save();
+                    // Update user info
+                    [user] = await db.update(users)
+                        .set({ hostel, batch })
+                        .where(eq(users.id, user.id))
+                        .returning();
                     console.log(`Updated user ${emailLower} with hostel and batch info`);
                 }
 
                 if (!user) {
-                    user = new User({
+                    // Create new user
+                    [user] = await db.insert(users).values({
                         email: emailLower,
-                        name: name || emailLower.split('@')[0], // Fallback name
+                        name: name || emailLower.split('@')[0],
                         batch: batch,
                         hostel: hostel,
                         role: 'student'
-                    });
-                    await user.save();
+                    }).returning();
                     console.log(`Created new user with email ${emailLower}`);
                 }
 
-                if (existingUserSelections.has(user._id.toString())) {
+                if (existingUserIds.has(user.id)) {
                     duplicates.push({ email: emailLower, vendorName: vendorNameString });
                     continue;
                 }
@@ -96,18 +107,18 @@ export async function POST(req: Request) {
                     continue;
                 }
 
-                const newVendorSelection = new VendorSelection({
-                    user: user._id,
-                    vendor: vendor._id,
-                    preference,
+                // Create selection
+                await db.insert(vendorSelections).values({
+                    userId: user.id,
+                    vendorId: vendor.id,
+                    preference, // Assuming matches Enum or text
                     forMonth: forMonthDate,
                     dateofEntry: new Date(),
+                    hostel: hostel, // Schema has hostel column
                 });
 
-                await newVendorSelection.save();
-
                 newEntries.push({ email: emailLower, vendorName: vendorNameString });
-                existingUserSelections.add(user._id.toString());
+                existingUserIds.add(user.id);
 
             } catch (error: any) {
                 console.error('Error processing row:', row, error);

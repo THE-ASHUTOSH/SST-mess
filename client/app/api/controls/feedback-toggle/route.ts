@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server';
-import connectDB from '@/lib/db';
-import Control from '@/lib/models/control.model';
+import { db } from '@/lib/db';
+import { controls } from '@/lib/db/schema';
 import { requireRole } from '@/lib/auth-helper';
+import { eq } from 'drizzle-orm';
 
 export async function GET() {
     try {
-        await connectDB();
-        const feedbackToggle = await Control.findOne({ name: 'feedbackToggle' });
+        const [feedbackToggle] = await db.select().from(controls).where(eq(controls.name, 'feedbackToggle'));
         if (!feedbackToggle) {
-            const newToggle = new Control({ name: 'feedbackToggle', enabled: false });
-            await newToggle.save();
+            const [newToggle] = await db.insert(controls).values({ name: 'feedbackToggle', enabled: false }).returning();
             return NextResponse.json({ enabled: newToggle.enabled });
         }
         return NextResponse.json({ enabled: feedbackToggle.enabled });
@@ -21,17 +20,20 @@ export async function GET() {
 export async function PATCH(req: Request) {
     try {
         const user = await requireRole(['admin']);
-        await connectDB();
 
-        let feedbackToggle = await Control.findOne({ name: 'feedbackToggle' });
+        let [feedbackToggle] = await db.select().from(controls).where(eq(controls.name, 'feedbackToggle'));
 
         if (feedbackToggle) {
-            feedbackToggle.enabled = !feedbackToggle.enabled;
+            [feedbackToggle] = await db.update(controls)
+                .set({ enabled: !feedbackToggle.enabled })
+                .where(eq(controls.id, feedbackToggle.id))
+                .returning();
         } else {
-            feedbackToggle = new Control({ name: 'feedbackToggle', enabled: true });
+            [feedbackToggle] = await db.insert(controls)
+                .values({ name: 'feedbackToggle', enabled: true })
+                .returning();
         }
 
-        await feedbackToggle.save();
         console.log(`Feedback toggle set to ${feedbackToggle.enabled} by ${user.email}`);
         return NextResponse.json({ enabled: feedbackToggle.enabled });
 

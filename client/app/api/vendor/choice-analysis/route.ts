@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import connectDB from '@/lib/db';
-import VendorSelection from '@/lib/models/vendorselectform.model';
+import { db } from '@/lib/db';
+import { vendorSelections } from '@/lib/db/schema';
 import { requireRole } from '@/lib/auth-helper';
-import Vendor from '@/lib/models/vendor.model'; // Register model
+import { and, gte, lt } from 'drizzle-orm';
 
 export async function POST(req: Request) {
     try {
@@ -11,8 +11,6 @@ export async function POST(req: Request) {
         const body = await req.json();
         let { month, year } = body;
 
-        await connectDB();
-
         if (month === undefined || year === undefined) {
             const today = new Date();
             month = today.getMonth() + 1; // 1-indexed
@@ -20,14 +18,17 @@ export async function POST(req: Request) {
         }
 
         const startDate = new Date(year, month - 1, 1);
-        const endDate = new Date(year, month, 1);
+        const endDate = new Date(year, month, 1); // Next month start
 
-        const section = await VendorSelection.find({
-            forMonth: {
-                $gte: startDate,
-                $lt: endDate,
-            },
-        }).populate({ path: "vendor", model: Vendor }).lean();
+        const section = await db.query.vendorSelections.findMany({
+            where: and(
+                gte(vendorSelections.forMonth, startDate),
+                lt(vendorSelections.forMonth, endDate)
+            ),
+            with: {
+                vendor: true
+            }
+        });
 
         return NextResponse.json({ success: true, data: section });
     } catch (err: any) {

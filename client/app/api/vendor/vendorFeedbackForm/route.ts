@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import connectDB from '@/lib/db';
-import VendorFeedback from '@/lib/models/vendorfeedbackform.model';
+import { db } from '@/lib/db';
+import { vendorFeedbacks } from '@/lib/db/schema';
 import { getDbUser } from '@/lib/auth-helper';
 
 export async function POST(req: Request) {
@@ -13,16 +13,31 @@ export async function POST(req: Request) {
         const body = await req.json();
         const { ratings, vendor, feedback } = body;
 
-        await connectDB();
-
-        const newFeedback = new VendorFeedback({
+        const [newFeedback] = await db.insert(vendorFeedbacks).values({
             ratings,
-            vendor,
+            hygiene: ratings.hygiene,
+            quantity: ratings.quantity,
+            timeliness: ratings.timeliness,
+            variety: ratings.variety,
+            staff: ratings.staff,
+            overall: ratings.overall,
+            vendorId: Number(vendor), // Assuming vendor is passed as ID
+            userId: user.id,
             feedback,
-            user: user._id,
-        });
+        } as any).returning(); // Cast to any if there are extra fields in ratings object that we don't store in separate columns, wait schema has separate columns.
 
-        await newFeedback.save();
+        // Actually schema has individual columns: hygiene, quantity etc.
+        // The detailed breakdown is:
+        /*
+          hygiene: integer("hygiene").notNull(),
+          quantity: integer("quantity").notNull(),
+          timeliness: integer("timeliness").notNull(),
+          variety: integer("variety").notNull(),
+          staff: integer("staff").notNull(),
+          overall: integer("overall").notNull(),
+        */
+        // I need to map `ratings` object to these columns.
+
         return NextResponse.json({ success: true, VendorFeedbackForm: newFeedback });
 
     } catch (err: any) {

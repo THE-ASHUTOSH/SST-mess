@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import connectDB from '@/lib/db';
-import Meal from '@/lib/models/meal.model';
-import VendorSelection from '@/lib/models/vendorselectform.model';
+import { db } from '@/lib/db';
+import { meals, vendorSelections } from '@/lib/db/schema';
 import { getDbUser } from '@/lib/auth-helper';
 import jwt from 'jsonwebtoken';
-import Vendor from '@/lib/models/vendor.model';
+import { and, eq, gte, lt } from 'drizzle-orm';
 
 export async function GET() {
     try {
@@ -13,15 +12,13 @@ export async function GET() {
             return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         }
 
-        await connectDB();
-
         const nowtime = new Date();
         const istTime = new Date(nowtime.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
         const indianHours = istTime.getHours();
         const year = nowtime.getFullYear();
         const month = nowtime.getMonth();
 
-        let mealType;
+        let mealType: 'breakfast' | 'lunch' | 'dinner';
         if (indianHours >= 7 && indianHours < 10) {
             mealType = "breakfast";
         } else if (indianHours >= 12 && indianHours < 15) {
@@ -33,27 +30,37 @@ export async function GET() {
         }
 
         // Fix logic for month range query
-        const selection = await VendorSelection.findOne({
-            user: user._id,
-            forMonth: { $gte: new Date(year, month, 1), $lt: new Date(year, month + 1, 1) },
+        const selection = await db.query.vendorSelections.findFirst({
+            where: and(
+                eq(vendorSelections.userId, user.id),
+                gte(vendorSelections.forMonth, new Date(year, month, 1)),
+                lt(vendorSelections.forMonth, new Date(year, month + 1, 1))
+            ),
+            with: {
+                vendor: true
+            }
         });
 
         if (!selection) {
             return NextResponse.json({ message: "Mess not opted in for this month." }, { status: 403 });
         }
 
-        await selection.populate({ path: "vendor", model: Vendor });
-        if (selection.vendor.mealsOptions && !selection.vendor.mealsOptions[mealType] == true) {
+        // Check if vendor offers this meal
+        // In schema, vendor has boolean columns: breakfast, lunch, dinner
+        if (selection.vendor && !selection.vendor[mealType]) {
             return NextResponse.json({ message: `Vendor does not offer ${mealType}.` }, { status: 403 });
         }
 
         const startOfDay = new Date(year, month, nowtime.getDate());
         const endOfDay = new Date(year, month, nowtime.getDate() + 1);
 
-        const currentMeal = await Meal.findOne({
-            forUser: user._id,
-            mealType,
-            date: { $gte: startOfDay, $lt: endOfDay },
+        const currentMeal = await db.query.meals.findFirst({
+            where: and(
+                eq(meals.forUserId, user.id),
+                eq(meals.mealType, mealType),
+                gte(meals.date, startOfDay),
+                lt(meals.date, endOfDay)
+            )
         });
 
         if (currentMeal) {
@@ -61,7 +68,7 @@ export async function GET() {
         }
 
         const token = jwt.sign(
-            { userId: user._id, vendorId: selection.vendor._id },
+            { userId: user.id, vendorId: selection.vendor.id },
             process.env.JWT_SECRET_KEY || 'default_secret', // Fallback for dev safety
             { expiresIn: "15m" }
         );

@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import connectDB from '@/lib/db';
-import Vendor from '@/lib/models/vendor.model';
-import Menu from '@/lib/models/menu.model';
+import { db } from '@/lib/db';
+import { vendors, menus } from '@/lib/db/schema';
 import { requireRole } from '@/lib/auth-helper';
 import generateMenu from '@/lib/utils/generateMenu';
+import { eq } from 'drizzle-orm';
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
     try {
@@ -11,7 +11,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         console.log("Vendor update triggered by user:", user.email);
 
         const { id } = await params;
-        console.log("Vendor ID:", id);
+        const vendorId = Number(id);
 
         const formData = await req.formData();
         const name = formData.get('name') as string;
@@ -25,23 +25,26 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
             return NextResponse.json({ message: "Name and price are required" }, { status: 400 });
         }
 
-        await connectDB();
-
         const parsedMealsOptions = mealsOptions ? JSON.parse(mealsOptions) : undefined;
-        let menuId = null;
+        // Map parsedMealsOptions (e.g. { breakfast: true, ... }) to separate columns if needed.
+        // Vendor table columns: breakfast, lunch, dinner.
+
+        let menuUpdateData: any = null;
 
         if (menuFile) {
             const buffer = Buffer.from(await menuFile.arrayBuffer());
             const csvContent = buffer.toString('utf-8');
             const menuData = generateMenu(csvContent);
+            menuUpdateData = menuData;
 
-            const updatedMenu = await Menu.findOneAndUpdate(
-                { vendor: id },
-                { ...menuData, vendor: id },
-                { new: true, upsert: true }
-            );
-            menuId = updatedMenu._id;
-
+            // Upsert menu
+            await db.insert(menus).values({
+                ...menuData,
+                vendorId: vendorId,
+            }).onConflictDoUpdate({
+                target: menus.vendorId,
+                set: menuData,
+            });
         }
 
         const updateData: any = {
@@ -49,23 +52,28 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
             description,
             price: Number(price),
             menuUrl,
+            updatedAt: new Date(),
         };
-        // console.log("Update Data:", updateData);
-        if (parsedMealsOptions) updateData.mealsOptions = parsedMealsOptions;
-        if (menuId) updateData.menu = menuId;
 
-        const updatedVendor = await Vendor.findByIdAndUpdate(
-            id,
-            updateData,
-            { new: true }
-        );
+        if (parsedMealsOptions) {
+            if (parsedMealsOptions.breakfast !== undefined) updateData.breakfast = parsedMealsOptions.breakfast;
+            if (parsedMealsOptions.lunch !== undefined) updateData.lunch = parsedMealsOptions.lunch;
+            if (parsedMealsOptions.dinner !== undefined) updateData.dinner = parsedMealsOptions.dinner;
+        }
+
+        // We don't need to update 'menu' field on vendor as it's implied via relation, unless we really want it.
+        // The schema doesn't have it.
+
+        const [updatedVendor] = await db.update(vendors)
+            .set(updateData)
+            .where(eq(vendors.id, vendorId))
+            .returning();
 
         return NextResponse.json({ message: "Vendor updated successfully", vendor: updatedVendor });
 
     } catch (error: any) {
         if (error.message === "Unauthorized") return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         if (error.message === "Forbidden") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-        console.error("Error updating vendor:", error);
         return NextResponse.json({ message: "Error updating vendor", error: error.message }, { status: 500 });
     }
 }

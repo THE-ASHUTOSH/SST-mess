@@ -9,7 +9,8 @@ export async function GET() {
             },
         });
         return NextResponse.json({ success: true, vendor: vendors });
-    } catch (err: any) {
-        return NextResponse.json({ success: false, err: err.message }, { status: 400 });
+    } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
+        return NextResponse.json({ success: false, err: errorMessage }, { status: 400 });
     }
 }

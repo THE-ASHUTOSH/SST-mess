@@ -1,16 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { vendors, menus } from '@/lib/db/schema';
 import { requireRole } from '@/lib/auth-helper';
 import generateMenu from '@/lib/utils/generateMenu';
 import { eq } from 'drizzle-orm';
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
     try {
         const user = await requireRole(['admin']);
         console.log("Vendor update triggered by user:", user.email);
 
-        const { id } = params;
+        const { id } = await context.params;
         const vendorId = id;
 
         const formData = await req.formData();
@@ -47,7 +47,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
             }
         }
 
-        const updateData: any = {
+        const updateData: Partial<(typeof vendors)["$inferInsert"]> = {
             name,
             description,
             price: Number(price),
@@ -71,9 +71,12 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
         return NextResponse.json({ message: "Vendor updated successfully", vendor: updatedVendor });
 
-    } catch (error: any) {
-        if (error.message === "Unauthorized") return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-        if (error.message === "Forbidden") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-        return NextResponse.json({ message: "Error updating vendor", error: error.message }, { status: 500 });
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            if (error.message === "Unauthorized") return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+            if (error.message === "Forbidden") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+            return NextResponse.json({ message: "Error updating vendor", error: error.message }, { status: 500 });
+        }
+        return NextResponse.json({ message: "An unknown error occurred while updating vendor" }, { status: 500 });
     }
 }

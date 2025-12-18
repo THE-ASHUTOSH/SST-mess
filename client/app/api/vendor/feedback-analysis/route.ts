@@ -26,9 +26,12 @@ export async function GET() {
         // Drizzle already nests it. So `feedback` array contains objects like { ..., vendor: { ... } }.
 
         return NextResponse.json({ success: true, data: feedback });
-    } catch (err: any) {
-        if (err.message === "Unauthorized") return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-        if (err.message === "Forbidden") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-        return NextResponse.json({ success: false, err: err.message }, { status: 400 });
+    } catch (err: unknown) {
+        if (err instanceof Error) {
+            if (err.message === "Unauthorized") return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+            if (err.message === "Forbidden") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+            return NextResponse.json({ success: false, err: err.message }, { status: 400 });
+        }
+        return NextResponse.json({ success: false, err: "An unknown error occurred" }, { status: 400 });
     }
 }

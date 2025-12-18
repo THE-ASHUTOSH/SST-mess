@@ -8,7 +8,8 @@ export async function GET() {
             return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         }
         return NextResponse.json({ user });
-    } catch (error: any) {
-        return NextResponse.json({ message: "Server error", error: error.message }, { status: 500 });
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+        return NextResponse.json({ message: "Server error", error: errorMessage }, { status: 500 });
     }
 }

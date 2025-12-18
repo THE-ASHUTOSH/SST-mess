@@ -12,8 +12,9 @@ export async function GET() {
             return NextResponse.json({ enabled: newToggle.enabled });
         }
         return NextResponse.json({ enabled: feedbackToggle.enabled });
-    } catch (error: any) {
-        return NextResponse.json({ message: 'Error fetching feedback toggle', error: error.message }, { status: 500 });
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+        return NextResponse.json({ message: 'Error fetching feedback toggle', error: errorMessage }, { status: 500 });
     }
 }
 
@@ -37,9 +38,12 @@ export async function PATCH(req: Request) {
         console.log(`Feedback toggle set to ${feedbackToggle.enabled} by ${user.email}`);
         return NextResponse.json({ enabled: feedbackToggle.enabled });
 
-    } catch (error: any) {
-        if (error.message === "Unauthorized") return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-        if (error.message === "Forbidden") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-        return NextResponse.json({ message: 'Error toggling feedback toggle', error: error.message }, { status: 500 });
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            if (error.message === "Unauthorized") return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+            if (error.message === "Forbidden") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+            return NextResponse.json({ message: 'Error toggling feedback toggle', error: error.message }, { status: 500 });
+        }
+        return NextResponse.json({ message: 'An unknown error occurred while toggling feedback' }, { status: 500 });
     }
 }

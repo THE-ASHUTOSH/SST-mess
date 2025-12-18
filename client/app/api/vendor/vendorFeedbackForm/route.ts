@@ -23,23 +23,12 @@ export async function POST(req: Request) {
             vendorId: vendor, // Assuming vendor is passed as ID
             userId: user.id,
             feedback,
-        }).returning(); // Cast to any if there are extra fields in ratings object that we don't store in separate columns, wait schema has separate columns.
-
-        // Actually schema has individual columns: hygiene, quantity etc.
-        // The detailed breakdown is:
-        /*
-          hygiene: integer("hygiene").notNull(),
-          quantity: integer("quantity").notNull(),
-          timeliness: integer("timeliness").notNull(),
-          variety: integer("variety").notNull(),
-          staff: integer("staff").notNull(),
-          overall: integer("overall").notNull(),
-        */
-        // I need to map `ratings` object to these columns.
+        }).returning(); 
 
         return NextResponse.json({ success: true, VendorFeedbackForm: newFeedback });
 
-    } catch (err: any) {
-        return NextResponse.json({ success: false, err: err.message }, { status: 400 });
+    } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
+        return NextResponse.json({ success: false, err: errorMessage }, { status: 400 });
     }
 }

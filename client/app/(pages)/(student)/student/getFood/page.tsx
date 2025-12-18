@@ -62,7 +62,7 @@ const GetFoodPage = () => {
         } catch (error) {
           console.error('Error checking meal status:', error);
         }
-      }, 1000);
+      }, 5000);
     }
 
     return () => {

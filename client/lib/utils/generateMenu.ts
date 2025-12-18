@@ -1,9 +1,19 @@
 
+interface MealSchedule {
+    breakfast: string[];
+    lunch: string[];
+    dinner: string[];
+}
+
+interface Menu {
+    [day: string]: MealSchedule;
+}
+
 const generateMenu = (csvContent: string) => {
     // Standardize line endings and split
     const rows = csvContent.split(/\r?\n(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(row => row.split(','));
 
-    const menu: any = {};
+    const menu: Menu = {};
     const days = rows[3].slice(1).map(day => day.trim().replace(/^"|"$/g, '').toLowerCase());
 
     days.forEach(day => {

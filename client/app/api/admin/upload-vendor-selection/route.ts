@@ -1,9 +1,31 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { users, vendors, vendorSelections } from '@/lib/db/schema';
+import { users, vendors, vendorSelections, preferenceEnum, hostelEnum } from '@/lib/db/schema';
 import { requireRole } from '@/lib/auth-helper';
 import * as xlsx from 'xlsx';
 import { eq } from 'drizzle-orm';
+
+type Preference = (typeof preferenceEnum.enumValues)[number];
+type Hostel = (typeof hostelEnum.enumValues)[number];
+
+interface VendorSelectionRow {
+    'Email Address': string;
+    'Choose your preference': string; // This is vendor name
+    'Meal Option': Preference;
+    'Hostel': Hostel;
+    'Batch': string;
+    'Name': string;
+}
+
+interface Issue {
+    row: Partial<VendorSelectionRow>;
+    error: string;
+}
+
+interface SelectionInfo {
+    email: string;
+    vendorName: string;
+}
 
 export async function POST(req: Request) {
     try {
@@ -27,9 +49,9 @@ export async function POST(req: Request) {
 
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
-        const data: any[] = xlsx.utils.sheet_to_json(sheet);
+        const data: VendorSelectionRow[] = xlsx.utils.sheet_to_json<VendorSelectionRow>(sheet);
 
-        const issues: any[] = [];
+        const issues: Issue[] = [];
 
         // Fetch all vendors to map name -> vendor
         const allVendors = await db.select().from(vendors);
@@ -51,8 +73,8 @@ export async function POST(req: Request) {
         // We can map userId -> true
         const existingUserIds = new Set(existingSelections.map(sel => sel.userId));
 
-        const duplicates: any[] = [];
-        const newEntries: any[] = [];
+        const duplicates: SelectionInfo[] = [];
+        const newEntries: SelectionInfo[] = [];
 
         for (const row of data) {
             try {
@@ -120,9 +142,10 @@ export async function POST(req: Request) {
                 newEntries.push({ email: emailLower, vendorName: vendorNameString });
                 existingUserIds.add(user.id);
 
-            } catch (error: any) {
+            } catch (error: unknown) {
                 console.error('Error processing row:', row, error);
-                issues.push({ row, error: error.message });
+                const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+                issues.push({ row, error: errorMessage });
             }
         }
 
@@ -137,9 +160,12 @@ export async function POST(req: Request) {
             issues,
         });
 
-    } catch (error: any) {
-        if (error.message === "Unauthorized") return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-        if (error.message === "Forbidden") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-        return NextResponse.json({ message: "Internal server error", error: error.message }, { status: 500 });
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            if (error.message === "Unauthorized") return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+            if (error.message === "Forbidden") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+            return NextResponse.json({ message: "Internal server error", error: error.message }, { status: 500 });
+        }
+        return NextResponse.json({ message: "An unknown internal server error occurred" }, { status: 500 });
     }
 }

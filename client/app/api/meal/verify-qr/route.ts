@@ -2,8 +2,13 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { meals, users } from '@/lib/db/schema';
 import { requireRole } from '@/lib/auth-helper';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import { and, eq, gte, lt } from 'drizzle-orm';
+
+interface QrCodePayload extends JwtPayload {
+    userId: string;
+    vendorId: string;
+}
 
 export async function POST(req: Request) {
     try {
@@ -17,7 +22,7 @@ export async function POST(req: Request) {
         }
 
         // Verify token from QR
-        const decoded: any = jwt.verify(token, process.env.JWT_SECRET_KEY || 'default_secret');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY || 'default_secret') as QrCodePayload;
         const forUserId = decoded.userId;
         const userVendorId = decoded.vendorId;
 
@@ -78,16 +83,19 @@ export async function POST(req: Request) {
 
         return NextResponse.json({ message: "Meal verified successfully.", user: foruser });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error verifying QR code:", error);
-        if (error.name === "JsonWebTokenError") {
-            return NextResponse.json({ message: "Invalid QR code." }, { status: 401 });
+
+        if (error instanceof Error) {
+            if (error.name === "JsonWebTokenError") {
+                return NextResponse.json({ message: "Invalid QR code." }, { status: 401 });
+            }
+            if (error.name === "TokenExpiredError") {
+                return NextResponse.json({ message: "QR code has expired." }, { status: 401 });
+            }
+            if (error.message === "Unauthorized") return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+            if (error.message === "Forbidden") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
         }
-        if (error.name === "TokenExpiredError") {
-            return NextResponse.json({ message: "QR code has expired." }, { status: 401 });
-        }
-        if (error.message === "Unauthorized") return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-        if (error.message === "Forbidden") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
 
         return NextResponse.json({ message: "Internal server error" }, { status: 500 });
     }

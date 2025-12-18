@@ -28,10 +28,17 @@ export async function getDbUser(): Promise<IUser | null> {
         return null;
     }
 
+    const domain = email.split('@')[1];
+    const allowedDomains = ["sst.scaler.com", "scaler.com"];
+
     const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
     // If user doesn't exist in DB, create new one
     if (!user) {
+        if (!allowedDomains.includes(domain)) {
+            return null; // Don't create user for unauthorized domain
+        }
+
         const [newUser] = await db.insert(users).values({
             email,
             name: `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || 'User',

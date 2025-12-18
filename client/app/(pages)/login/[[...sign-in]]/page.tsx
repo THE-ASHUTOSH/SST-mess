@@ -1,5 +1,6 @@
 "use client"
 
+import LoadingSpinner from "@/components/common/LoadingAnimation";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
 import Image from "next/image"
 import sstlogo from '@/public/sstlogo.png'
@@ -9,8 +10,15 @@ import { useEffect } from 'react'
 import { SignIn } from "@clerk/nextjs"
 
 const LoginPage = () => {
-  const { user, loading } = useUser();
+  const { user, loading, authError, setAuthError } = useUser();
   const router = useRouter();
+
+  useEffect(() => {
+    if (authError) {
+      alert(authError);
+      setAuthError(null);
+    }
+  }, [authError, setAuthError]);
 
   useEffect(() => {
     if (!loading && user) {
@@ -23,16 +31,18 @@ const LoginPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center">
-        <div className="text-white">Checking authentication...</div>
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#1a1d2e] text-white">
+        <LoadingSpinner />
+        <p className="mt-4 text-lg">Checking authentication...</p>
       </div>
     );
   }
 
   if (user) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center">
-        <div className="text-white">Redirecting...</div>
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#1a1d2e] text-white">
+        <LoadingSpinner />
+        <p className="mt-4 text-lg">Redirecting...</p>
       </div>
     );
   }
@@ -77,3 +87,4 @@ const LoginPage = () => {
 }
 
 export default LoginPage
+

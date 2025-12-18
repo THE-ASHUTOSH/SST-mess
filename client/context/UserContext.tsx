@@ -19,25 +19,42 @@ type ContextType = {
   user: User;
   setUser: (u: User) => void;
   loading: boolean;
+  authError: string | null;
+  setAuthError: (error: string | null) => void;
 };
 
 const UserContext = createContext<ContextType>({
   user: null,
   setUser: () => { },
   loading: true,
+  authError: null,
+  setAuthError: () => { },
 });
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user: clerkUser, isLoaded: clerkLoaded } = useClerkUser();
-  const { getToken } = useAuth();
+  const { getToken, signOut } = useAuth();
   const [user, setUser] = useState<User>(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     const syncUser = async () => {
       if (!clerkLoaded) return;
 
       if (clerkUser) {
+        const email = clerkUser.primaryEmailAddress?.emailAddress;
+        const domain = email?.split('@')[1];
+        const allowedDomains = ["sst.scaler.com", "scaler.com"];
+
+        if (domain && !allowedDomains.includes(domain)) {
+          setAuthError("Access denied: unauthorized domain");
+          await signOut();
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
         try {
           // Fetch DB user details to get role and other metadata
           // We use the token to authenticate with our API
@@ -83,10 +100,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     syncUser();
-  }, [clerkUser, clerkLoaded, getToken]);
+  }, [clerkUser, clerkLoaded, getToken, signOut]);
 
   return (
-    <UserContext.Provider value={{ user, setUser, loading: loading || !clerkLoaded }}>
+    <UserContext.Provider value={{ user, setUser, loading: loading || !clerkLoaded, authError, setAuthError }}>
       {children}
     </UserContext.Provider>
   );

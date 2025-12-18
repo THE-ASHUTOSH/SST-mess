@@ -1,4 +1,5 @@
 "use client";
+import LoadingSpinner from "@/components/common/LoadingAnimation";
 import React,{useEffect} from 'react'
 import { useUser } from "@/context/UserContext";
 import { useRouter } from "next/navigation";
@@ -25,8 +26,9 @@ const Protected: React.FC<{children: React.ReactNode}> = ({children}) => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="text-black">Checking authentication...</div>
+            <div className="flex flex-col items-center justify-center min-h-screen bg-[#1a1d2e] text-white">
+                <LoadingSpinner />
+                <p className="mt-4 text-lg">Checking authentication...</p>
             </div>
         );
     }

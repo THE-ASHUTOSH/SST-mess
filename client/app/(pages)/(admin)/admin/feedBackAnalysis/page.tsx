@@ -7,7 +7,7 @@ import axiosInstance from '@/lib/axiosInstance';
 import { isAxiosError } from 'axios';
 
 interface Vendor {
-  _id: string;
+  id: string;
   name: string;
   description: string;
   price: number;
@@ -15,18 +15,16 @@ interface Vendor {
 }
 
 interface Feedback {
-  _id: string;
+  id: string;
   vendor: Vendor;
   user: string;
   feedback: string;
-  ratings: {
-    hygiene: number;
-    quantity: number;
-    timeliness: number;
-    variety: number;
-    staff: number;
-    overall: number;
-  };
+  hygiene: number;
+  quantity: number;
+  timeliness: number;
+  variety: number;
+  staff: number;
+  overall: number;
   date: string;
 }
 
@@ -57,7 +55,7 @@ const FeedbackAnalysis = () => {
 
   const filteredFeedback = feedbackData.filter(feedback => {
     const vendorMatch = !selectedVendor || feedback.vendor?.name === selectedVendor;
-    const ratingMatch = !selectedRating || feedback.ratings.overall === parseInt(selectedRating, 10);
+    const ratingMatch = !selectedRating || feedback.overall === parseInt(selectedRating, 10);
     return vendorMatch && ratingMatch;
   });
 
@@ -69,7 +67,7 @@ const FeedbackAnalysis = () => {
         if (!vendorRatings[vendorName]) {
           vendorRatings[vendorName] = { totalRating: 0, count: 0 };
         }
-        vendorRatings[vendorName].totalRating += feedback.ratings[selectedChart as keyof typeof feedback.ratings];
+        vendorRatings[vendorName].totalRating += feedback[selectedChart as 'overall' | 'hygiene' | 'quantity' | 'timeliness' | 'variety' | 'staff'];
         vendorRatings[vendorName].count += 1;
       }
     });
@@ -200,14 +198,14 @@ const FeedbackAnalysis = () => {
                 <tbody className="divide-y divide-gray-700">
                   {filteredFeedback.length > 0 ? (
                     filteredFeedback.map((feedback) => (
-                      <tr key={feedback._id}>
+                      <tr key={feedback.id}>
                         <td className="py-2 px-4">{feedback.vendor ? feedback.vendor.name : "Vendor not found"}</td>
-                        <td className="py-2 px-4">{feedback.ratings.hygiene}</td>
-                        <td className="py-2 px-4">{feedback.ratings.quantity}</td>
-                        <td className="py-2 px-4">{feedback.ratings.timeliness}</td>
-                        <td className="py-2 px-4">{feedback.ratings.variety}</td>
-                        <td className="py-2 px-4">{feedback.ratings.staff}</td>
-                        <td className="py-2 px-4">{feedback.ratings.overall}</td>
+                        <td className="py-2 px-4">{feedback.hygiene}</td>
+                        <td className="py-2 px-4">{feedback.quantity}</td>
+                        <td className="py-2 px-4">{feedback.timeliness}</td>
+                        <td className="py-2 px-4">{feedback.variety}</td>
+                        <td className="py-2 px-4">{feedback.staff}</td>
+                        <td className="py-2 px-4">{feedback.overall}</td>
                         <td className="py-2 px-4">{feedback.feedback}</td>
                         <td className="py-2 px-4">{new Date(feedback.date).toLocaleDateString()}</td>
                       </tr>

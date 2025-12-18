@@ -65,7 +65,7 @@ const Feedback = () => {
 
     try {
       await axiosInstance.post("/api/vendor/vendorFeedbackForm", {
-        vendor: latestSelection.vendor._id,
+        vendor: latestSelection.vendor.id,
         ratings,
         feedback: feedback.trim(),
       });

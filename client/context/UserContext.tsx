@@ -12,7 +12,6 @@ type User = {
   hostel?: string;
   batch?: string;
   id?: string;
-  _id?: string;
 } | null;
 
 type ContextType = {

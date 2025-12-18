@@ -5,8 +5,22 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1765993874494,
-      "tag": "0000_groovy_komodo",
+      "when": 1766046100636,
+      "tag": "0000_rich_wild_pack",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1766047029479,
+      "tag": "0001_good_reptil",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1766078064302,
+      "tag": "0002_goofy_psynapse",
       "breakpoints": true
     }
   ]

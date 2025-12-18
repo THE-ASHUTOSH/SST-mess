@@ -3,23 +3,23 @@ CREATE TYPE "public"."meal_type" AS ENUM('breakfast', 'lunch', 'dinner');--> sta
 CREATE TYPE "public"."preference" AS ENUM('Vegetarian', 'Non-Vegetarian');--> statement-breakpoint
 CREATE TYPE "public"."role" AS ENUM('admin', 'student', 'vendor');--> statement-breakpoint
 CREATE TABLE "controls" (
-	"id" serial PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" text NOT NULL,
 	"enabled" boolean DEFAULT false,
 	CONSTRAINT "controls_name_unique" UNIQUE("name")
 );
 --> statement-breakpoint
 CREATE TABLE "meals" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"for_user_id" integer NOT NULL,
-	"by_user_id" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"for_user_id" uuid NOT NULL,
+	"by_user_id" uuid NOT NULL,
 	"meal_type" "meal_type" NOT NULL,
 	"date" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "menus" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"vendor_id" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"vendor_id" uuid NOT NULL,
 	"monday" jsonb,
 	"tuesday" jsonb,
 	"wednesday" jsonb,
@@ -33,7 +33,7 @@ CREATE TABLE "menus" (
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
-	"id" serial PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"email" text NOT NULL,
 	"roll" text,
 	"role" "role" DEFAULT 'student',
@@ -46,9 +46,9 @@ CREATE TABLE "users" (
 );
 --> statement-breakpoint
 CREATE TABLE "vendor_feedbacks" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"vendor_id" integer NOT NULL,
-	"user_id" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"vendor_id" uuid NOT NULL,
+	"user_id" uuid NOT NULL,
 	"feedback" text,
 	"hygiene" integer NOT NULL,
 	"quantity" integer NOT NULL,
@@ -60,9 +60,9 @@ CREATE TABLE "vendor_feedbacks" (
 );
 --> statement-breakpoint
 CREATE TABLE "vendor_selections" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"user_id" integer NOT NULL,
-	"vendor_id" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" uuid NOT NULL,
+	"vendor_id" uuid NOT NULL,
 	"preference" "preference" DEFAULT 'Vegetarian',
 	"hostel" "hostel",
 	"for_month" timestamp NOT NULL,
@@ -71,7 +71,7 @@ CREATE TABLE "vendor_selections" (
 );
 --> statement-breakpoint
 CREATE TABLE "vendors" (
-	"id" serial PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" text NOT NULL,
 	"description" text,
 	"price" integer NOT NULL,

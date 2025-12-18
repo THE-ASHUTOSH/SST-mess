@@ -6,14 +6,14 @@ import { isAxiosError } from 'axios';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import LoadingAnimation from '@/components/common/LoadingAnimation';
 interface VerifiedUser {
-  _id: string;
+  id: string;
   name: string;
   email: string;
   picture: string;
 }
 
 interface Vendor {
-  _id: string;
+  id: string;
   name: string;
 }
 
@@ -40,7 +40,7 @@ const VerifyStudentQRPage = () => {
 
           if (gaurasVendors.length > 0) {
             const combinedGauraVendor: Vendor = {
-              _id: gaurasVendors.map(v => v._id).join(','),
+              id: gaurasVendors.map(v => v.id).join(','),
               name: "Gaura's Secret Recipe",
             };
             setVendors([combinedGauraVendor, ...otherVendors]);
@@ -159,7 +159,7 @@ const VerifyStudentQRPage = () => {
         >
           <option value="" disabled>--Please choose a vendor--</option>
           {vendors.map((vendor) => (
-            <option key={vendor._id} value={vendor._id}>{vendor.name}</option>
+            <option key={vendor.id} value={vendor.id}>{vendor.name}</option>
           ))}
         </select>
       </div>

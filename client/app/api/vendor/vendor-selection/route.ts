@@ -13,7 +13,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "Vendor is required" }, { status: 400 });
         }
 
-        const [vendorDoc] = await db.select().from(vendors).where(eq(vendors.id, Number(vendor)));
+        const [vendorDoc] = await db.select().from(vendors).where(eq(vendors.id, vendor));
         if (!vendorDoc) {
             return NextResponse.json({ message: "Vendor not found" }, { status: 404 });
         }

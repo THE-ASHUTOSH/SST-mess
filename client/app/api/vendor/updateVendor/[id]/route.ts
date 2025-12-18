@@ -10,8 +10,8 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         const user = await requireRole(['admin']);
         console.log("Vendor update triggered by user:", user.email);
 
-        const { id } = await params;
-        const vendorId = Number(id);
+        const { id } = params;
+        const vendorId = id;
 
         const formData = await req.formData();
         const name = formData.get('name') as string;
@@ -29,22 +29,22 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         // Map parsedMealsOptions (e.g. { breakfast: true, ... }) to separate columns if needed.
         // Vendor table columns: breakfast, lunch, dinner.
 
-        let menuUpdateData: any = null;
-
         if (menuFile) {
             const buffer = Buffer.from(await menuFile.arrayBuffer());
             const csvContent = buffer.toString('utf-8');
             const menuData = generateMenu(csvContent);
-            menuUpdateData = menuData;
+            
+            // Get vendor to check for existing menu
+            const [vendor] = await db.select().from(vendors).where(eq(vendors.id, vendorId));
 
-            // Upsert menu
-            await db.insert(menus).values({
-                ...menuData,
-                vendorId: vendorId,
-            }).onConflictDoUpdate({
-                target: menus.vendorId,
-                set: menuData,
-            });
+            if (vendor && vendor.menuId) {
+                // Update existing menu
+                await db.update(menus).set(menuData).where(eq(menus.id, vendor.menuId));
+            } else {
+                // Insert new menu and update vendor
+                const [newMenu] = await db.insert(menus).values(menuData).returning();
+                await db.update(vendors).set({ menuId: newMenu.id }).where(eq(vendors.id, vendorId));
+            }
         }
 
         const updateData: any = {

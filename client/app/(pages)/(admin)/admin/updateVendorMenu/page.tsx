@@ -10,7 +10,7 @@ import SuccessPopup from '@/components/common/SuccessPopup';
 import ErrorPopup from '@/components/common/ErrorPopup';
 
 interface Vendor {
-  _id: string;
+  id: string;
   name: string;
   price: number;
   description: string;
@@ -57,7 +57,7 @@ const UpdateVendorMenu = () => {
   }, []);
 
   useEffect(() => {
-    const vendor = vendors.find(v => v._id === selectedVendor);
+    const vendor = vendors.find(v => v.id === selectedVendor);
     if (vendor) {
       setFormData({
         name: vendor.name,
@@ -151,7 +151,7 @@ const UpdateVendorMenu = () => {
               >
                 <option value="">Select a vendor</option>
                 {vendors.map(option => (
-                  <option key={option._id} value={option._id}>
+                  <option key={option.id} value={option.id}>
                     {option.name}
                   </option>
                 ))}

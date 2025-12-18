@@ -7,7 +7,7 @@ import LoadingAnimation from '@/components/common/LoadingAnimation';
 import axiosInstance from '@/lib/axiosInstance';
 import { isAxiosError } from 'axios';
 interface Vendor {
-  _id: string;
+  id: string;
   name: string;
   price: number;
   description: string;
@@ -128,7 +128,7 @@ const SelectVendor = () => {
               >
                 <option value="">Select a mess</option>
                 {vendors.map(option => (
-                  <option key={option._id} value={option._id}>
+                  <option key={option.id} value={option.id}>
                     {option.name} - ₹{option.price}
                   </option>
                 ))}
@@ -138,7 +138,7 @@ const SelectVendor = () => {
             {showMessage && formData.mess && (
               <div className="py-3 px-4 rounded-lg bg-blue-500/10 border border-blue-500/20 animate-fade-in">
                 <p className="text-sm text-blue-400">
-                  You have selected {vendors.find(opt => opt._id === formData.mess)?.name}.
+                  You have selected {vendors.find(opt => opt.id === formData.mess)?.name}.
                   Please ensure this is your final choice as it cannot be changed later.
                 </p>
               </div>

@@ -7,16 +7,14 @@ import axiosInstance from '@/lib/axiosInstance';
 import { isAxiosError } from 'axios';
 
 interface Vendor {
-  _id: string;
-  name: string;
+      id: string;  name: string;
   description: string;
   price: number;
   menu: string;
 }
 
 interface Choice {
-  _id: string;
-  name: string;
+      id: string;  name: string;
   user: string;
   roomNo: string;
   vendor: Vendor;

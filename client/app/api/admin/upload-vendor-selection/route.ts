@@ -116,7 +116,7 @@ export async function POST(req: Request) {
                     dateofEntry: new Date(),
                     hostel: hostel, // Schema has hostel column
                 });
-
+                console.log(`Created vendor selection for user ${emailLower} with vendor ${vendorNameString}`);
                 newEntries.push({ email: emailLower, vendorName: vendorNameString });
                 existingUserIds.add(user.id);
 

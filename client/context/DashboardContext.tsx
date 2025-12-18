@@ -10,8 +10,7 @@ interface MealsOptions {
 
 interface Vendor {
   mealsOptions: MealsOptions;
-  _id: string;
-  name: string;
+      id: string;  name: string;
   description: string;
   price: number;
   menuUrl: string;
@@ -22,8 +21,7 @@ interface Vendor {
 }
 
 export interface LatestSelection {
-  _id: string;
-  user: string;
+      id: string;  user: string;
   vendor: Vendor;
   preference: string;
   forMonth: string;

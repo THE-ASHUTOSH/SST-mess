@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { vendors, menus } from '@/lib/db/schema';
 import { requireRole } from '@/lib/auth-helper';
 import generateMenu from '@/lib/utils/generateMenu';
+import { eq } from 'drizzle-orm';
 
 export async function POST(req: Request) {
     try {
@@ -39,10 +40,11 @@ export async function POST(req: Request) {
                 const csvContent = buffer.toString('utf-8');
                 const menuData = generateMenu(csvContent);
 
-                await db.insert(menus).values({
+                const [newMenu] = await db.insert(menus).values({
                     ...menuData,
-                    vendorId: newVendor.id,
-                });
+                }).returning();
+
+                await db.update(vendors).set({ menuId: newMenu.id }).where(eq(vendors.id, newVendor.id));
             }
         } catch (menuError) {
             return NextResponse.json({ message: "Error processing menu file", menuError }, { status: 500 });

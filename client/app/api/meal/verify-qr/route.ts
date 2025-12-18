@@ -52,7 +52,7 @@ export async function POST(req: Request) {
         // Check if already eaten
         const existingMeal = await db.query.meals.findFirst({
             where: and(
-                eq(meals.forUserId, Number(forUserId)), // Ensure ID is number
+                eq(meals.forUserId, forUserId), // Ensure ID is number
                 eq(meals.mealType, mealType),
                 gte(meals.date, startOfDay),
                 lt(meals.date, endOfDay)
@@ -64,14 +64,14 @@ export async function POST(req: Request) {
         }
 
         await db.insert(meals).values({
-            forUserId: Number(forUserId),
+            forUserId: forUserId,
             byUserId: byUser.id,
             mealType: mealType,
             // date will default to now
         });
 
         const foruser = await db.query.users.findFirst({
-            where: eq(users.id, Number(forUserId))
+            where: eq(users.id, forUserId)
         });
 
         console.log("meal verified for", foruser?.name);

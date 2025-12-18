@@ -14,17 +14,16 @@ export async function POST(req: Request) {
         const { ratings, vendor, feedback } = body;
 
         const [newFeedback] = await db.insert(vendorFeedbacks).values({
-            ratings,
             hygiene: ratings.hygiene,
             quantity: ratings.quantity,
             timeliness: ratings.timeliness,
             variety: ratings.variety,
             staff: ratings.staff,
             overall: ratings.overall,
-            vendorId: Number(vendor), // Assuming vendor is passed as ID
+            vendorId: vendor, // Assuming vendor is passed as ID
             userId: user.id,
             feedback,
-        } as any).returning(); // Cast to any if there are extra fields in ratings object that we don't store in separate columns, wait schema has separate columns.
+        }).returning(); // Cast to any if there are extra fields in ratings object that we don't store in separate columns, wait schema has separate columns.
 
         // Actually schema has individual columns: hygiene, quantity etc.
         // The detailed breakdown is:

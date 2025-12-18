@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 
 // Define the User interface based on the SQL schema
 export interface IUser {
-    id: number;
+    id: string;
     email: string;
     role: 'admin' | 'student' | 'vendor'; // or string if relying on raw string
     name: string;

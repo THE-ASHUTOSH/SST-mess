@@ -59,8 +59,7 @@ export async function POST(req: Request) {
 
         const forMonthDate = new Date(month);
 
-        // Fetch existing selections for this month to check for duplicates
-        // We only really need the userIds to check usage
+        
         const existingSelections = await db.query.vendorSelections.findMany({
             where: eq(vendorSelections.forMonth, forMonthDate),
             with: {
@@ -68,9 +67,7 @@ export async function POST(req: Request) {
             }
         });
 
-        // Use user.email as key or userId. 
-        // Logic: if user exists in existingSelections, avoid duplicate.
-        // We can map userId -> true
+        
         const existingUserIds = new Set(existingSelections.map(sel => sel.userId));
 
         const duplicates: SelectionInfo[] = [];
@@ -133,10 +130,10 @@ export async function POST(req: Request) {
                 await db.insert(vendorSelections).values({
                     userId: user.id,
                     vendorId: vendor.id,
-                    preference, // Assuming matches Enum or text
+                    preference, 
                     forMonth: forMonthDate,
                     dateofEntry: new Date(),
-                    hostel: hostel, // Schema has hostel column
+                    hostel: hostel,
                 });
                 console.log(`Created vendor selection for user ${emailLower} with vendor ${vendorNameString}`);
                 newEntries.push({ email: emailLower, vendorName: vendorNameString });

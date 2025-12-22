@@ -88,6 +88,76 @@ The application is organized into three main user-facing portals.
 - **Verify Student QR**: The primary tool for vendors to scan and validate a student's meal QR code.
 - **Choice Analysis**: View analytics on how many students have selected them.
 
+## 📂 Project Structure
+
+This document outlines the structure of the SST Mess Management System project, providing an overview of the key directories and their purposes.
+
+### High-Level Overview
+
+The project follows the standard Next.js 14 (with App Router) conventions. The code is organized by feature and role, with clear separation between frontend pages, backend APIs, shared components, and database logic.
+
+```
+c:\Users\ashub\Documents\PROGRAMMING\Internal Tools\SST-mess\
+├───.gitignore
+├───components.json
+├───drizzle.config.ts
+├───eslint.config.mjs
+├───middleware.ts
+├───next.config.ts
+├───package.json
+├───pnpm-lock.yaml
+├───postcss.config.mjs
+├───README.md
+├───tsconfig.json
+├───.git\
+├───.next\
+├───app\
+│   ├───(pages)\
+│   │   ├───(admin)\
+│   │   ├───(student)\
+│   │   ├───(vendorUser)\
+│   │   └───login\
+│   └───api\
+│       ├───admin\
+│       ├───controls\
+│       ├───meal\
+│       ├───user\
+│       └───vendor\
+├───components\
+│   ├───common\
+│   ├───features\
+│   └───ui\
+├───context\
+├───drizzle\
+├───lib\
+│   ├───db\
+│   ├───models\
+│   └───utils\
+├───node_modules\
+└───public\
+```
+
+### Key Directories
+
+#### `app/`
+This is the core directory for the Next.js App Router.
+- **`app/(pages)/`**: This directory uses route grouping to organize the different user portals (Admin, Student, Vendor).
+- **`app/api/`**: Contains all the backend API route handlers, organized by resource type.
+
+#### `components/`
+This directory holds all the shared React components, separated into `ui` for basic elements, `common` for more complex shared components, and `features` for components tied to specific functionalities.
+
+#### `lib/`
+Contains shared libraries, utility functions, and business logic.
+- **`lib/db.ts`**: Drizzle ORM database client instance.
+- **`lib/db/schema.ts`**: The heart of the data model, defining all database tables, columns, and relations.
+
+#### `drizzle/`
+This folder is managed by Drizzle Kit and contains the SQL migration files that track changes to the database schema over time.
+
+#### `public/`
+Stores all static assets that are publicly accessible, such as images and other files.
+
 ## 🔌 API Endpoints
 
 The backend is built with Next.js API Routes. Here are the primary endpoints:

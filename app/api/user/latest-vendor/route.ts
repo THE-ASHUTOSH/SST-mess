@@ -3,17 +3,17 @@ import { db } from '@/lib/db';
 import { vendorSelections } from '@/lib/db/schema';
 import { getDbUser } from '@/lib/auth-helper';
 import { and, eq, gte, lte, desc } from 'drizzle-orm';
+import { getISTMonthStart, getISTMonthEnd } from '@/lib/utils/timezone';
 
 export async function GET() {
     try {
         const user = await getDbUser();
         if (!user) {
-            return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
 
-        const today = new Date();
-        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        const startOfMonth = getISTMonthStart();
+        const endOfMonth = getISTMonthEnd();
 
         const latestSelection = await db.query.vendorSelections.findFirst({
             where: and(
@@ -28,13 +28,13 @@ export async function GET() {
         });
 
         if (!latestSelection) {
-            return NextResponse.json({ message: "No vendor selection found" }, { status: 404 });
+            return NextResponse.json({ success: false, message: "No vendor selection found" }, { status: 404 });
         }
 
-        return NextResponse.json({ latestSelection });
+        return NextResponse.json({ success: true, latestSelection });
 
     } catch (error) {
         console.error('Error fetching latest vendor selection:', error);
-        return NextResponse.json({ message: "Server error" }, { status: 500 });
+        return NextResponse.json({ success: false, message: "Server error" }, { status: 500 });
     }
 }

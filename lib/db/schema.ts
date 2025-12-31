@@ -1,4 +1,4 @@
-import { pgTable, text, boolean, integer, timestamp, date, jsonb, pgEnum, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, boolean, integer, timestamp, date, jsonb, pgEnum, uuid, uniqueIndex } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const roleEnum = pgEnum("role", ["admin", "student", "vendor"]);
@@ -23,7 +23,7 @@ export const menus = pgTable("menus", {
     id: uuid("id").defaultRandom().primaryKey(),
     monday: jsonb("monday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
     tuesday: jsonb("tuesday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
-    wednesday: jsonb("wednesday").$type<{ breakfast: string[]; lunch:string[]; dinner: string[] }>(),
+    wednesday: jsonb("wednesday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
     thursday: jsonb("thursday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
     friday: jsonb("friday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
     saturday: jsonb("saturday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
@@ -52,7 +52,10 @@ export const meals = pgTable("meals", {
     byUserId: uuid("by_user_id").references(() => users.id).notNull(),
     mealType: mealTypeEnum("meal_type").notNull(),
     date: timestamp("date").notNull().defaultNow(),
-});
+}, (table) => ({
+    // Unique constraint to prevent duplicate meals per user per day per meal type
+    userMealDateIdx: uniqueIndex("meals_user_meal_date_idx").on(table.forUserId, table.mealType, table.date),
+}));
 
 export const controls = pgTable("controls", {
     id: uuid("id").defaultRandom().primaryKey(),
@@ -111,7 +114,7 @@ export const mealsRelations = relations(meals, ({ one }) => ({
     byUser: one(users, {
         fields: [meals.byUserId],
         references: [users.id],
-        relationName: "generated_.meals"
+        relationName: "generated_meals"
     }),
 }));
 

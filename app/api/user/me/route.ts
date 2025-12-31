@@ -5,11 +5,11 @@ export async function GET() {
     try {
         const user = await getDbUser();
         if (!user) {
-            return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
-        return NextResponse.json({ user });
+        return NextResponse.json({ success: true, user });
     } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-        return NextResponse.json({ message: "Server error", error: errorMessage }, { status: 500 });
+        return NextResponse.json({ success: false, message: "Server error", error: errorMessage }, { status: 500 });
     }
 }

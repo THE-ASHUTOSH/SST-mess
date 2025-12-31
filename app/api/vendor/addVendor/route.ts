@@ -8,7 +8,9 @@ import { eq } from 'drizzle-orm';
 export async function POST(req: Request) {
     try {
         const user = await requireRole(['admin']);
-        console.log("Vendor addition triggered by user:", user.email);
+        if (process.env.NODE_ENV !== 'production') {
+            console.log("Vendor addition triggered by user:", user.email);
+        }
 
         const formData = await req.formData();
         const name = formData.get('name') as string;
@@ -18,20 +20,32 @@ export async function POST(req: Request) {
         const mealsOptions = formData.get('mealsOptions') as string;
         const menuFile = formData.get('menuFile') as File | null;
 
-        if (!name || !price) {
-            return NextResponse.json({ message: "All fields are required" }, { status: 400 });
+        // Validate required fields
+        if (!name || typeof name !== 'string' || name.trim().length === 0) {
+            return NextResponse.json({ success: false, message: "Vendor name is required" }, { status: 400 });
         }
 
-        const parsedMealsOptions = mealsOptions ? JSON.parse(mealsOptions) : undefined;
+        if (!price || isNaN(Number(price)) || Number(price) < 0) {
+            return NextResponse.json({ success: false, message: "Valid price is required" }, { status: 400 });
+        }
+
+        let parsedMealsOptions;
+        if (mealsOptions) {
+            try {
+                parsedMealsOptions = JSON.parse(mealsOptions);
+            } catch {
+                return NextResponse.json({ success: false, message: "Invalid mealsOptions format" }, { status: 400 });
+            }
+        }
 
         const [newVendor] = await db.insert(vendors).values({
-            name,
-            description,
+            name: name.trim(),
+            description: description?.trim() || null,
             price: Number(price),
-            menuUrl,
-            breakfast: parsedMealsOptions?.breakfast,
-            lunch: parsedMealsOptions?.lunch,
-            dinner: parsedMealsOptions?.dinner,
+            menuUrl: menuUrl?.trim() || null,
+            breakfast: parsedMealsOptions?.breakfast ?? true,
+            lunch: parsedMealsOptions?.lunch ?? true,
+            dinner: parsedMealsOptions?.dinner ?? true,
         }).returning();
 
         try {
@@ -47,17 +61,18 @@ export async function POST(req: Request) {
                 await db.update(vendors).set({ menuId: newMenu.id }).where(eq(vendors.id, newVendor.id));
             }
         } catch (menuError) {
-            return NextResponse.json({ message: "Error processing menu file", menuError }, { status: 500 });
+            const errorMessage = menuError instanceof Error ? menuError.message : "Unknown error";
+            return NextResponse.json({ success: false, message: "Error processing menu file", error: errorMessage }, { status: 500 });
         }
 
-        return NextResponse.json({ message: "Vendor added successfully", vendor: newVendor }, { status: 201 });
+        return NextResponse.json({ success: true, message: "Vendor added successfully", vendor: newVendor }, { status: 201 });
 
     } catch (error: unknown) {
         if (error instanceof Error) {
-            if (error.message === "Unauthorized") return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-            if (error.message === "Forbidden") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-            return NextResponse.json({ message: "Error adding vendor", error: error.message }, { status: 500 });
+            if (error.message === "Unauthorized") return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+            if (error.message === "Forbidden") return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
+            return NextResponse.json({ success: false, message: "Error adding vendor", error: error.message }, { status: 500 });
         }
-        return NextResponse.json({ message: "An unknown error occurred while adding vendor" }, { status: 500 });
+        return NextResponse.json({ success: false, message: "An unknown error occurred while adding vendor" }, { status: 500 });
     }
 }

@@ -11,6 +11,12 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Limit request body size to 4MB for security
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '4mb',
+    },
+  },
 };
 
 export default nextConfig;

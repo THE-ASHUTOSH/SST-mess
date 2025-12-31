@@ -9,12 +9,12 @@ export async function GET() {
         const [feedbackToggle] = await db.select().from(controls).where(eq(controls.name, 'feedbackToggle'));
         if (!feedbackToggle) {
             const [newToggle] = await db.insert(controls).values({ name: 'feedbackToggle', enabled: false }).returning();
-            return NextResponse.json({ enabled: newToggle.enabled });
+            return NextResponse.json({ success: true, enabled: newToggle.enabled });
         }
-        return NextResponse.json({ enabled: feedbackToggle.enabled });
+        return NextResponse.json({ success: true, enabled: feedbackToggle.enabled });
     } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-        return NextResponse.json({ message: 'Error fetching feedback toggle', error: errorMessage }, { status: 500 });
+        return NextResponse.json({ success: false, message: 'Error fetching feedback toggle', error: errorMessage }, { status: 500 });
     }
 }
 
@@ -35,15 +35,18 @@ export async function PATCH(req: Request) {
                 .returning();
         }
 
-        console.log(`Feedback toggle set to ${feedbackToggle.enabled} by ${user.email}`);
-        return NextResponse.json({ enabled: feedbackToggle.enabled });
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`Feedback toggle set to ${feedbackToggle.enabled} by ${user.email}`);
+        }
+
+        return NextResponse.json({ success: true, enabled: feedbackToggle.enabled });
 
     } catch (error: unknown) {
         if (error instanceof Error) {
-            if (error.message === "Unauthorized") return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-            if (error.message === "Forbidden") return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-            return NextResponse.json({ message: 'Error toggling feedback toggle', error: error.message }, { status: 500 });
+            if (error.message === "Unauthorized") return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+            if (error.message === "Forbidden") return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
+            return NextResponse.json({ success: false, message: 'Error toggling feedback toggle', error: error.message }, { status: 500 });
         }
-        return NextResponse.json({ message: 'An unknown error occurred while toggling feedback' }, { status: 500 });
+        return NextResponse.json({ success: false, message: 'An unknown error occurred while toggling feedback' }, { status: 500 });
     }
 }

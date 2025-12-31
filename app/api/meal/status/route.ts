@@ -3,31 +3,21 @@ import { db } from '@/lib/db';
 import { meals } from '@/lib/db/schema';
 import { getDbUser } from '@/lib/auth-helper';
 import { and, eq, gte, lt } from 'drizzle-orm';
+import { getCurrentMealType, getISTDayBounds } from '@/lib/utils/timezone';
 
 export async function GET() {
     try {
         const user = await getDbUser();
         if (!user) {
-            return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
 
-        const nowtime = new Date();
-        const istTime = new Date(nowtime.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
-        const indianHours = istTime.getHours();
-
-        let mealType: 'breakfast' | 'lunch' | 'dinner';
-        if (indianHours >= 7 && indianHours < 10) {
-            mealType = "breakfast";
-        } else if (indianHours >= 12 && indianHours < 15) {
-            mealType = "lunch";
-        } else if (indianHours >= 19 && indianHours < 22) {
-            mealType = "dinner";
-        } else {
-            return NextResponse.json({ message: "Wrong meal time." }, { status: 403 });
+        const mealType = getCurrentMealType();
+        if (!mealType) {
+            return NextResponse.json({ success: false, message: "Wrong meal time." }, { status: 403 });
         }
 
-        const startOfDay = new Date(nowtime.getFullYear(), nowtime.getMonth(), nowtime.getDate());
-        const endOfDay = new Date(nowtime.getFullYear(), nowtime.getMonth(), nowtime.getDate() + 1);
+        const { startOfDay, endOfDay } = getISTDayBounds();
 
         const meal = await db.query.meals.findFirst({
             where: and(
@@ -39,13 +29,13 @@ export async function GET() {
         });
 
         if (meal) {
-            return NextResponse.json({ status: "scanned" });
+            return NextResponse.json({ success: true, status: "scanned" });
         }
 
-        return NextResponse.json({ status: "not_scanned" });
+        return NextResponse.json({ success: true, status: "not_scanned" });
 
     } catch (error) {
         console.error("Error getting meal status:", error);
-        return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+        return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
     }
 }

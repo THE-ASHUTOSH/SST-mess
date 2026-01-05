@@ -71,9 +71,9 @@ export async function GET() {
             { expiresIn: "15m" }
         );
 
-        if (process.env.NODE_ENV !== 'production') {
-            console.log("QR generated for " + user.name + " for vendor " + selection.vendor.name);
-        }
+        
+        console.log("QR generated for " + user.name + " for vendor " + selection.vendor.name);
+        
 
         return NextResponse.json({ success: true, token });
 

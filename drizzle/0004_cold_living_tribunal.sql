@@ -1,0 +1,1 @@
+ALTER TYPE "public"."preference" ADD VALUE 'Eggetarian';

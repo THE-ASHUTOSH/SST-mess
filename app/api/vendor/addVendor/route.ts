@@ -8,9 +8,9 @@ import { eq } from 'drizzle-orm';
 export async function POST(req: Request) {
     try {
         const user = await requireRole(['admin']);
-        if (process.env.NODE_ENV !== 'production') {
-            console.log("Vendor addition triggered by user:", user.email);
-        }
+        
+        console.log("Vendor addition triggered by user:", user.email);
+        
 
         const formData = await req.formData();
         const name = formData.get('name') as string;

@@ -3,7 +3,7 @@ import { relations } from "drizzle-orm";
 
 export const roleEnum = pgEnum("role", ["admin", "student", "vendor"]);
 export const mealTypeEnum = pgEnum("meal_type", ["breakfast", "lunch", "dinner"]);
-export const preferenceEnum = pgEnum("preference", ["Vegetarian", "Non-Vegetarian"]);
+export const preferenceEnum = pgEnum("preference", ["Vegetarian", "Non-Vegetarian", "Eggetarian"]);
 export const hostelEnum = pgEnum("hostel", ["Velankani Micro Campus (Uniworld 2)", "Neeladri Micro Campus (Uniworld 1)"]);
 
 export const users = pgTable("users", {

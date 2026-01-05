@@ -84,9 +84,9 @@ export async function POST(req: Request) {
             where: eq(users.id, forUserId)
         });
 
-        if (process.env.NODE_ENV !== 'production') {
+        
             console.log("Meal verified for", foruser?.name);
-        }
+        
 
         return NextResponse.json({ success: true, message: "Meal verified successfully.", user: foruser });
 

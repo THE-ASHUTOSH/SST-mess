@@ -36,7 +36,7 @@ const VendorDetail = () => {
     async function loadVendors() {
       try {
         const response = await axiosInstance.get(`/api/vendor/getVendors`);
-        setVendors(response.data.vendor);
+        setVendors(response.data.vendors);
       } catch (err) {
         // console.error("Failed to fetch vendors:", err);
       } finally {

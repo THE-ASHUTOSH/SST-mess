@@ -32,12 +32,12 @@ const VerifyStudentQRPage = () => {
     const fetchVendors = async () => {
       try {
         const response = await axiosInstance.get(`/api/vendor/getVendors`);
-        if (Array.isArray(response.data.vendor)) {
+        if (Array.isArray(response.data.vendors)) {
           // setVendors(response.data.vendor);
           const fetchedVendors: Vendor[] = response.data.vendor;
           const gaurasVendors = fetchedVendors.filter(v => v.name.includes("Gaura's Secret Recipe"));
           const otherVendors = fetchedVendors.filter(v => !v.name.includes("Gaura's Secret Recipe"));
-
+          
           if (gaurasVendors.length > 0) {
             const combinedGauraVendor: Vendor = {
               id: gaurasVendors.map(v => v.id).join(','),

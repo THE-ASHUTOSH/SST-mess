@@ -35,9 +35,9 @@ export async function PATCH(req: Request) {
                 .returning();
         }
 
-        if (process.env.NODE_ENV !== 'production') {
-            console.log(`Feedback toggle set to ${feedbackToggle.enabled} by ${user.email}`);
-        }
+        
+        console.log(`Feedback toggle set to ${feedbackToggle.enabled} by ${user.email}`);
+        
 
         return NextResponse.json({ success: true, enabled: feedbackToggle.enabled });
 

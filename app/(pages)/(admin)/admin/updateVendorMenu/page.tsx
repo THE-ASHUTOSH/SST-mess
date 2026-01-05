@@ -47,9 +47,11 @@ const UpdateVendorMenu = () => {
     async function loadVendors() {
       try {
         const response = await axiosInstance.get(`/api/vendor/getVendors`);
-        setVendors(response.data.vendor);
+        if (Array.isArray(response.data.vendors)) {
+          setVendors(response.data.vendors);
+        }
       } catch (err) {
-        // console.log(err);
+        console.log(err);
       }
     }
 

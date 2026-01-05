@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "meals_user_meal_date_idx" ON "meals" USING btree ("for_user_id","meal_type","date");

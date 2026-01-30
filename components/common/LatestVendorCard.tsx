@@ -4,13 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const LatestVendorCard = ({ vendorName }: { vendorName: string }) => {
   return (
-    <Card className="mb-4 bg-transparent text-white rounded-lg shadow-lg">
+    <Card className="mb-4 bg-card text-card-foreground rounded-xl border border-border/60 shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-md">
       <CardHeader>
-        <CardTitle className="text-2xl font-bold bg-gradient-to-r from-[#4facfe] via-[#00f2fe] to-[#7b4dff] bg-clip-text text-transparent">Your Latest Vendor Selection</CardTitle>
+        <CardTitle className="text-2xl font-bold text-foreground">Your Latest Vendor Selection</CardTitle>
       </CardHeader>
-      <CardContent className='bg-gradient-to-r from-[#4facfe] via-[#00f2fe] to-[#7b4dff] bg-clip-text text-transparent'>
-        <p className="text-lg">
-          You selected <strong>{vendorName}</strong>.
+      <CardContent>
+        <p className="text-lg text-muted-foreground">
+          You selected <strong className="text-primary font-semibold">{vendorName}</strong>.
         </p>
       </CardContent>
     </Card>

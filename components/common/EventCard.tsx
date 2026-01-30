@@ -1,48 +1,54 @@
 "use client";
+
 import React, { ReactNode } from "react";
-import { Card, CardHeader } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-interface CardProps {
+
+interface EventCardProps {
   title: string;
   description?: string;
-  logoUrl?: string;
   children?: ReactNode;
   redirectUrl?: string;
   enabled?: boolean;
 }
-const EventCard: React.FC<CardProps> = ({
+
+const EventCard: React.FC<EventCardProps> = ({
   title,
   description,
-  logoUrl,
   children,
   redirectUrl,
   enabled = true,
-}: CardProps) => {
+}: EventCardProps) => {
   const cardContent = (
     <Card
       className={cn(
-        "w-full h-full bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-[#ff6b6b]/30 transform hover:-translate-y-2 transition-all duration-300 group",
-        !enabled && "grayscale pointer-events-none"
+        "h-full transition-all duration-300 ease-out",
+        "bg-card border border-border/60 rounded-xl",
+        "shadow-sm",
+        enabled
+          ? "hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 cursor-pointer"
+          : "opacity-50 cursor-not-allowed",
+        "flex flex-col overflow-hidden group"
       )}
     >
-      <CardHeader className="p-6 bg-gradient-to-br from-gray-800/80 to-gray-900/80 border-b border-gray-700/50">
-        <h1 className="text-xl font-semibold bg-gradient-to-r from-[#4facfe] via-[#00f2fe] to-[#7b4dff] bg-clip-text text-transparent group-hover:from-[#ff6b6b] group-hover:via-[#ffd93d] group-hover:to-[#6c5ce7] transition-all duration-500">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors duration-300">
           {title}
-        </h1>
-        <p className="mt-2 text-sm text-gray-400 ">{description}</p>
+        </CardTitle>
+        {description && <p className="text-sm text-muted-foreground">{description}</p>}
       </CardHeader>
-      <div className="p-6 text-gray-300 text-sm leading-relaxed">
+      <CardContent className="flex-1 text-sm text-muted-foreground">
         {children}
-      </div>
+      </CardContent>
     </Card>
   );
 
   if (redirectUrl && enabled) {
-    return <Link href={redirectUrl}>{cardContent}</Link>;
+    return <Link href={redirectUrl} className="block h-full">{cardContent}</Link>;
   }
 
-  return cardContent;
+  return <div className="h-full">{cardContent}</div>;
 };
 
 export default EventCard;

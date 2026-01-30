@@ -2,19 +2,21 @@
 import React, { useEffect, useState } from "react";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, PieLabelRenderProps } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import LoadingAnimation from "@/components/common/LoadingAnimation";
+import { TableSkeleton } from "@/components/common/Skeletons";
 import axiosInstance from '@/lib/axiosInstance';
-import { isAxiosError } from 'axios';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Vendor {
-      id: string;  name: string;
+  id: string;
+  name: string;
   description: string;
   price: number;
   menu: string;
 }
 
 interface Choice {
-      id: string;  name: string;
+  id: string;
+  name: string;
   user: string;
   roomNo: string;
   vendor: Vendor;
@@ -60,15 +62,15 @@ const ChoiceAnalysis = () => {
   };
 
   if (loading) {
-    return <LoadingAnimation />;
+    return <div className="p-8 max-w-4xl mx-auto"><TableSkeleton rows={6} /></div>;
   }
 
   if (error) {
-    return <div className="text-red-500 text-center mt-10">{error}</div>;
+    return <div className="text-destructive text-center mt-10">{error}</div>;
   }
 
   const chartData = getChartData();
-  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
+  const COLORS = ["oklch(0.6 0.118 184.704)", "oklch(0.646 0.222 41.116)", "oklch(0.828 0.189 84.429)", "oklch(0.769 0.188 70.08)"];
 
   const RADIAN = Math.PI / 180;
   const renderCustomizedLabel = (props: PieLabelRenderProps) => {
@@ -96,24 +98,38 @@ const ChoiceAnalysis = () => {
   };
 
   return (
-    <div className="min-h-[80vh] flex flex-col items-center justify-center p-4 bg-gray-900 text-white animate-fade-in-up">
-      <div className="w-full max-w-4xl">
-        <h1 className="text-3xl font-bold mb-6 text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-indigo-400">
+    <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-4xl space-y-8">
+        <h1 className="text-3xl font-bold text-center text-primary">
           Choice Analysis
         </h1>
 
-        <div className="flex justify-center gap-4 mb-4">
-          <select value={year} onChange={(e) => setYear(parseInt(e.target.value))} className="bg-gray-800 text-white p-2 rounded">
-            {Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - 3 + i).map(y => <option key={y} value={y}>{y}</option>)}
-          </select>
-          <select value={month} onChange={(e) => setMonth(parseInt(e.target.value))} className="bg-gray-800 text-white p-2 rounded">
-            {Array.from({ length: 12 }, (_, i) => i + 1).map(m => <option key={m} value={m}>{new Date(0, m - 1).toLocaleString('default', { month: 'long' })}</option>)}
-          </select>
+        <div className="flex justify-center gap-4">
+          <Select value={year.toString()} onValueChange={(val) => setYear(parseInt(val))}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Year" />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - 3 + i).map(y => (
+                <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={month.toString()} onValueChange={(val) => setMonth(parseInt(val))}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Month" />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                <SelectItem key={m} value={m.toString()}>{new Date(0, m - 1).toLocaleString('default', { month: 'long' })}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <Card className="w-full bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl overflow-hidden shadow-lg">
+        <Card className="w-full border-border bg-card shadow-lg">
           <CardHeader>
-            <CardTitle className="text-white">Vendor Selections</CardTitle>
+            <CardTitle className="text-card-foreground">Vendor Selections</CardTitle>
           </CardHeader>
           <CardContent>
             {chartData.length > 0 ? (
@@ -135,16 +151,18 @@ const ChoiceAnalysis = () => {
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: 'rgba(31, 41, 55, 0.8)',
-                      borderColor: '#4A5568',
-                      color: 'white',
+                      backgroundColor: 'oklch(0.12 0 0)',
+                      borderColor: 'oklch(0.2 0 0)',
+                      color: 'oklch(0.985 0 0)',
+                      borderRadius: '8px'
                     }}
+                    itemStyle={{ color: 'inherit' }}
                   />
-                  <Legend wrapperStyle={{ color: '#E2E8F0' }} />
+                  <Legend wrapperStyle={{ color: 'oklch(0.705 0 0)' }} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-center text-gray-400">No choice data available to display.</p>
+              <p className="text-center text-muted-foreground">No choice data available to display.</p>
             )}
           </CardContent>
         </Card>

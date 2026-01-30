@@ -1,126 +1,86 @@
 "use client"
-import React, { useState } from 'react'
+import React from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useUser } from '@/context/UserContext'
 import { SignOutButton } from "@clerk/nextjs"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
 
 const Header = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const pathname = usePathname();
-
-
   const { user, setUser } = useUser();
   const router = useRouter();
 
+  const getDashboardLink = () => {
+    if (!user) return '/login';
+    if (user.role === 'admin') return '/admin/dashboard';
+    if (user.role === 'vendor') return '/vendorUser/dashboard';
+    return '/student/dashboard';
+  }
 
   return (
-    <header className="bg-gray-900/90 backdrop-blur-md border-b border-gray-800/50 shadow-lg sticky top-0 z-50">
+    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur-md">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 lg:h-20">
-          {/* Logo */}
-          <div className="flex-shrink-0">
-            <Link href="/" className="text-2xl lg:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-indigo-400 hover:from-indigo-400 hover:via-purple-500 hover:to-blue-400 transition-all duration-500">
-              SST Mess
+        <div className="flex h-16 items-center justify-between">
+          <div className="flex flex-col">
+            <Link href="/" className="flex items-center">
+              <span className="text-3xl font-bold tracking-tight text-primary">
+                SST Mess
+              </span>
             </Link>
-          </div>
-
-
-          {/* Auth Buttons - Desktop */}
-          <div className="hidden md:flex items-center gap-4">
-            {!user ? (
-              <Link href="/login"
-                className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-purple-500 hover:to-blue-500 text-white font-medium py-2 px-6 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 hover:-translate-y-0.5">
-                Login
-              </Link>
-            ) : (
-              <div className="flex items-center gap-3">
-                {/* Profile / Dashboard link */}
-                <Link href={user.role === 'admin' ? '/admin/dashboard' : user.role === 'vendor' ? '/vendorUser/dashboard' : '/student/dashboard'} className="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-800">
-                  <img src={user.picture || '/avatar_placeholder.png'} alt="avatar" className="h-8 w-8 rounded-full object-cover" />
-                  <span className="text-sm">{user.name?.split(' ')[0]}</span>
-                </Link>
-
-                {/* Logout button */}
-                <SignOutButton redirectUrl='/login'>
-                  <button
-                    onClick={() => setUser(null)}
-                    className="px-3 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white text-sm">
-                    Logout
-                  </button>
-                </SignOutButton>
-              </div>
+            {user && (
+              <span className="text-sm text-muted-foreground">
+                Welcome back, <span className="text-foreground font-medium">{user.name?.split(' ')[0]}</span>
+              </span>
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="-mr-2 flex md:hidden">
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none"
-            >
-              {isMenuOpen ? (
-                <svg className="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg className="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              )}
-            </button>
+          <div className="flex items-center gap-4">
+            {!user ? (
+              <Button asChild variant="default" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md shadow-blue-500/20">
+                <Link href="/login">Login</Link>
+              </Button>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-9 w-9 rounded-full ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={user.picture || '/avatar_placeholder.png'} alt={user.name} />
+                      <AvatarFallback className="bg-primary/10 text-primary">{user.name?.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{user.name}</p>
+                      <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => router.push(getDashboardLink())}>
+                    Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <SignOutButton redirectUrl='/login'>
+                    <DropdownMenuItem onClick={() => setUser(null)} className="text-red-500 focus:text-red-500 focus:bg-red-500/10 cursor-pointer">
+                      Logout
+                    </DropdownMenuItem>
+                  </SignOutButton>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
       </div>
-
-      {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="md:hidden animate-fade-in-down">
-          <div className="px-2 pt-2 pb-3 space-y-2 sm:px-3">
-            {user ? (
-              <>
-                <div className="flex items-center gap-3 px-3 py-2">
-                  <img src={user.picture || '/avatar_placeholder.png'} alt="avatar" className="h-10 w-10 rounded-full object-cover" referrerPolicy="no-referrer" />
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-white">{user.name}</span>
-                    <span className="text-xs text-gray-400">{user.email}</span>
-                  </div>
-                </div>
-
-                <div className="mt-4 space-y-2">
-                  <Link
-                    href={user.role === 'admin' ? '/admin/dashboard' : user.role === 'vendor' ? '/vendorUser/dashboard' : '/student/dashboard'}
-                    className="block w-full text-center px-4 py-2 rounded-lg text-base font-medium text-white hover:bg-gray-800"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Dashboard
-                  </Link>
-
-                  <SignOutButton redirectUrl='/login'>
-                    <button
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        setUser(null);
-                      }}
-                      className="block w-full text-center px-4 py-2 rounded-lg bg-red-600 text-white"
-                    >
-                      Logout
-                    </button>
-                  </SignOutButton>
-                </div>
-              </>
-            ) : (
-              <div className="mt-6 pt-4 border-t border-gray-700/50 space-y-2">
-                <Link href="/login"
-                  className="block w-full text-center px-4 py-2 rounded-lg text-base font-medium text-white bg-gradient-to-r from-blue-500 to-purple-500 hover:from-purple-500 hover:to-blue-500 transition-all duration-300 hover:shadow-md hover:shadow-purple-500/20"
-                  onClick={() => setIsMenuOpen(false)}>
-                  Login
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </header>
   )
 }

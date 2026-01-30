@@ -4,7 +4,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import axiosInstance from '@/lib/axiosInstance';
 import { isAxiosError } from 'axios';
 import { Html5QrcodeScanner } from 'html5-qrcode';
-import LoadingAnimation from '@/components/common/LoadingAnimation';
+import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+
 interface VerifiedUser {
   id: string;
   name: string;
@@ -16,7 +19,6 @@ interface Vendor {
   id: string;
   name: string;
 }
-
 
 const VerifyStudentQRPage = () => {
   const [message, setMessage] = useState('');
@@ -34,7 +36,6 @@ const VerifyStudentQRPage = () => {
         const response = await axiosInstance.get(`/api/vendor/getVendors`);
         console.log('Fetched vendors:', response.data.vendors);
         if (Array.isArray(response.data.vendors)) {
-          // setVendors(response.data.vendor);
           const fetchedVendors: Vendor[] = response.data.vendors;
           const gaurasVendors = fetchedVendors.filter(v => v.name.includes("Gaura's Secret Recipe"));
           const otherVendors = fetchedVendors.filter(v => !v.name.includes("Gaura's Secret Recipe"));
@@ -57,17 +58,6 @@ const VerifyStudentQRPage = () => {
     };
     fetchVendors();
   }, []);
-
-  // useEffect(() => {
-  //   const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-  //     event.preventDefault();
-  //     event.returnValue = '';
-  //   };
-  //   window.addEventListener('beforeunload', handleBeforeUnload);
-  //   return () => {
-  //     window.removeEventListener('beforeunload', handleBeforeUnload);
-  //   };
-  // }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !selectedVendor) {
@@ -149,41 +139,60 @@ const VerifyStudentQRPage = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-center">
-      <h1 className="text-4xl font-extrabold text-center mb-10 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-indigo-400 tracking-tight transform hover:scale-105 transition-transform duration-300">Verify Student QR</h1>
+    <div className="p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]">
+      <h1 className="text-4xl font-extrabold text-center mb-10 text-primary tracking-tight">
+        Verify Student QR
+      </h1>
 
-      <div className="mb-4 w-full max-w-sm">
-        <label htmlFor="vendor-select" className="block text-sm font-medium text-gray-700 mb-2">Select Vendor</label>
-        <select
-          id="vendor-select"
+      <div className="mb-8 w-full max-w-sm space-y-4">
+        <Label htmlFor="vendor-select" className="text-base">Select Vendor</Label>
+        <Select
           value={selectedVendor}
-          onChange={(e) => setSelectedVendor(e.target.value)}
-          className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-300 text-white placeholder-gray-500"
+          onValueChange={setSelectedVendor}
           disabled={isProcessing}
         >
-          <option value="" disabled>--Please choose a vendor--</option>
-          {vendors.map((vendor) => (
-            <option key={vendor.id} value={vendor.id}>{vendor.name}</option>
-          ))}
-        </select>
+          <SelectTrigger id="vendor-select" className="w-full">
+            <SelectValue placeholder="-- Please choose a vendor --" />
+          </SelectTrigger>
+          <SelectContent>
+            {vendors.map((vendor) => (
+              <SelectItem key={vendor.id} value={vendor.id}>
+                {vendor.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {selectedVendor && (
-        <div className="w-full max-w-sm" style={{ minHeight: '300px' }}>
-          <div id={scannerContainerId} style={{ display: isProcessing ? 'none' : 'block' }}></div>
+        <div className="w-full max-w-sm relative" style={{ minHeight: '300px' }}>
+          <div id={scannerContainerId} style={{ display: isProcessing ? 'none' : 'block' }} className="rounded-lg overflow-hidden border-2 border-primary/20 bg-black"></div>
           {isProcessing && (
-            <div className="flex flex-col items-center justify-center h-full mt-4">
+            <div className="flex flex-col items-center justify-center h-full mt-4 animate-in fade-in zoom-in duration-300">
               {verifiedUser ? (
-                <div className="text-center">
-                  <img src={verifiedUser.picture} alt={verifiedUser.name} className="w-32 h-32 mx-auto mb-4 border-4 border-purple-500" referrerPolicy='no-referrer' />
-                  <p className="text-green-500 text-xl">{message}</p>
+                <div className="text-center space-y-4">
+                  <div className="relative inline-block">
+                    <img src={verifiedUser.picture} alt={verifiedUser.name} className="w-32 h-32 mx-auto rounded-full border-4 border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.5)]" referrerPolicy='no-referrer' />
+                    <div className="absolute bottom-0 right-0 bg-green-500 rounded-full p-2 border-4 border-background">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-2xl font-bold">{verifiedUser.name}</h3>
+                    <p className="text-green-500 text-lg font-medium">{message}</p>
+                  </div>
                 </div>
               ) : (
-                <>
-                  {message && <p className="text-green-500 text-xl text-center">{message}</p>}
-                  {error && <p className="text-red-500 text-xl text-center">{error}</p>}
-                  {!message && !error && <LoadingAnimation />}
-                </>
+                <div className="flex flex-col items-center space-y-4">
+                  {message && <p className="text-green-500 text-xl text-center font-medium">{message}</p>}
+                  {error && (
+                    <div className="text-red-500 text-center space-y-2">
+                      <svg className="w-12 h-12 mx-auto text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                      <p className="text-xl font-medium">{error}</p>
+                    </div>
+                  )}
+                  {!message && !error && <Skeleton className="h-10 w-40" />}
+                </div>
               )}
             </div>
           )}

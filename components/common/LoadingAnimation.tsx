@@ -7,9 +7,9 @@ interface LoadingSpinnerProps {
   fullScreen?: boolean;
 }
 
-const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ 
-  size = 'md', 
-  fullScreen = false 
+const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
+  size = 'md',
+  fullScreen = false
 }) => {
   const sizeClasses = {
     sm: 'w-8 h-8',
@@ -19,7 +19,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   };
 
   const containerClasses = fullScreen
-    ? 'fixed inset-0 flex items-center justify-center bg-[#1a1d2e] z-50'
+    ? 'fixed inset-0 flex items-center justify-center bg-background z-50'
     : 'flex items-center justify-center p-8';
 
   return (
@@ -28,7 +28,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
         <div className={`${sizeClasses[size]} relative`}>
           {/* Outer spinning ring */}
           <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-violet-500 border-r-blue-500 animate-spin"></div>
-          
+
           {/* Inner spinning ring */}
           <div className="absolute inset-2 rounded-full border-4 border-transparent border-b-purple-400 border-l-indigo-400 animate-spin-reverse"></div>
         </div>

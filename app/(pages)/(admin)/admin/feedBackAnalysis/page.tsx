@@ -2,9 +2,18 @@
 import React, { useEffect, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import LoadingAnimation from "@/components/common/LoadingAnimation";
+import { TableSkeleton } from "@/components/common/Skeletons";
 import axiosInstance from '@/lib/axiosInstance';
-import { isAxiosError } from 'axios';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 
 interface Vendor {
   id: string;
@@ -32,8 +41,8 @@ const FeedbackAnalysis = () => {
   const [feedbackData, setFeedbackData] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedVendor, setSelectedVendor] = useState<string>("");
-  const [selectedRating, setSelectedRating] = useState<string>("");
+  const [selectedVendor, setSelectedVendor] = useState<string>("all");
+  const [selectedRating, setSelectedRating] = useState<string>("all");
   const [selectedChart, setSelectedChart] = useState<string>("overall");
 
   useEffect(() => {
@@ -54,8 +63,8 @@ const FeedbackAnalysis = () => {
   const vendors = Array.from(new Set(feedbackData.map(f => f.vendor?.name).filter(Boolean)));
 
   const filteredFeedback = feedbackData.filter(feedback => {
-    const vendorMatch = !selectedVendor || feedback.vendor?.name === selectedVendor;
-    const ratingMatch = !selectedRating || feedback.overall === parseInt(selectedRating, 10);
+    const vendorMatch = selectedVendor === "all" || feedback.vendor?.name === selectedVendor;
+    const ratingMatch = selectedRating === "all" || feedback.overall === parseInt(selectedRating, 10);
     return vendorMatch && ratingMatch;
   });
 
@@ -79,144 +88,150 @@ const FeedbackAnalysis = () => {
   };
 
   if (loading) {
-    return <LoadingAnimation />;
+    return <div className="p-8 max-w-4xl mx-auto"><TableSkeleton rows={6} /></div>;
   }
 
   if (error) {
-    return <div className="text-red-500 text-center mt-10">{error}</div>;
+    return <div className="text-destructive text-center mt-10">{error}</div>;
   }
 
   const chartData = getChartData();
 
   return (
-    <div className="min-h-[80vh] flex flex-col items-center p-4 bg-gray-900 text-white animate-fade-in-up">
-      <div className="w-full max-w-6xl">
-        <h1 className="text-3xl font-bold mb-6 text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-indigo-400">
+    <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center p-4">
+      <div className="w-full max-w-6xl space-y-8">
+        <h1 className="text-3xl font-bold text-center text-primary">
           Feedback Analysis
         </h1>
 
-        <Card className="w-full bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl overflow-hidden shadow-lg mb-6">
+        <Card className="w-full border-border bg-card shadow-lg">
           <CardHeader>
-            <CardTitle className="text-white">Filters</CardTitle>
+            <CardTitle>Filters</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <label htmlFor="vendor-filter" className="block text-sm font-medium text-gray-300 mb-2">Vendor</label>
-              <select
-                id="vendor-filter"
-                value={selectedVendor}
-                onChange={(e) => setSelectedVendor(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-900/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-300 text-white"
-              >
-                <option value="">All Vendors</option>
-                {vendors.map(vendor => (
-                  <option key={vendor} value={vendor}>{vendor}</option>
-                ))}
-              </select>
+            <div className="flex-1 space-y-2">
+              <Label htmlFor="vendor-filter">Vendor</Label>
+              <Select value={selectedVendor} onValueChange={setSelectedVendor}>
+                <SelectTrigger id="vendor-filter">
+                  <SelectValue placeholder="All Vendors" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Vendors</SelectItem>
+                  {vendors.map(vendor => (
+                    <SelectItem key={vendor} value={vendor}>{vendor}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <div className="flex-1">
-              <label htmlFor="rating-filter" className="block text-sm font-medium text-gray-300 mb-2">Rating</label>
-              <select
-                id="rating-filter"
-                value={selectedRating}
-                onChange={(e) => setSelectedRating(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-900/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-300 text-white"
-              >
-                <option value="">All Ratings</option>
-                {[5, 4, 3, 2, 1].map(rating => (
-                  <option key={rating} value={rating}>{rating} Star{rating > 1 ? 's' : ''}</option>
-                ))}
-              </select>
+            <div className="flex-1 space-y-2">
+              <Label htmlFor="rating-filter">Rating</Label>
+              <Select value={selectedRating} onValueChange={setSelectedRating}>
+                <SelectTrigger id="rating-filter">
+                  <SelectValue placeholder="All Ratings" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Ratings</SelectItem>
+                  {[5, 4, 3, 2, 1].map(rating => (
+                    <SelectItem key={rating} value={rating.toString()}>{rating} Star{rating > 1 ? 's' : ''}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <div className="flex-1">
-              <label htmlFor="chart-filter" className="block text-sm font-medium text-gray-300 mb-2">Chart</label>
-              <select
-                id="chart-filter"
-                value={selectedChart}
-                onChange={(e) => setSelectedChart(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-900/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-300 text-white"
-              >
-                <option value="overall">Overall</option>
-                <option value="hygiene">Hygiene</option>
-                <option value="quantity">Quantity</option>
-                <option value="timeliness">Timeliness</option>
-                <option value="variety">Variety</option>
-                <option value="staff">Staff</option>
-              </select>
+            <div className="flex-1 space-y-2">
+              <Label htmlFor="chart-filter">Chart Metric</Label>
+              <Select value={selectedChart} onValueChange={setSelectedChart}>
+                <SelectTrigger id="chart-filter">
+                  <SelectValue placeholder="Overall" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="overall">Overall</SelectItem>
+                  <SelectItem value="hygiene">Hygiene</SelectItem>
+                  <SelectItem value="quantity">Quantity</SelectItem>
+                  <SelectItem value="timeliness">Timeliness</SelectItem>
+                  <SelectItem value="variety">Variety</SelectItem>
+                  <SelectItem value="staff">Staff</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="w-full bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl overflow-hidden shadow-lg">
+          <Card className="w-full border-border bg-card shadow-lg">
             <CardHeader>
-              <CardTitle className="text-white">Average Vendor Ratings</CardTitle>
+              <CardTitle>Average Vendor Ratings</CardTitle>
             </CardHeader>
             <CardContent>
               {chartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={400}>
                   <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#4A5568" />
-                    <XAxis dataKey="name" tick={{ fill: '#E2E8F0' }} />
-                    <YAxis tick={{ fill: '#E2E8F0' }} />
-                    <Tooltip contentStyle={{ backgroundColor: 'rgba(31, 41, 55, 0.8)', borderColor: '#4A5568', color: '#E2E8F0' }} />
-                    <Legend wrapperStyle={{ color: '#E2E8F0' }} />
-                    <Bar dataKey="averageRating" fill="url(#colorRating)" />
-                    <defs>
-                      <linearGradient id="colorRating" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8} />
-                        <stop offset="95%" stopColor="#82ca9d" stopOpacity={0.2} />
-                      </linearGradient>
-                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.2 0 0)" />
+                    <XAxis dataKey="name" tick={{ fill: 'oklch(0.705 0 0)' }} />
+                    <YAxis tick={{ fill: 'oklch(0.705 0 0)' }} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'oklch(0.12 0 0)',
+                        borderColor: 'oklch(0.2 0 0)',
+                        color: 'oklch(0.985 0 0)',
+                        borderRadius: '8px'
+                      }}
+                      itemStyle={{ color: 'inherit' }}
+                    />
+                    <Legend wrapperStyle={{ color: 'oklch(0.705 0 0)' }} />
+                    <Bar dataKey="averageRating" fill="oklch(0.646 0.222 41.116)" />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <p className="text-center text-gray-400">No feedback data available for the selected filters.</p>
+                <p className="text-center text-muted-foreground">No feedback data available for the selected filters.</p>
               )}
             </CardContent>
           </Card>
 
-          <Card className="w-full bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl overflow-hidden shadow-lg">
+          <Card className="w-full border-border bg-card shadow-lg">
             <CardHeader>
-              <CardTitle className="text-white">All Feedback</CardTitle>
+              <CardTitle>All Feedback</CardTitle>
             </CardHeader>
-            <CardContent className="overflow-y-auto h-[400px] text-white">
-              <table className="min-w-full">
-                <thead className="sticky top-0 bg-gray-800/80 backdrop-blur-sm">
-                  <tr>
-                    <th className="py-2 px-4 border-b border-gray-700 text-left">Vendor</th>
-                    <th className="py-2 px-4 border-b border-gray-700 text-left">Hygiene</th>
-                    <th className="py-2 px-4 border-b border-gray-700 text-left">Quantity</th>
-                    <th className="py-2 px-4 border-b border-gray-700 text-left">Timeliness</th>
-                    <th className="py-2 px-4 border-b border-gray-700 text-left">Variety</th>
-                    <th className="py-2 px-4 border-b border-gray-700 text-left">Staff</th>
-                    <th className="py-2 px-4 border-b border-gray-700 text-left">Overall</th>
-                    <th className="py-2 px-4 border-b border-gray-700 text-left">Feedback</th>
-                    <th className="py-2 px-4 border-b border-gray-700 text-left">Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-700">
-                  {filteredFeedback.length > 0 ? (
-                    filteredFeedback.map((feedback) => (
-                      <tr key={feedback.id}>
-                        <td className="py-2 px-4">{feedback.vendor ? feedback.vendor.name : "Vendor not found"}</td>
-                        <td className="py-2 px-4">{feedback.hygiene}</td>
-                        <td className="py-2 px-4">{feedback.quantity}</td>
-                        <td className="py-2 px-4">{feedback.timeliness}</td>
-                        <td className="py-2 px-4">{feedback.variety}</td>
-                        <td className="py-2 px-4">{feedback.staff}</td>
-                        <td className="py-2 px-4">{feedback.overall}</td>
-                        <td className="py-2 px-4">{feedback.feedback}</td>
-                        <td className="py-2 px-4">{new Date(feedback.date).toLocaleDateString()}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={9} className="text-center py-4 text-gray-400">No feedback submitted yet.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+            <CardContent className="h-[400px]">
+              <div className="h-full overflow-auto rounded-md border text-card-foreground">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-secondary">
+                    <TableRow>
+                      <TableHead>Vendor</TableHead>
+                      <TableHead>Hygiene</TableHead>
+                      <TableHead>Qty</TableHead>
+                      <TableHead>Time</TableHead>
+                      <TableHead>Var</TableHead>
+                      <TableHead>Staff</TableHead>
+                      <TableHead>Overall</TableHead>
+                      <TableHead>Feedback</TableHead>
+                      <TableHead>Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredFeedback.length > 0 ? (
+                      filteredFeedback.map((feedback) => (
+                        <TableRow key={feedback.id}>
+                          <TableCell className="font-medium">{feedback.vendor ? feedback.vendor.name : "Unknown"}</TableCell>
+                          <TableCell>{feedback.hygiene}</TableCell>
+                          <TableCell>{feedback.quantity}</TableCell>
+                          <TableCell>{feedback.timeliness}</TableCell>
+                          <TableCell>{feedback.variety}</TableCell>
+                          <TableCell>{feedback.staff}</TableCell>
+                          <TableCell>{feedback.overall}</TableCell>
+                          <TableCell className="max-w-[200px] truncate" title={feedback.feedback}>{feedback.feedback}</TableCell>
+                          <TableCell>{new Date(feedback.date).toLocaleDateString()}</TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={9} className="text-center h-24 text-muted-foreground">
+                          No feedback submitted yet.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </div>

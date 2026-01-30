@@ -1,6 +1,6 @@
 "use client"
 
-import LoadingSpinner from "@/components/common/LoadingAnimation";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
 import Image from "next/image"
 import sstlogo from '@/public/sstlogo.png'
@@ -8,14 +8,17 @@ import { useUser } from '@/context/UserContext'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { SignIn } from "@clerk/nextjs"
+import { toast } from "sonner";
 
 const LoginPage = () => {
   const { user, loading, authError, setAuthError } = useUser();
   const router = useRouter();
 
+
+
   useEffect(() => {
     if (authError) {
-      alert(authError);
+      toast.error(authError);
       setAuthError(null);
     }
   }, [authError, setAuthError]);
@@ -31,25 +34,25 @@ const LoginPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#1a1d2e] text-white">
-        <LoadingSpinner />
-        <p className="mt-4 text-lg">Checking authentication...</p>
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-background text-foreground gap-4">
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-4 w-64" />
       </div>
     );
   }
 
   if (user) {
     return (
-      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#1a1d2e] text-white">
-        <LoadingSpinner />
-        <p className="mt-4 text-lg">Redirecting...</p>
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-background text-foreground gap-4">
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-4 w-40" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center">
-      <Card className="w-full max-w-md mx-4 bg-gray-950 border-0 transition-all duration-300 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] p-6 flex flex-col items-center">
+    <div className="min-h-screen w-full flex items-center justify-center bg-background text-foreground">
+      <Card className="w-full max-w-md mx-4 bg-card border border-border/60 shadow-lg transition-all duration-300 hover:border-primary/40 hover:shadow-xl p-6 flex flex-col items-center rounded-xl">
         <CardHeader className="space-y-6 w-full flex flex-col items-center">
           <div className="w-full flex justify-center">
             <Image

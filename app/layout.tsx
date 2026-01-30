@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { UserProvider } from "@/context/UserContext";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,10 +31,10 @@ export default function RootLayout({
       <ClerkProvider>
         <UserProvider>
           <body
-            className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gradient-to-br from-gray-900 via-[#1a1c2e] to-gray-950 text-white flex flex-col min-h-screen`}
+            className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground flex flex-col min-h-screen selection:bg-primary/20 selection:text-primary`}
           >
-
             {children}
+            <Toaster />
           </body>
         </UserProvider>
       </ClerkProvider>

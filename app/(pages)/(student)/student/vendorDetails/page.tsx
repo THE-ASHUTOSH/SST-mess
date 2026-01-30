@@ -1,9 +1,12 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import EventCard from "@/components/common/EventCard";
-import LoadingSpinner from "@/components/common/LoadingAnimation";
+import { CardSkeleton } from "@/components/common/Skeletons";
 import axiosInstance from '@/lib/axiosInstance';
-import { isAxiosError } from 'axios';
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface DailyMenuItem {
   breakfast: string[];
@@ -62,7 +65,6 @@ const VendorDetail = () => {
           return `https://drive.google.com/file/d/${id}/preview`;
         }
       }
-
       return url;
     } catch (error) {
       console.error("Error getting embeddable URL:", error);
@@ -76,12 +78,6 @@ const VendorDetail = () => {
     setShowViewer(true);
   };
 
-  const handleCloseViewer = () => {
-    setShowViewer(false);
-
-    setSelectedMenuUrl(null);
-  };
-
   const getDayOfWeek = () => {
     const days = [
       "sunday",
@@ -92,143 +88,123 @@ const VendorDetail = () => {
       "friday",
       "saturday",
     ];
-
     return days[new Date().getDay()];
   };
 
   const dayOfWeek = getDayOfWeek();
-
   const dailyMenu = selectedVendorMenu ? selectedVendorMenu[dayOfWeek] : null;
-  // console.log("Selected Vendor Menu:", selectedVendorMenu);
-  // console.log("Daily Menu:", dailyMenu);
-
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-      <h1 className="text-4xl font-extrabold text-center mb-10 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-indigo-400 tracking-tight transform hover:scale-105 transition-transform duration-300">
+      <h1 className="text-4xl font-extrabold text-center mb-10 text-primary tracking-tight animate-fade-in-up">
         Menu
       </h1>
 
-      {loading && <LoadingSpinner />}
+      {loading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
+          <CardSkeleton />
+          <CardSkeleton />
+          <CardSkeleton />
+          <CardSkeleton />
+        </div>
+      )}
 
       {!loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
           {vendors.map((vendor) => (
             <EventCard
               key={vendor.id}
               title={vendor.name}
               description={`Price: ₹${vendor.price}`}
             >
-              <p>{vendor.description}</p>
-
-              <button
-                onClick={() => handleViewMenuClick(vendor.menuUrl)}
-                className="mt-4 mr-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
-                View Menu Pdf
-              </button>
-
-              <button
-                onClick={() => handleViewTodayMenuClick(vendor.menu)}
-                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
-                View Menu
-              </button>
+              <p className="text-sm text-muted-foreground mb-4">{vendor.description}</p>
+              <div className="flex flex-col gap-2">
+                <Button
+                  onClick={() => handleViewMenuClick(vendor.menuUrl)}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  View Menu PDF
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => handleViewTodayMenuClick(vendor.menu)}
+                  className="w-full border-blue-600 text-blue-400 hover:bg-blue-600/10 hover:text-blue-300"
+                >
+                  View Today's Menu
+                </Button>
+              </div>
             </EventCard>
           ))}
         </div>
       )}
 
-      {showViewer && selectedMenuUrl && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-75 p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-4xl h-[80vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-            <button
-              onClick={handleCloseViewer}
-              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-gray-800 text-white hover:bg-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
-              aria-label="Close"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-
-            <iframe
-              src={selectedMenuUrl}
-              className="w-full h-full border-none"
-              title="Menu Viewer"
-              referrerPolicy="no-referrer"
-            ></iframe>
-          </div>
-        </div>
-      )}
-
-      {showTodayMenu && selectedVendorMenu && (
-        <div className="fixed  inset-0 z-50 flex items-center justify-center bg-opacity-75 p-4 backdrop-blur-sm ">
-          <div className="relative w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl p-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <button
-              onClick={() => setShowTodayMenu(false)}
-              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-gray-800 text-white hover:bg-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400"
-              aria-label="Close"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-
-            <h2 className="text-2xl font-bold mb-4">Menu for {dayOfWeek}</h2>
-
-            {dailyMenu ? (
-              <div className="space-y-4">
-                <EventCard title="Breakfast">
-                  <p>
-                    {Array.isArray(dailyMenu.breakfast) && dailyMenu.breakfast.length > 0
-                      ? dailyMenu.breakfast.join(', ')
-                      : 'Not available'}
-                  </p>
-                </EventCard>
-                <EventCard title="Lunch">
-                  <p>
-                    {Array.isArray(dailyMenu.lunch) && dailyMenu.lunch.length > 0
-                      ? dailyMenu.lunch.join(', ')
-                      : 'Not available'}
-                  </p>
-                </EventCard>
-                <EventCard title="Dinner">
-                  <p>
-                    {Array.isArray(dailyMenu.dinner) && dailyMenu.dinner.length > 0
-                      ? dailyMenu.dinner.join(', ')
-                      : 'Not available'}
-                  </p>
-                </EventCard>
-              </div>
-            ) : (
-              <p>Menu for today is not available.</p>
+      <Dialog open={showViewer} onOpenChange={setShowViewer}>
+        <DialogContent className="max-w-4xl h-[80vh] p-0 overflow-hidden bg-card border-border">
+          <DialogHeader className="p-4 pb-0">
+            <DialogTitle>Menu PDF</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 h-full p-4 pt-2">
+            {selectedMenuUrl && (
+              <iframe
+                src={selectedMenuUrl}
+                className="w-full h-full rounded-md border border-border"
+                title="Menu Viewer"
+                referrerPolicy="no-referrer"
+              ></iframe>
             )}
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showTodayMenu} onOpenChange={setShowTodayMenu}>
+        <DialogContent className="max-w-md max-h-[90vh] bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-foreground">
+              Menu for {dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)}
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[70vh] pr-4">
+            {dailyMenu ? (
+              <div className="space-y-4 py-2">
+                <Card className="bg-secondary/20 border-border">
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold text-lg mb-2 text-primary">Breakfast</h3>
+                    <p className="text-muted-foreground">
+                      {Array.isArray(dailyMenu.breakfast) && dailyMenu.breakfast.length > 0
+                        ? dailyMenu.breakfast.join(', ')
+                        : 'Not available'}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-secondary/20 border-border">
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold text-lg mb-2 text-primary">Lunch</h3>
+                    <p className="text-muted-foreground">
+                      {Array.isArray(dailyMenu.lunch) && dailyMenu.lunch.length > 0
+                        ? dailyMenu.lunch.join(', ')
+                        : 'Not available'}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-secondary/20 border-border">
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold text-lg mb-2 text-primary">Dinner</h3>
+                    <p className="text-muted-foreground">
+                      {Array.isArray(dailyMenu.dinner) && dailyMenu.dinner.length > 0
+                        ? dailyMenu.dinner.join(', ')
+                        : 'Not available'}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                Menu for today is not available.
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

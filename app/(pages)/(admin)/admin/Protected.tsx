@@ -1,10 +1,10 @@
 "use client";
-import LoadingSpinner from "@/components/common/LoadingAnimation";
-import React,{useEffect} from 'react'
+import { Skeleton } from "@/components/ui/skeleton";
+import React, { useEffect } from 'react'
 import { useUser } from "@/context/UserContext";
 import { useRouter } from "next/navigation";
 
-const Protected: React.FC<{children: React.ReactNode}> = ({children}) => {
+const Protected: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { user, loading } = useUser();
     const router = useRouter();
 
@@ -26,9 +26,9 @@ const Protected: React.FC<{children: React.ReactNode}> = ({children}) => {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-[#1a1d2e] text-white">
-                <LoadingSpinner />
-                <p className="mt-4 text-lg">Checking authentication...</p>
+            <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground gap-4">
+                <Skeleton className="h-10 w-48" />
+                <Skeleton className="h-4 w-64" />
             </div>
         );
     }
@@ -37,9 +37,9 @@ const Protected: React.FC<{children: React.ReactNode}> = ({children}) => {
     if (!user || user.role !== "admin") {
         return null;
     }
-  return (
-    <>{children}</>
-  )
+    return (
+        <>{children}</>
+    )
 }
 
 export default Protected

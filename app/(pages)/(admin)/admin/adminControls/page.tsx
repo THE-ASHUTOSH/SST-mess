@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import axiosInstance from '@/lib/axiosInstance';
-import { isAxiosError } from 'axios';
-import { Card } from '@/components/ui/card';
-import LoadingAnimation from '@/components/common/LoadingAnimation';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const AdminControlsPage = () => {
     const [feedbackEnabled, setFeedbackEnabled] = useState<boolean | null>(null);
@@ -29,7 +30,7 @@ const AdminControlsPage = () => {
         fetchFeedbackStatus();
     }, []);
 
-    const handleToggleFeedback = async () => {
+    const handleToggleFeedback = async (checked: boolean) => {
         try {
             setIsSubmitting(true);
             const response = await axiosInstance.patch(`/api/controls/feedback-toggle`, {});
@@ -44,46 +45,37 @@ const AdminControlsPage = () => {
 
 
     return (
-        <div className="min-h-[80vh] flex items-center justify-center p-4 animate-fade-in-up">
-            <Card className="w-full max-w-md bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl overflow-hidden shadow-lg">
-                <div className="p-8">
-                    <h1 className="text-2xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-indigo-400">
+        <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
+            <Card className="w-full max-w-md border-border bg-card shadow-lg">
+                <CardHeader>
+                    <CardTitle className="text-2xl font-bold text-primary">
                         Admin Controls
-                    </h1>
-
-                    {isLoading || isSubmitting ? (
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {isLoading ? (
                         <div className="flex justify-center items-center h-24">
-                            <LoadingAnimation />
+                            <Skeleton className="h-10 w-full" />
                         </div>
                     ) : error ? (
-                        <div className="text-center text-red-400">{error}</div>
+                        <div className="text-center text-destructive">{error}</div>
                     ) : (
                         <div className="space-y-6">
-                            <div className="flex items-center justify-between p-4 bg-gray-900/50 rounded-lg border border-gray-700">
-                                <div>
-                                    <h2 className="text-lg font-semibold text-gray-200">Feedback System</h2>
-                                    <p className="text-sm text-gray-400">Allow students to submit feedback.</p>
+                            <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-accent/10">
+                                <div className="space-y-0.5">
+                                    <Label htmlFor="feedback-toggle" className="text-base font-semibold">Feedback System</Label>
+                                    <p className="text-sm text-muted-foreground">Allow students to submit feedback.</p>
                                 </div>
-                                <div className="flex items-center space-x-4">
-                                    <label htmlFor="feedback-toggle" className="flex items-center cursor-pointer">
-                                        <div className="relative">
-                                            <input
-                                                id="feedback-toggle"
-                                                type="checkbox"
-                                                className="sr-only"
-                                                checked={feedbackEnabled || false}
-                                                onChange={handleToggleFeedback}
-                                                disabled={isSubmitting}
-                                            />
-                                            <div className={`block w-14 h-8 rounded-full ${feedbackEnabled ? 'bg-green-500' : 'bg-gray-600'}`}></div>
-                                            <div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${feedbackEnabled ? 'transform translate-x-6' : ''}`}></div>
-                                        </div>
-                                    </label>
-                                </div>
+                                <Switch
+                                    id="feedback-toggle"
+                                    checked={feedbackEnabled || false}
+                                    onCheckedChange={handleToggleFeedback}
+                                    disabled={isSubmitting}
+                                />
                             </div>
                         </div>
                     )}
-                </div>
+                </CardContent>
             </Card>
         </div>
     );

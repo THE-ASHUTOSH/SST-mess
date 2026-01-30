@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from 'react';
-import LoadingSpinner from '@/components/common/LoadingAnimation';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Page() {
   useEffect(() => {
@@ -9,9 +9,9 @@ export default function Page() {
   }, []);
 
   return (
-      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#1a1d2e] text-white">
-        <LoadingSpinner />
-        <p className="mt-4 text-lg">Redirecting...</p>
-      </div>
-    );
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-background text-foreground gap-4">
+      <Skeleton className="h-10 w-48" />
+      <Skeleton className="h-4 w-40" />
+    </div>
+  );
 }

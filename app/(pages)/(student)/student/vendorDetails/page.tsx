@@ -130,7 +130,7 @@ const VendorDetail = () => {
                   onClick={() => handleViewTodayMenuClick(vendor.menu)}
                   className="w-full border-blue-600 text-blue-400 hover:bg-blue-600/10 hover:text-blue-300"
                 >
-                  View Today's Menu
+                  View Today&apos;s Menu
                 </Button>
               </div>
             </EventCard>

@@ -54,7 +54,7 @@ const UploadVendorSelectionPage = () => {
                             <div className="mt-2">
                                 <p className="font-semibold text-red-400">Issues:</p>
                                 <ul className="list-disc list-inside text-xs text-red-300 max-h-20 overflow-y-auto">
-                                    {issues.map((issue: any, index: number) => (
+                                    {issues.map((issue: unknown, index: number) => (
                                         <li key={index}>{JSON.stringify(issue)}</li>
                                     ))}
                                 </ul>

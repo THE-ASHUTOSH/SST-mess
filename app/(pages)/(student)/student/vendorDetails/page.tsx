@@ -4,9 +4,10 @@ import EventCard from "@/components/common/EventCard";
 import { CardSkeleton } from "@/components/common/Skeletons";
 import axiosInstance from '@/lib/axiosInstance';
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
+import { Download } from "lucide-react";
 
 interface DailyMenuItem {
   breakfast: string[];
@@ -30,8 +31,6 @@ interface Vendor {
 const VendorDetail = () => {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedMenuUrl, setSelectedMenuUrl] = useState<string | null>(null);
-  const [showViewer, setShowViewer] = useState<boolean>(false);
   const [showTodayMenu, setShowTodayMenu] = useState<boolean>(false);
   const [selectedVendorMenu, setSelectedVendorMenu] = useState<VendorMenu | null>(null);
 
@@ -55,27 +54,22 @@ const VendorDetail = () => {
     setShowTodayMenu(true);
   };
 
-  const getEmbeddableUrl = (url: string | null): string => {
-    if (!url) return "";
+  const handleDownloadMenuClick = (url: string | null) => {
+    if (!url) return;
     try {
+      let downloadUrl = url;
       if (url.includes("drive.google.com/file")) {
         const parts = url.split("/d/");
         if (parts.length > 1) {
           const id = parts[1].split("/")[0];
-          return `https://drive.google.com/file/d/${id}/preview`;
+          downloadUrl = `https://drive.google.com/uc?export=download&id=${id}`;
         }
       }
-      return url;
+      window.open(downloadUrl, '_blank');
     } catch (error) {
-      console.error("Error getting embeddable URL:", error);
-      return url;
+      console.error("Error processing download URL:", error);
+      window.open(url, '_blank');
     }
-  };
-
-  const handleViewMenuClick = (menuUrl: string) => {
-    const embedUrl = getEmbeddableUrl(menuUrl);
-    setSelectedMenuUrl(embedUrl);
-    setShowViewer(true);
   };
 
   const getDayOfWeek = () => {
@@ -120,10 +114,11 @@ const VendorDetail = () => {
               <p className="text-sm text-muted-foreground mb-4">{vendor.description}</p>
               <div className="flex flex-col gap-2">
                 <Button
-                  onClick={() => handleViewMenuClick(vendor.menuUrl)}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={() => handleDownloadMenuClick(vendor.menuUrl)}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2"
                 >
-                  View Menu PDF
+                  <Download className="w-4 h-4" />
+                  Download Menu
                 </Button>
                 <Button
                   variant="outline"
@@ -137,24 +132,6 @@ const VendorDetail = () => {
           ))}
         </div>
       )}
-
-      <Dialog open={showViewer} onOpenChange={setShowViewer}>
-        <DialogContent className="max-w-4xl h-[80vh] p-0 overflow-hidden bg-card border-border">
-          <DialogHeader className="p-4 pb-0">
-            <DialogTitle>Menu PDF</DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 h-full p-4 pt-2">
-            {selectedMenuUrl && (
-              <iframe
-                src={selectedMenuUrl}
-                className="w-full h-full rounded-md border border-border"
-                title="Menu Viewer"
-                referrerPolicy="no-referrer"
-              ></iframe>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={showTodayMenu} onOpenChange={setShowTodayMenu}>
         <DialogContent className="max-w-md max-h-[90vh] bg-card border-border">

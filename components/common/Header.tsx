@@ -32,7 +32,7 @@ const Header = () => {
         <div className="flex h-16 items-center justify-between">
           <div className="flex flex-col">
             <Link href="/" className="flex items-center">
-              <span className="text-3xl font-bold tracking-tight text-primary">
+              <span className="text-2xl sm:text-3xl font-bold tracking-tight text-primary">
                 SST Mess
               </span>
             </Link>

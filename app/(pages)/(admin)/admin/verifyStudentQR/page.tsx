@@ -141,8 +141,8 @@ const VerifyStudentQRPage = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]">
-      <h1 className="text-4xl font-extrabold text-center mb-10 text-primary tracking-tight">
+    <div className="p-4 sm:p-6 lg:p-8 flex flex-col items-center pt-10 sm:pt-20 min-h-[calc(100vh-4rem)]">
+      <h1 className="text-3xl sm:text-4xl font-extrabold text-center mb-10 text-primary tracking-tight">
         Verify Student QR
       </h1>
 

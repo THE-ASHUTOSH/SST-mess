@@ -24,7 +24,7 @@ const Dashboard = () => {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-      <h1 className="text-4xl font-extrabold text-center mb-10 text-primary tracking-tight transform hover:scale-105 transition-transform duration-300">
+      <h1 className="text-3xl sm:text-4xl font-extrabold text-center mb-10 text-primary tracking-tight transform hover:scale-105 transition-transform duration-300">
         Dashboard
       </h1>
       {latestSelection ? (

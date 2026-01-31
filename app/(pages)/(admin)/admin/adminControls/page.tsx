@@ -61,17 +61,22 @@ const AdminControlsPage = () => {
                         <div className="text-center text-destructive">{error}</div>
                     ) : (
                         <div className="space-y-6">
-                            <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-accent/10">
+                            <div className="flex items-center justify-between p-5 rounded-xl border border-border bg-card shadow-sm hover:shadow-md transition-shadow duration-300 hover:border-emerald-500/30">
                                 <div className="space-y-0.5">
                                     <Label htmlFor="feedback-toggle" className="text-base font-semibold">Feedback System</Label>
                                     <p className="text-sm text-muted-foreground">Allow students to submit feedback.</p>
                                 </div>
-                                <Switch
-                                    id="feedback-toggle"
-                                    checked={feedbackEnabled || false}
-                                    onCheckedChange={handleToggleFeedback}
-                                    disabled={isSubmitting}
-                                />
+                                {isSubmitting ? (
+                                    <Skeleton className="h-6 w-11 rounded-full" />
+                                ) : (
+                                    <Switch
+                                        id="feedback-toggle"
+                                        checked={feedbackEnabled || false}
+                                        onCheckedChange={handleToggleFeedback}
+                                        disabled={isSubmitting}
+                                        className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-zinc-300 dark:data-[state=unchecked]:bg-zinc-700 hover:scale-110 transition-all duration-300 shadow-md ring-offset-background"
+                                    />
+                                )}
                             </div>
                         </div>
                     )}

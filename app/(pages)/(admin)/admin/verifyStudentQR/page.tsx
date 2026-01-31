@@ -8,6 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 
+import { Button } from "@/components/ui/button";
+
 interface VerifiedUser {
   id: string;
   name: string;
@@ -128,14 +130,14 @@ const VerifyStudentQRPage = () => {
         setError('Error verifying QR code. Please try again later.');
       }
       setMessage('');
-    } finally {
-      setTimeout(() => {
-        setMessage('');
-        setError('');
-        setIsProcessing(false);
-        setVerifiedUser(null);
-      }, 3000);
     }
+  };
+
+  const resetScanner = () => {
+    setMessage('');
+    setError('');
+    setIsProcessing(false);
+    setVerifiedUser(null);
   };
 
   return (
@@ -181,6 +183,7 @@ const VerifyStudentQRPage = () => {
                     <h3 className="text-2xl font-bold">{verifiedUser.name}</h3>
                     <p className="text-green-500 text-lg font-medium">{message}</p>
                   </div>
+                  <Button onClick={resetScanner} size="lg" className="w-full">Scan Again</Button>
                 </div>
               ) : (
                 <div className="flex flex-col items-center space-y-4">
@@ -192,6 +195,7 @@ const VerifyStudentQRPage = () => {
                     </div>
                   )}
                   {!message && !error && <Skeleton className="h-10 w-40" />}
+                  {(message || error) && <Button onClick={resetScanner} size="lg" className="w-full">Scan Again</Button>}
                 </div>
               )}
             </div>

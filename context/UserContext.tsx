@@ -58,7 +58,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Fetch DB user details to get role and other metadata
           // We use the token to authenticate with our API
           const token = await getToken();
-          console.log("Token: ", token);
+          // console.log("Token: ", token);
 
           // If we have a token, we can call our API
           // Note: axiosInstance might not be ready if it depends on this context or something else

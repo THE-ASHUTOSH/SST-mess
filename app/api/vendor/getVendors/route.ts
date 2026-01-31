@@ -1,13 +1,23 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
-export async function GET() {
-    try {
-        const allVendors = await db.query.vendors.findMany({
+import { unstable_cache } from 'next/cache';
+
+const getCachedVendors = unstable_cache(
+    async () => {
+        return await db.query.vendors.findMany({
             with: {
                 menu: true,
             },
         });
+    },
+    ['vendors-list'], // cache key
+    { tags: ['vendors'], revalidate: 3600 } // revalidate after 1 hour and tag
+);
+
+export async function GET() {
+    try {
+        const allVendors = await getCachedVendors();
         return NextResponse.json({ success: true, vendors: allVendors });
     } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";

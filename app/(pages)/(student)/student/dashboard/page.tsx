@@ -4,6 +4,7 @@ import EventCard from '@/components/common/EventCard';
 import LatestVendorCard from '@/components/common/LatestVendorCard';
 import { useDashboard } from '@/context/DashboardContext';
 import { VendorCardSkeleton, CardSkeleton } from '@/components/common/Skeletons';
+import { Card, CardContent } from '@/components/ui/card';
 
 const Dashboard = () => {
   const { latestSelection, loading, isFeedbackEnabled } = useDashboard();
@@ -32,7 +33,11 @@ const Dashboard = () => {
           vendorName={latestSelection.vendor.name}
         />
       ) : (
-        <p>No vendor selection found.</p>
+        <Card className="bg-muted border-dashed border-2 mb-10">
+          <CardContent className="p-6 text-center">
+            <p className="text-muted-foreground">You are Opted out for this month</p>
+          </CardContent>
+        </Card>
       )}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch animate-in fade-in slide-in-from-bottom-6 duration-700">
         <EventCard title="Get your food" redirectUrl="/student/getFood">

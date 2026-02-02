@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { db } from '@/lib/db';
 import { vendors, menus } from '@/lib/db/schema';
 import { requireRole } from '@/lib/auth-helper';
@@ -8,9 +9,9 @@ import { eq } from 'drizzle-orm';
 export async function POST(req: Request) {
     try {
         const user = await requireRole(['admin']);
-        
+
         console.log("Vendor addition triggered by user:", user.email);
-        
+
 
         const formData = await req.formData();
         const name = formData.get('name') as string;
@@ -65,6 +66,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false, message: "Error processing menu file", error: errorMessage }, { status: 500 });
         }
 
+        revalidateTag('vendors');
         return NextResponse.json({ success: true, message: "Vendor added successfully", vendor: newVendor }, { status: 201 });
 
     } catch (error: unknown) {

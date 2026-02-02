@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { db } from '@/lib/db';
 import { vendors, menus } from '@/lib/db/schema';
 import { requireRole } from '@/lib/auth-helper';
@@ -33,7 +34,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
             const buffer = Buffer.from(await menuFile.arrayBuffer());
             const csvContent = buffer.toString('utf-8');
             const menuData = generateMenu(csvContent);
-            
+
             // Get vendor to check for existing menu
             const [vendor] = await db.select().from(vendors).where(eq(vendors.id, vendorId));
 
@@ -69,6 +70,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
             .where(eq(vendors.id, vendorId))
             .returning();
 
+        revalidateTag('vendors');
         return NextResponse.json({ message: "Vendor updated successfully", vendor: updatedVendor });
 
     } catch (error: unknown) {

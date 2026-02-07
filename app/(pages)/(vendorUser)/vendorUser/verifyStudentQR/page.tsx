@@ -86,6 +86,13 @@ const VerifyStudentQRPage = () => {
       );
 
       const onScanSuccess = (decodedText: string) => {
+        if (navigator.vibrate) {
+          try {
+            navigator.vibrate(300);
+          } catch (e) {
+            console.error("Vibration failed", e);
+          }
+        }
         handleVerify(decodedText);
       };
 
@@ -123,7 +130,8 @@ const VerifyStudentQRPage = () => {
       if (isAxiosError(err) && err.response?.data?.message) {
         setError(err.response.data.message);
       } else {
-        setError('Error verifying QR code. Please try again later.');
+        const errorMessage = err instanceof Error ? err.message : 'Error verifying QR code. Please try again later.';
+        setError(errorMessage);
       }
       setMessage('');
     }
@@ -190,7 +198,14 @@ const VerifyStudentQRPage = () => {
                       <p className="text-xl font-medium">{error}</p>
                     </div>
                   )}
-                  {!message && !error && <Skeleton className="h-10 w-40" />}
+                  {/* PLEASE WAIT STATE */}
+                  {!message && !error && (
+                    <div className="flex flex-col items-center gap-4">
+                      <Skeleton className="h-32 w-32 rounded-full" />
+                      <p className="text-xl font-semibold animate-pulse text-muted-foreground">Please wait...</p>
+                      <p className="text-sm text-muted-foreground">Verifying details</p>
+                    </div>
+                  )}
                   {(message || error) && <Button onClick={resetScanner} size="lg" className="w-full">Scan Again</Button>}
                 </div>
               )}

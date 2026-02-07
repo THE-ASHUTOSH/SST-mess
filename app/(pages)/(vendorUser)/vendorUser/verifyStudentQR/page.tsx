@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axiosInstance from '@/lib/axiosInstance';
 import { isAxiosError } from 'axios';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -29,7 +29,7 @@ const VerifyStudentQRPage = () => {
   const [verifiedUser, setVerifiedUser] = useState<VerifiedUser | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [selectedVendor, setSelectedVendor] = useState<string>('');
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerContainerId = 'qr-code-full-region';
 
   useEffect(() => {
@@ -41,14 +41,24 @@ const VerifyStudentQRPage = () => {
           const gaurasVendors = fetchedVendors.filter(v => v.name.includes("Gaura's Secret Recipe"));
           const otherVendors = fetchedVendors.filter(v => !v.name.includes("Gaura's Secret Recipe"));
 
+          let finalVendors = fetchedVendors;
           if (gaurasVendors.length > 0) {
             const combinedGauraVendor: Vendor = {
               id: gaurasVendors.map(v => v.id).join(','),
               name: "Gaura's Secret Recipe",
             };
-            setVendors([combinedGauraVendor, ...otherVendors]);
+            finalVendors = [combinedGauraVendor, ...otherVendors];
+            setVendors(finalVendors);
           } else {
             setVendors(fetchedVendors);
+          }
+
+          const savedVendorId = localStorage.getItem('selectedVendorId');
+          if (savedVendorId) {
+            const vendorExists = finalVendors.some(v => v.id === savedVendorId);
+            if (vendorExists) {
+              setSelectedVendor(savedVendorId);
+            }
           }
         } else {
           setError('Failed to fetch vendors: Invalid data format.');
@@ -65,50 +75,68 @@ const VerifyStudentQRPage = () => {
       return;
     }
 
-    if (isProcessing) {
+    const cleanupScanner = async () => {
       if (scannerRef.current) {
-        scannerRef.current.clear().catch(err => console.error("Error clearing scanner:", err));
+        try {
+          await scannerRef.current.stop();
+          scannerRef.current.clear();
+        } catch (err) {
+          // Ignore errors if scanner is not running
+          console.warn("Error stopping scanner:", err);
+        }
         scannerRef.current = null;
       }
+    };
+
+    if (isProcessing) {
+      cleanupScanner();
       return;
     }
 
-    if (!scannerRef.current && document.getElementById(scannerContainerId)) {
-      const scanner = new Html5QrcodeScanner(
-        scannerContainerId,
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-          rememberLastUsedCamera: true,
-          supportedScanTypes: [],
-        },
-        false
-      );
+    const startScanner = async () => {
+      if (!scannerRef.current && document.getElementById(scannerContainerId)) {
+        const scanner = new Html5Qrcode(scannerContainerId);
+        scannerRef.current = scanner;
 
-      const onScanSuccess = (decodedText: string) => {
-        if (navigator.vibrate) {
-          try {
-            navigator.vibrate(300);
-          } catch (e) {
-            console.error("Vibration failed", e);
+        try {
+          await scanner.start(
+            { facingMode: "environment" },
+            {
+              fps: 10,
+              qrbox: { width: 250, height: 250 }
+            },
+            (decodedText) => {
+              if (navigator.vibrate) {
+                try {
+                  navigator.vibrate(100);
+                } catch (e) {
+                  console.error("Vibration failed", e);
+                }
+              }
+              handleVerify(decodedText);
+            },
+            (errorMessage) => {
+              // ignore
+            }
+          );
+        } catch (err) {
+          console.error("Error starting scanner", err);
+          // Only show error if not processing (processing might cause unmount/stop which throws)
+          if (!isProcessing) {
+            setError("Failed to start camera. Please ensure camera permissions are granted.");
           }
         }
-        handleVerify(decodedText);
-      };
+      }
+    };
 
-      const onScanFailure = (errorMessage: string) => {
-        // ignore
-      };
-
-      scanner.render(onScanSuccess, onScanFailure);
-      scannerRef.current = scanner;
-    }
+    // Small timeout to ensure DOM is ready and previous instance is cleared
+    const timerId = setTimeout(() => {
+      startScanner();
+    }, 100);
 
     return () => {
-      if (scannerRef.current) {
-        scannerRef.current.clear().catch(err => console.error("Error clearing scanner on unmount:", err));
-        scannerRef.current = null;
-      }
+      clearTimeout(timerId);
+      cleanupScanner();
     };
   }, [isProcessing, selectedVendor]);
 
@@ -154,7 +182,10 @@ const VerifyStudentQRPage = () => {
         <Label htmlFor="vendor-select" className="text-base">Select Vendor</Label>
         <Select
           value={selectedVendor}
-          onValueChange={setSelectedVendor}
+          onValueChange={(value) => {
+            setSelectedVendor(value);
+            localStorage.setItem('selectedVendorId', value);
+          }}
           disabled={isProcessing}
         >
           <SelectTrigger id="vendor-select" className="w-full">
@@ -168,6 +199,7 @@ const VerifyStudentQRPage = () => {
             ))}
           </SelectContent>
         </Select>
+        
       </div>
 
       {selectedVendor && (
@@ -202,8 +234,8 @@ const VerifyStudentQRPage = () => {
                   {!message && !error && (
                     <div className="flex flex-col items-center gap-4">
                       <Skeleton className="h-32 w-32 rounded-full" />
-                      <p className="text-xl font-semibold animate-pulse text-muted-foreground">Please wait...</p>
-                      <p className="text-sm text-muted-foreground">Verifying details</p>
+                      <p className="text-xl font-semibold animate-pulse ">Please wait...</p>
+                      <p className="text-sm ">Verifying details</p>
                     </div>
                   )}
                   {(message || error) && <Button onClick={resetScanner} size="lg" className="w-full">Scan Again</Button>}

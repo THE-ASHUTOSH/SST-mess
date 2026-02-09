@@ -9,9 +9,9 @@ const Dashboard = () => {
         <EventCard title="Verify Student QR" redirectUrl="/vendorUser/verifyStudentQR">
           <p>Verify the QR code of a student</p>
         </EventCard>
-        <EventCard title="Choice Analysis" redirectUrl="/vendorUser/choiceAnalysis">
-          <p>Analyze the choices made for vendors</p>
-        </EventCard>
+        <EventCard title="Total Meals Calculator" redirectUrl="/vendorUser/totalMeals">
+          <p>Calculate the total meals for a specific date and meal type</p>
+        </EventCard>        
       </div>
     </div>
   )

@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { vendorSelections } from '@/lib/db/schema';
-import { requireRole } from '@/lib/auth-helper';
-import { and, gte, lt } from 'drizzle-orm';
+import { getScopedVendorIds, requireRole } from '@/lib/auth-helper';
+import { and, gte, inArray, lt } from 'drizzle-orm';
 
 export async function POST(req: Request) {
     try {
-        await requireRole(['vendor', 'admin']);
+        const user = await requireRole(['vendor', 'admin']);
+        const scopedVendorIds = getScopedVendorIds(user);
 
         const body = await req.json();
         let { month, year } = body;
@@ -28,10 +29,15 @@ export async function POST(req: Request) {
         const startDate = new Date(year, month - 1, 1);
         const endDate = new Date(year, month, 1); // Next month start
 
+        if (user.role === 'vendor' && (!scopedVendorIds || scopedVendorIds.length === 0)) {
+            return NextResponse.json({ success: false, message: "Vendor account is not linked to a vendor." }, { status: 403 });
+        }
+
         const selections = await db.query.vendorSelections.findMany({
             where: and(
                 gte(vendorSelections.forMonth, startDate),
-                lt(vendorSelections.forMonth, endDate)
+                lt(vendorSelections.forMonth, endDate),
+                ...(scopedVendorIds ? [inArray(vendorSelections.vendorId, scopedVendorIds)] : [])
             ),
             with: {
                 vendor: true

@@ -8,6 +8,7 @@ export interface IUser {
     id: string;
     email: string;
     role: 'admin' | 'student' | 'vendor'; // or string if relying on raw string
+    vendorId?: string | null;
     name: string;
     picture?: string | null;
     roll?: string | null;
@@ -65,4 +66,16 @@ export async function requireRole(allowedRoles: string[]) {
     }
 
     return user;
+}
+
+export function getScopedVendorIds(user: IUser): string[] | null {
+    if (user.role === 'admin') {
+        return null;
+    }
+
+    if (user.role === 'vendor') {
+        return user.vendorId ? [user.vendorId] : [];
+    }
+
+    return [];
 }

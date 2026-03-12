@@ -66,7 +66,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false, message: "Error processing menu file", error: errorMessage }, { status: 500 });
         }
 
-        revalidateTag('vendors');
+        revalidateTag('vendors', 'max');
         return NextResponse.json({ success: true, message: "Vendor added successfully", vendor: newVendor }, { status: 201 });
 
     } catch (error: unknown) {

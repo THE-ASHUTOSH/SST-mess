@@ -11,6 +11,7 @@ export const users = pgTable("users", {
     email: text("email").notNull().unique(),
     roll: text("roll"), // Roll number
     role: roleEnum("role").default("student"),
+    vendorId: uuid("vendor_id").references(() => vendors.id),
     picture: text("picture"),
     hostel: text("hostel"),
     batch: text("batch"),

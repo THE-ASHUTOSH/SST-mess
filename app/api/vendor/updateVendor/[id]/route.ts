@@ -70,7 +70,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
             .where(eq(vendors.id, vendorId))
             .returning();
 
-        revalidateTag('vendors');
+        revalidateTag('vendors', 'max');
         return NextResponse.json({ message: "Vendor updated successfully", vendor: updatedVendor });
 
     } catch (error: unknown) {

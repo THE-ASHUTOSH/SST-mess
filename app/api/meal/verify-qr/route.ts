@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { meals, users } from '@/lib/db/schema';
-import { requireRole } from '@/lib/auth-helper';
+import { getScopedVendorIds, requireRole } from '@/lib/auth-helper';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { and, eq, gte, lt } from 'drizzle-orm';
 import { getCurrentMealType, getISTDayBounds } from '@/lib/utils/timezone';
@@ -14,6 +14,7 @@ interface QrCodePayload extends JwtPayload {
 export async function POST(req: Request) {
     try {
         const byUser = await requireRole(['vendor', 'admin']);
+        const scopedVendorIds = getScopedVendorIds(byUser);
 
         const body = await req.json();
         const { token, vendorId } = body;
@@ -39,9 +40,17 @@ export async function POST(req: Request) {
         const forUserId = decoded.userId;
         const userVendorId = decoded.vendorId;
 
-        const isVendorAuthorized = Array.isArray(vendorId)
-            ? vendorId.includes(userVendorId.toString())
-            : userVendorId.toString() === vendorId.toString();
+        if (byUser.role === 'vendor' && (!scopedVendorIds || scopedVendorIds.length === 0)) {
+            return NextResponse.json({ success: false, message: "Vendor account is not linked to a vendor." }, { status: 403 });
+        }
+
+        const normalizedVendorIds = Array.isArray(vendorId)
+            ? vendorId.map((value) => value.toString())
+            : [vendorId.toString()];
+
+        const allowedVendorIds = scopedVendorIds ?? normalizedVendorIds;
+
+        const isVendorAuthorized = allowedVendorIds.includes(userVendorId.toString());
 
         if (!isVendorAuthorized) {
             return NextResponse.json({ success: false, message: "This student is not assigned to your vendor." }, { status: 403 });

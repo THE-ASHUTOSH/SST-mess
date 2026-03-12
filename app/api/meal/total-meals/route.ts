@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { meals, vendorSelections } from '@/lib/db/schema';
-import { requireRole } from '@/lib/auth-helper';
+import { getScopedVendorIds, requireRole } from '@/lib/auth-helper';
 import { and, eq, gte, lt, inArray, sql } from 'drizzle-orm';
 
 export async function POST(req: Request) {
     try {
         // 1. Authenticate (Vendor or Admin)
         const user = await requireRole(['vendor', 'admin']);
+        const scopedVendorIds = getScopedVendorIds(user);
 
         // 2. Parse Input
         const body = await req.json();
@@ -22,6 +23,16 @@ export async function POST(req: Request) {
         const targetDate = new Date(date);
         if (isNaN(targetDate.getTime())) {
             return NextResponse.json({ success: false, message: "Invalid date format" }, { status: 400 });
+        }
+
+        if (user.role === 'vendor') {
+            if (!scopedVendorIds || scopedVendorIds.length === 0) {
+                return NextResponse.json({ success: false, message: "Vendor account is not linked to a vendor." }, { status: 403 });
+            }
+
+            if (!scopedVendorIds.includes(vendorId.toString())) {
+                return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
+            }
         }
 
         // Find students who selected this vendor for this month

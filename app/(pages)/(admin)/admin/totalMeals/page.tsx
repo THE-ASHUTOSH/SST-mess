@@ -12,17 +12,73 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Loader2 } from 'lucide-react';
 
+type Period = 'daily' | 'weekly' | 'monthly';
+
 interface Vendor {
     id: string;
     name: string;
 }
 
+// Convert YYYY-Wnn to Monday's date (YYYY-MM-DD)
+function weekInputToDate(weekStr: string): string {
+    const [yearStr, weekPart] = weekStr.split('-W');
+    const year = Number(yearStr);
+    const week = Number(weekPart);
+    const jan4 = new Date(Date.UTC(year, 0, 4));
+    const dayOfWeek = jan4.getUTCDay() || 7;
+    jan4.setUTCDate(jan4.getUTCDate() - dayOfWeek + 1 + (week - 1) * 7);
+    return jan4.toISOString().split('T')[0];
+}
+
+// Convert YYYY-MM to YYYY-MM-01
+function monthInputToDate(monthStr: string): string {
+    return `${monthStr}-01`;
+}
+
+function getDefaultDateValue(period: Period): string {
+    const now = new Date();
+    if (period === 'daily') {
+        return now.toISOString().split('T')[0];
+    } else if (period === 'weekly') {
+        // Compute ISO week string
+        const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+        return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+    } else {
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    }
+}
+
+function buildResultSubtitle(period: Period, resolvedDate: string, vendorName: string, mealTypeName: string): string {
+    const parts = [vendorName, mealTypeName];
+
+    if (period === 'daily') {
+        parts.push(new Date(resolvedDate + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }));
+    } else if (period === 'weekly') {
+        const start = new Date(resolvedDate + 'T00:00:00');
+        const end = new Date(start);
+        end.setDate(end.getDate() + 6);
+        parts.push(
+            `${start.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} – ${end.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`
+        );
+    } else {
+        parts.push(new Date(resolvedDate + 'T00:00:00').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }));
+    }
+
+    return parts.join(' · ');
+}
+
 const TotalMealsPage = () => {
-    const [date, setDate] = useState<string>('');
+    const [period, setPeriod] = useState<Period>('daily');
+    const [dateValue, setDateValue] = useState<string>('');
     const [vendors, setVendors] = useState<Vendor[]>([]);
     const [selectedVendor, setSelectedVendor] = useState<string>('');
     const [mealType, setMealType] = useState<string>('');
     const [count, setCount] = useState<number | null>(null);
+    const [resultSubtitle, setResultSubtitle] = useState<string>('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -33,13 +89,10 @@ const TotalMealsPage = () => {
                 if (response.data.success && Array.isArray(response.data.vendors)) {
                     setVendors(response.data.vendors);
 
-                    // Recover saved vendor choice
                     const savedVendorId = localStorage.getItem('selectedVendorId');
                     if (savedVendorId) {
                         const vendorExists = response.data.vendors.some((v: Vendor) => v.id === savedVendorId);
-                        if (vendorExists) {
-                            setSelectedVendor(savedVendorId);
-                        }
+                        if (vendorExists) setSelectedVendor(savedVendorId);
                     }
                 }
             } catch (err) {
@@ -48,16 +101,30 @@ const TotalMealsPage = () => {
             }
         };
         fetchVendors();
-
-        // Set default date to today
-        const today = new Date().toISOString().split('T')[0];
-        setDate(today);
+        setDateValue(getDefaultDateValue('daily'));
     }, []);
 
+    const handlePeriodChange = (newPeriod: Period) => {
+        setPeriod(newPeriod);
+        setDateValue(getDefaultDateValue(newPeriod));
+        setCount(null);
+        setError('');
+    };
+
     const handleCalculate = async () => {
-        if (!date || !selectedVendor || !mealType) {
+        if (!dateValue || !selectedVendor || !mealType) {
             toast.error("Please fill all fields");
             return;
+        }
+
+        // Resolve date to YYYY-MM-DD for API
+        let resolvedDate: string;
+        if (period === 'weekly') {
+            resolvedDate = weekInputToDate(dateValue);
+        } else if (period === 'monthly') {
+            resolvedDate = monthInputToDate(dateValue);
+        } else {
+            resolvedDate = dateValue;
         }
 
         setLoading(true);
@@ -66,13 +133,17 @@ const TotalMealsPage = () => {
 
         try {
             const response = await axiosInstance.post('/api/meal/total-meals', {
-                date,
+                date: resolvedDate,
                 vendorId: selectedVendor,
-                mealType
+                mealType,
+                period,
             });
 
             if (response.data.success) {
                 setCount(response.data.count);
+                const vendorName = selectedVendor === 'all' ? 'All Vendors' : (vendors.find(v => v.id === selectedVendor)?.name ?? selectedVendor);
+                const mealLabel = mealType === 'all' ? 'All Meals' : mealType.charAt(0).toUpperCase() + mealType.slice(1);
+                setResultSubtitle(buildResultSubtitle(period, resolvedDate, vendorName, mealLabel));
                 toast.success("Calculation complete");
             } else {
                 setError(response.data.message || "Failed to calculate");
@@ -101,14 +172,31 @@ const TotalMealsPage = () => {
                 </CardHeader>
                 <CardContent className="space-y-6">
 
-                    {/* Date Selection */}
+                    {/* Period Selection */}
                     <div className="space-y-2">
-                        <Label htmlFor="date-input">Select Date</Label>
+                        <Label htmlFor="period-select">Period</Label>
+                        <Select value={period} onValueChange={(v) => handlePeriodChange(v as Period)}>
+                            <SelectTrigger id="period-select">
+                                <SelectValue placeholder="Choose period" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="daily">Daily</SelectItem>
+                                <SelectItem value="weekly">Weekly</SelectItem>
+                                <SelectItem value="monthly">Monthly</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {/* Conditional Date Picker */}
+                    <div className="space-y-2">
+                        <Label htmlFor="date-input">
+                            {period === 'daily' ? 'Select Date' : period === 'weekly' ? 'Select Week' : 'Select Month'}
+                        </Label>
                         <Input
                             id="date-input"
-                            type="date"
-                            value={date}
-                            onChange={(e) => setDate(e.target.value)}
+                            type={period === 'daily' ? 'date' : period === 'weekly' ? 'week' : 'month'}
+                            value={dateValue}
+                            onChange={(e) => setDateValue(e.target.value)}
                             className="w-full"
                         />
                     </div>
@@ -120,13 +208,14 @@ const TotalMealsPage = () => {
                             value={selectedVendor}
                             onValueChange={(value) => {
                                 setSelectedVendor(value);
-                                localStorage.setItem('selectedVendorId', value);
+                                if (value !== 'all') localStorage.setItem('selectedVendorId', value);
                             }}
                         >
                             <SelectTrigger id="vendor-select">
                                 <SelectValue placeholder="Choose a vendor" />
                             </SelectTrigger>
                             <SelectContent>
+                                <SelectItem value="all">All Vendors</SelectItem>
                                 {vendors.map((v) => (
                                     <SelectItem key={v.id} value={v.id}>
                                         {v.name}
@@ -144,6 +233,7 @@ const TotalMealsPage = () => {
                                 <SelectValue placeholder="Choose meal type" />
                             </SelectTrigger>
                             <SelectContent>
+                                <SelectItem value="all">All Meals</SelectItem>
                                 <SelectItem value="breakfast">Breakfast</SelectItem>
                                 <SelectItem value="lunch">Lunch</SelectItem>
                                 <SelectItem value="dinner">Dinner</SelectItem>
@@ -176,9 +266,7 @@ const TotalMealsPage = () => {
                                 <div>
                                     <p className="text-sm uppercase tracking-wide font-semibold opacity-70 mb-1">Total Meals Recorded</p>
                                     <p className="text-5xl font-extrabold">{count}</p>
-                                    <p className="text-xs mt-2 opacity-60">
-                                        For {vendors.find(v => v.id === selectedVendor)?.name} on {new Date(date).toLocaleDateString()}
-                                    </p>
+                                    <p className="text-xs mt-2 opacity-60">{resultSubtitle}</p>
                                 </div>
                             )}
                         </div>

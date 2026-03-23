@@ -68,7 +68,7 @@ export async function GET() {
         const token = jwt.sign(
             { userId: user.id, vendorId: selection.vendor.id },
             jwtSecret,
-            { expiresIn: "15m" }
+            { algorithm: 'HS256', expiresIn: "15m" }
         );
 
         

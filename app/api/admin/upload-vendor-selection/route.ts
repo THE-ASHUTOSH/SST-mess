@@ -89,6 +89,11 @@ export async function POST(req: Request) {
                 }
 
                 const emailLower = email.toLowerCase();
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(emailLower)) {
+                    issues.push({ row, error: `Invalid email format: '${email}'` });
+                    continue;
+                }
 
                 // Check if user exists
                 let [user] = await db.select().from(users).where(eq(users.email, emailLower)).limit(1);

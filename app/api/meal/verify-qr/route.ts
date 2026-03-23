@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { meals, users } from '@/lib/db/schema';
+import { meals, users, vendorSelections } from '@/lib/db/schema';
 import { requireRole } from '@/lib/auth-helper';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { and, eq, gte, lt } from 'drizzle-orm';
-import { getCurrentMealType, getISTDayBounds } from '@/lib/utils/timezone';
+import { getCurrentMealType, getISTDayBounds, getISTNow } from '@/lib/utils/timezone';
 
 interface QrCodePayload extends JwtPayload {
     userId: string;
@@ -19,8 +19,8 @@ export async function POST(req: Request) {
         const { token, vendorId } = body;
 
         // Validate required fields
-        if (!token || typeof token !== 'string') {
-            return NextResponse.json({ success: false, message: "Token is required" }, { status: 400 });
+        if (!token || typeof token !== 'string' || token.length > 1000) {
+            return NextResponse.json({ success: false, message: "Invalid token" }, { status: 400 });
         }
 
         if (!vendorId) {
@@ -34,8 +34,8 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false, message: "Server configuration error" }, { status: 500 });
         }
 
-        // Verify token from QR
-        const decoded = jwt.verify(token, jwtSecret) as QrCodePayload;
+        // Verify token from QR (enforce HS256 to prevent alg:none attacks)
+        const decoded = jwt.verify(token, jwtSecret, { algorithms: ['HS256'] }) as QrCodePayload;
         const forUserId = decoded.userId;
         const userVendorId = decoded.vendorId;
 
@@ -45,6 +45,32 @@ export async function POST(req: Request) {
 
         if (!isVendorAuthorized) {
             return NextResponse.json({ success: false, message: "This student is not assigned to your vendor." }, { status: 403 });
+        }
+
+        // Validate that the user in the token actually exists
+        const forUser = await db.query.users.findFirst({
+            where: eq(users.id, forUserId)
+        });
+
+        if (!forUser) {
+            return NextResponse.json({ success: false, message: "Invalid QR code." }, { status: 401 });
+        }
+
+        // Verify user is opted in for the current month
+        const istNow = getISTNow();
+        const year = istNow.getFullYear();
+        const month = istNow.getMonth();
+
+        const selection = await db.query.vendorSelections.findFirst({
+            where: and(
+                eq(vendorSelections.userId, forUserId),
+                gte(vendorSelections.forMonth, new Date(year, month, 1)),
+                lt(vendorSelections.forMonth, new Date(year, month + 1, 1))
+            ),
+        });
+
+        if (!selection) {
+            return NextResponse.json({ success: false, message: "Student is not opted in for mess this month." }, { status: 403 });
         }
 
         const mealType = getCurrentMealType();
@@ -80,15 +106,9 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false, message: `User has already taken ${mealType} today.` }, { status: 403 });
         }
 
-        const foruser = await db.query.users.findFirst({
-            where: eq(users.id, forUserId)
-        });
+        console.log("Meal verified for user:", forUserId);
 
-        
-            console.log("Meal verified for", foruser?.name);
-        
-
-        return NextResponse.json({ success: true, message: "Meal verified successfully.", user: foruser });
+        return NextResponse.json({ success: true, message: "Meal verified successfully.", user: forUser });
 
     } catch (error: unknown) {
         console.error("Error verifying QR code:", error);

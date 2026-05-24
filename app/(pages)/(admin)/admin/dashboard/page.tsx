@@ -1,39 +1,79 @@
-import React from 'react'
-import EventCard from '@/components/common/EventCard'
+"use client";
+
+import React from "react";
+import {
+  BarChart3,
+  ClipboardList,
+  ScanLine,
+  Sliders,
+  Store,
+  Upload,
+  Utensils,
+  UtensilsCrossed,
+} from "lucide-react";
+import EventCard from "@/components/common/EventCard";
+import PageHeader from "@/components/common/layout/PageHeader";
 
 const Dashboard = () => {
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <h1 className="text-3xl sm:text-4xl font-extrabold text-center mb-10 text-primary tracking-tight transform hover:scale-105 transition-transform duration-300">Dashboard</h1>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch animate-in fade-in slide-in-from-bottom-6 duration-700">
-        <EventCard title="Verify Student QR" redirectUrl="/admin/verifyStudentQR">
-          <p>Verify the QR code of a student</p>
-        </EventCard>
-        <EventCard title="Update Vendor Menu" redirectUrl="/admin/updateVendorMenu">
-          <p>Update the menu, price and other details of a vendor</p>
-        </EventCard>
-        <EventCard title="Add Vendor" redirectUrl="/admin/addVendor">
-          <p>Add a new vendor to the system</p>
-        </EventCard>
-        <EventCard title="Choice Analysis" redirectUrl="/admin/choiceAnalysis">
-          <p>Analyze the choices made for vendors</p>
-        </EventCard>
-        <EventCard title="FeedBack Analysis" redirectUrl="/admin/feedBackAnalysis">
-          <p>Analyze the feedback received for vendors</p>
-        </EventCard>
-        <EventCard title="Controls" redirectUrl="/admin/adminControls">
-          <p>Manage various administrative controls</p>
-        </EventCard>
-        <EventCard title="Upload Vendor Selection" redirectUrl="/admin/uploadVendorSelection">
-          <p>Upload the vendor selection for the month</p>
-        </EventCard>
-        <EventCard title="Total Meals" redirectUrl="/admin/totalMeals">
-          <p>Calculate the total meals for a vendor</p>
-        </EventCard>
+    <div className="flex flex-col gap-4">
+      <PageHeader
+        title="Admin Dashboard"
+        description="Manage vendors, menus, selections, and analytics."
+      />
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <EventCard
+          title="Verify Student QR"
+          description="Scan a student's QR manually"
+          redirectUrl="/admin/verifyStudentQR"
+          icon={ScanLine}
+        />
+        <EventCard
+          title="Update Vendor Menu"
+          description="Edit menus, price and meal options"
+          redirectUrl="/admin/updateVendorMenu"
+          icon={Utensils}
+        />
+        <EventCard
+          title="Add Vendor"
+          description="Onboard a new vendor"
+          redirectUrl="/admin/addVendor"
+          icon={Store}
+        />
+        <EventCard
+          title="Choice Analysis"
+          description="Vendor popularity and student picks"
+          redirectUrl="/admin/choiceAnalysis"
+          icon={BarChart3}
+        />
+        <EventCard
+          title="Feedback Analysis"
+          description="Aggregate ratings and comments"
+          redirectUrl="/admin/feedBackAnalysis"
+          icon={ClipboardList}
+        />
+        <EventCard
+          title="Controls"
+          description="Toggle feedback window and system flags"
+          redirectUrl="/admin/adminControls"
+          icon={Sliders}
+        />
+        <EventCard
+          title="Upload Vendor Selection"
+          description="Bulk-upload the monthly xlsx"
+          redirectUrl="/admin/uploadVendorSelection"
+          icon={Upload}
+        />
+        <EventCard
+          title="Total Meals"
+          description="Calculate served meals for billing"
+          redirectUrl="/admin/totalMeals"
+          icon={UtensilsCrossed}
+        />
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Dashboard
+export default Dashboard;

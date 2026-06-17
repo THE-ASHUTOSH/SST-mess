@@ -1,7 +1,7 @@
-import { pgTable, text, boolean, integer, timestamp, date, jsonb, pgEnum, uuid, uniqueIndex } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { pgTable, text, boolean, integer, timestamp, date, jsonb, pgEnum, uuid, uniqueIndex, index } from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
 
-export const roleEnum = pgEnum("role", ["admin", "student", "vendor"]);
+export const roleEnum = pgEnum("role", ["admin", "student", "vendor", "superAdmin"]);
 export const mealTypeEnum = pgEnum("meal_type", ["breakfast", "lunch", "dinner"]);
 export const preferenceEnum = pgEnum("preference", ["Vegetarian", "Non-Vegetarian", "Eggetarian"]);
 export const hostelEnum = pgEnum("hostel", ["Velankani Micro Campus (Uniworld 2)", "Neeladri Micro Campus (Uniworld 1)"]);
@@ -38,13 +38,18 @@ export const vendors = pgTable("vendors", {
     description: text("description"),
     price: integer("price").notNull(), // Storing as integer (e.g., cents/pysa) or just number
     menuUrl: text("menu_url"),
-    menuId: uuid("menu_id").references(() => menus.id).unique(),
+    menuId: uuid("menu_id").references(() => menus.id),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
     breakfast: boolean("breakfast").default(true),
     lunch: boolean("lunch").default(true),
     dinner: boolean("dinner").default(true),
-});
+    deletedAt: timestamp("deleted_at"),
+}, (table) => ({
+    // Soft-delete: a menu can only bind to ONE *active* vendor; the menu becomes reusable once the vendor is soft-deleted.
+    menuIdActiveUnique: uniqueIndex("vendors_menu_id_active_unique").on(table.menuId).where(sql`${table.deletedAt} IS NULL`),
+    deletedAtIdx: index("vendors_deleted_at_idx").on(table.deletedAt),
+}));
 
 export const meals = pgTable("meals", {
     id: uuid("id").defaultRandom().primaryKey(),

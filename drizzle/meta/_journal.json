@@ -36,6 +36,20 @@
       "when": 1767580575512,
       "tag": "0004_cold_living_tribunal",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1781719996459,
+      "tag": "0005_add_superadmin_role",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1781720031569,
+      "tag": "0006_vendor_soft_delete",
+      "breakpoints": true
     }
   ]
 }

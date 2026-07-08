@@ -10,6 +10,7 @@ type User = {
   role?: string;
   roll?: string;
   hostel?: string;
+  hostelId?: string;
   batch?: string;
   id?: string;
 } | null;

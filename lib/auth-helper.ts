@@ -12,6 +12,7 @@ export interface IUser {
     picture?: string | null;
     roll?: string | null;
     hostel?: string | null;
+    hostelId?: string | null;
     batch?: string | null;
 }
 

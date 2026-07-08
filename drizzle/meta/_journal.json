@@ -50,6 +50,13 @@
       "when": 1781720031569,
       "tag": "0006_vendor_soft_delete",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1781721506950,
+      "tag": "0007_hostel_table",
+      "breakpoints": true
     }
   ]
 }

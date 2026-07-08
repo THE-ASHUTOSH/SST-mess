@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { users, vendors, vendorSelections, preferenceEnum, hostelEnum } from '@/lib/db/schema';
+import { users, vendors, vendorSelections, hostels, preferenceEnum, hostelEnum } from '@/lib/db/schema';
 import { requireRole } from '@/lib/auth-helper';
 import * as xlsx from 'xlsx';
 import { eq } from 'drizzle-orm';
@@ -57,6 +57,16 @@ export async function POST(req: Request) {
         const allVendors = await db.select().from(vendors);
         const vendorsMap = new Map(allVendors.map(vendor => [vendor.name, vendor]));
 
+        // Map hostel name -> record (case-insensitive + trimmed) for FK resolution.
+        const allHostels = await db.select().from(hostels);
+        if (allHostels.length === 0) {
+            return NextResponse.json({
+                message: "Hostels table is empty. Seed it first (run scripts/migrate-hostels.ts) before uploading vendor selections.",
+            }, { status: 503 });
+        }
+        const hostelsMap = new Map(allHostels.map(h => [h.name.trim().toLowerCase(), h]));
+        const hostelEnumValues = hostelEnum.enumValues as readonly string[];
+
         const forMonthDate = new Date(month);
 
         
@@ -95,13 +105,24 @@ export async function POST(req: Request) {
                     continue;
                 }
 
+                // Resolve the hostel against the hostels table (the FK source of truth).
+                const hostelRecord = hostelsMap.get(String(hostel).trim().toLowerCase());
+                if (!hostelRecord) {
+                    issues.push({ row, error: `Unknown hostel: '${hostel}'. Add it to the hostels table or fix the spreadsheet.` });
+                    continue;
+                }
+                // Keep the legacy enum column in sync only while the name is still a valid enum value.
+                const hostelEnumValue = hostelEnumValues.includes(hostelRecord.name)
+                    ? (hostelRecord.name as Hostel)
+                    : undefined;
+
                 // Check if user exists
                 let [user] = await db.select().from(users).where(eq(users.email, emailLower)).limit(1);
 
-                if (user && (!user.hostel || user.hostel !== hostel || !user.batch || user.batch !== batch)) {
-                    // Update user info
+                if (user && (user.hostelId !== hostelRecord.id || !user.batch || user.batch !== batch)) {
+                    // Update user info (dual-write: legacy text column + new FK)
                     [user] = await db.update(users)
-                        .set({ hostel, batch })
+                        .set({ hostel: hostelRecord.name, hostelId: hostelRecord.id, batch })
                         .where(eq(users.id, user.id))
                         .returning();
                     console.log(`Updated user ${emailLower} with hostel and batch info`);
@@ -113,7 +134,8 @@ export async function POST(req: Request) {
                         email: emailLower,
                         name: name || emailLower.split('@')[0],
                         batch: batch,
-                        hostel: hostel,
+                        hostel: hostelRecord.name,
+                        hostelId: hostelRecord.id,
                         role: 'student'
                     }).returning();
                     console.log(`Created new user with email ${emailLower}`);
@@ -131,14 +153,15 @@ export async function POST(req: Request) {
                     continue;
                 }
 
-                // Create selection
+                // Create selection (dual-write: legacy enum column when valid + new FK)
                 await db.insert(vendorSelections).values({
                     userId: user.id,
                     vendorId: vendor.id,
-                    preference, 
+                    preference,
                     forMonth: forMonthDate,
                     dateofEntry: new Date(),
-                    hostel: hostel,
+                    hostel: hostelEnumValue,
+                    hostelId: hostelRecord.id,
                 });
                 console.log(`Created vendor selection for user ${emailLower} with vendor ${vendorNameString}`);
                 newEntries.push({ email: emailLower, vendorName: vendorNameString });

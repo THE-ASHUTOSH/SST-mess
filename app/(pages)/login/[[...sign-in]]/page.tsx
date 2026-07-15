@@ -68,7 +68,7 @@ function SignInContent() {
   // Once UserContext resolves a DB user, route by role
   useEffect(() => {
     if (loading || !user) return;
-    if (user.role === "admin") router.replace("/admin/dashboard");
+    if (user.role === "admin" || user.role === "superAdmin") router.replace("/admin/dashboard");
     else if (user.role === "vendor") router.replace("/vendorUser/dashboard");
     else router.replace("/student/dashboard");
   }, [user, loading, router]);

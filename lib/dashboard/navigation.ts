@@ -8,10 +8,15 @@ import {
   Sliders,
   Store,
   Upload,
+  Utensils,
   UtensilsCrossed,
 } from "lucide-react";
 
 export type ShellVariant = "student" | "admin" | "vendor";
+
+// Within the admin shell, items can be limited to specific roles. superAdmin is a superset:
+// it sees every admin item plus its own. An item with no `roles` is visible to the whole shell.
+export type AdminAreaRole = "admin" | "superAdmin";
 
 export interface AppNavItem {
   id: string;
@@ -20,6 +25,7 @@ export interface AppNavItem {
   icon: LucideIcon;
   kind?: "route" | "external";
   children?: AppNavItem[];
+  roles?: AdminAreaRole[];
 }
 
 export interface RoleNavConfig {
@@ -66,48 +72,64 @@ export const roleNavConfig: Record<ShellVariant, RoleNavConfig> = {
         label: "Home",
         href: "/admin/dashboard",
         icon: Home,
+        roles: ["admin", "superAdmin"],
       },
       {
-        id: "admin-verify",
-        label: "Verify QR",
-        href: "/admin/verifyStudentQR",
-        icon: ScanLine,
-      },
-      {
-        id: "admin-manage-vendor",
-        label: "Manage Vendors",
-        href: "/admin/manageVendor",
-        icon: Store,
-      },
-      {
-        id: "admin-upload",
-        label: "Upload Selection",
-        href: "/admin/uploadVendorSelection",
-        icon: Upload,
+        id: "admin-update-menu",
+        label: "Update Menu",
+        href: "/admin/updateMenu",
+        icon: Utensils,
+        roles: ["admin", "superAdmin"],
       },
       {
         id: "admin-choice",
         label: "Choice Analysis",
         href: "/admin/choiceAnalysis",
         icon: BarChart3,
+        roles: ["admin", "superAdmin"],
       },
       {
         id: "admin-feedback",
         label: "Feedback Analysis",
         href: "/admin/feedBackAnalysis",
         icon: ClipboardList,
+        roles: ["admin", "superAdmin"],
       },
       {
         id: "admin-total-meals",
         label: "Total Meals",
         href: "/admin/totalMeals",
         icon: UtensilsCrossed,
+        roles: ["admin", "superAdmin"],
       },
       {
         id: "admin-controls",
         label: "Controls",
         href: "/admin/adminControls",
         icon: Sliders,
+        roles: ["admin", "superAdmin"],
+      },
+      // superAdmin-only
+      {
+        id: "admin-verify",
+        label: "Verify QR",
+        href: "/admin/verifyStudentQR",
+        icon: ScanLine,
+        roles: ["superAdmin"],
+      },
+      {
+        id: "admin-manage-vendor",
+        label: "Manage Vendors",
+        href: "/admin/manageVendor",
+        icon: Store,
+        roles: ["superAdmin"],
+      },
+      {
+        id: "admin-upload",
+        label: "Upload Selection",
+        href: "/admin/uploadVendorSelection",
+        icon: Upload,
+        roles: ["superAdmin"],
       },
     ],
   },
@@ -144,5 +166,25 @@ export function isNavItemActive(pathname: string, href: string): boolean {
   if (href === "/vendorUser/dashboard")
     return pathname === "/vendorUser/dashboard";
   return pathname.startsWith(href);
+}
+
+// Returns whether a nav item should be shown to a given role. Items without a `roles`
+// list are visible to everyone in the shell; otherwise the role must be listed.
+export function canAccessNavItem(item: AppNavItem, role: string | undefined): boolean {
+  if (!item.roles) return true;
+  return role !== undefined && (item.roles as string[]).includes(role);
+}
+
+// Produces a role-scoped copy of a nav config (used by the admin shell so admins and
+// superAdmins see different item sets from the same source config).
+export function filterNavConfigByRole(
+  config: RoleNavConfig,
+  role: string | undefined,
+): RoleNavConfig {
+  return {
+    ...config,
+    items: config.items.filter((item) => canAccessNavItem(item, role)),
+    footerItems: config.footerItems?.filter((item) => canAccessNavItem(item, role)),
+  };
 }
 

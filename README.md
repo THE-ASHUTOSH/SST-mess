@@ -162,16 +162,19 @@ Stores all static assets that are publicly accessible, such as images and other 
 
 The backend is built with Next.js API Routes. Here are the primary endpoints:
 
-- `POST /api/admin/upload-vendor-selection`: Allows an admin to upload a file of vendor selections.
+- `POST /api/admin/upload-vendor-selection`: Uploads a file of vendor selections. **superAdmin only.**
+- `GET /api/admin/users`: Search/list users for administration. **superAdmin only.**
+- `PATCH /api/admin/users?id=[id]`: Change a user's role. **superAdmin only.**
 - `GET/POST /api/controls/feedback-toggle`: Manages the global setting for enabling or disabling the feedback form.
 - `POST /api/meal/generate-qr`: Generates a meal QR code for a student.
 - `GET /api/meal/status`: Checks the current meal status for a student (instead of the web sockets).
 - `POST /api/meal/verify-qr`: Used by vendors to verify a student's QR code.
 - `GET /api/user/latest-vendor`: Fetches the most recently selected vendor for the logged-in user.
 - `GET /api/user/me`: Retrieves details for the currently logged-in user.
-- `POST /api/vendor/manageVendor`: Adds a new vendor to the database.
-- `PUT /api/vendor/manageVendor?id=[id]`: Updates details for a specific vendor.
-- `DELETE /api/vendor/manageVendor?id=[id]`: Soft-deletes a vendor (hides it from listings; records are preserved).
+- `POST /api/vendor/manageVendor`: Adds a new vendor (name, price, meal options). **superAdmin only.**
+- `PUT /api/vendor/manageVendor?id=[id]`: Updates a vendor's details. **superAdmin only.**
+- `DELETE /api/vendor/manageVendor?id=[id]`: Soft-deletes a vendor (hides it from listings; records are preserved). **superAdmin only.**
+- `PUT /api/vendor/updateMenu?id=[id]`: Updates a vendor's menu (menu URL + weekly CSV). **admin + superAdmin.**
 - `GET /api/vendor/choice-analysis`: Fetches data for vendor choice analysis.
 - `GET /api/vendor/feedback-analysis`: Fetches data for vendor feedback analysis.
 - `GET /api/vendor/getVendors`: Retrieves a list of all active (non-deleted) vendors.

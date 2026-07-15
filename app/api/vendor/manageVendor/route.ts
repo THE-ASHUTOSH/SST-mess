@@ -1,30 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
 import { db } from '@/lib/db';
-import { vendors, menus } from '@/lib/db/schema';
+import { vendors } from '@/lib/db/schema';
 import { requireRole } from '@/lib/auth-helper';
-import generateMenu from '@/lib/utils/generateMenu';
 import { and, eq, isNull } from 'drizzle-orm';
 
 /**
- * Unified vendor management endpoint. Merges the former
- * `POST /api/vendor/addVendor` and `PUT /api/vendor/updateVendor/[id]`
- * routes and adds a `DELETE` (soft-delete) operation.
+ * Vendor-entity management endpoint (superAdmin only). Handles the vendor record
+ * itself — name, description, price, and which meals it serves — plus soft-delete.
+ * The vendor's MENU (menu URL + weekly CSV) is managed separately via
+ * `PUT /api/vendor/updateMenu?id=<id>`, which admins can also access.
  *
  *   POST   /api/vendor/manageVendor            → create a vendor
- *   PUT    /api/vendor/manageVendor?id=<id>    → update a vendor
+ *   PUT    /api/vendor/manageVendor?id=<id>    → update a vendor's details
  *   DELETE /api/vendor/manageVendor?id=<id>    → soft-delete a vendor
- *
- * All three require the `admin` role.
  */
 
 interface ParsedVendorForm {
     name: string;
     description: string | null;
     price: number;
-    menuUrl: string | null;
     mealsOptions?: { breakfast?: boolean; lunch?: boolean; dinner?: boolean };
-    menuFile: File | null;
 }
 
 // Client-side (400) validation failure, distinct from server errors.
@@ -42,9 +38,7 @@ async function parseVendorForm(req: Request): Promise<ParsedVendorForm> {
     const name = formData.get('name') as string;
     const description = formData.get('description') as string | null;
     const price = formData.get('price') as string;
-    const menuUrl = formData.get('menuUrl') as string | null;
     const mealsOptions = formData.get('mealsOptions') as string | null;
-    const menuFile = formData.get('menuFile') as File | null;
 
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
         throw new VendorFormError('Vendor name is required');
@@ -66,21 +60,8 @@ async function parseVendorForm(req: Request): Promise<ParsedVendorForm> {
         name: name.trim(),
         description: description?.trim() || null,
         price: Number(price),
-        menuUrl: menuUrl?.trim() || null,
         mealsOptions: parsedMealsOptions,
-        menuFile,
     };
-}
-
-// Read + parse an uploaded CSV into a `menus` row payload.
-async function buildMenuDataFromFile(menuFile: File) {
-    const buffer = Buffer.from(await menuFile.arrayBuffer());
-    const csvContent = buffer.toString('utf-8');
-    try {
-        return generateMenu(csvContent);
-    } catch {
-        throw new VendorFormError('Error processing menu file');
-    }
 }
 
 function mapError(error: unknown, action: string) {
@@ -98,27 +79,15 @@ function mapError(error: unknown, action: string) {
 // CREATE
 export async function POST(req: NextRequest) {
     try {
-        const user = await requireRole(['admin']);
+        const user = await requireRole(['superAdmin']);
         console.log('Vendor addition triggered by user:', user.email);
 
         const form = await parseVendorForm(req);
-
-        // Parse the CSV (if any) and create the menu BEFORE the vendor, so the vendor row is
-        // inserted last with its menuId already set. This avoids leaving an orphaned vendor
-        // behind if the CSV is malformed or the menu insert fails (neon-http has no transactions).
-        let menuId: string | undefined;
-        if (form.menuFile) {
-            const menuData = await buildMenuDataFromFile(form.menuFile);
-            const [newMenu] = await db.insert(menus).values({ ...menuData }).returning();
-            menuId = newMenu.id;
-        }
 
         const [newVendor] = await db.insert(vendors).values({
             name: form.name,
             description: form.description,
             price: form.price,
-            menuUrl: form.menuUrl,
-            menuId,
             breakfast: form.mealsOptions?.breakfast ?? true,
             lunch: form.mealsOptions?.lunch ?? true,
             dinner: form.mealsOptions?.dinner ?? true,
@@ -131,10 +100,10 @@ export async function POST(req: NextRequest) {
     }
 }
 
-// UPDATE
+// UPDATE (vendor details only — menu is handled by /api/vendor/updateMenu)
 export async function PUT(req: NextRequest) {
     try {
-        const user = await requireRole(['admin']);
+        const user = await requireRole(['superAdmin']);
 
         const vendorId = req.nextUrl.searchParams.get('id');
         if (!vendorId || !isUuid(vendorId)) {
@@ -151,23 +120,10 @@ export async function PUT(req: NextRequest) {
             return NextResponse.json({ success: false, message: 'Vendor not found' }, { status: 404 });
         }
 
-        if (form.menuFile) {
-            const menuData = await buildMenuDataFromFile(form.menuFile);
-            if (vendor.menuId) {
-                // Update the vendor's existing menu in place.
-                await db.update(menus).set({ ...menuData, updatedAt: new Date() }).where(eq(menus.id, vendor.menuId));
-            } else {
-                // No menu yet — create one and link it.
-                const [newMenu] = await db.insert(menus).values(menuData).returning();
-                await db.update(vendors).set({ menuId: newMenu.id }).where(eq(vendors.id, vendorId));
-            }
-        }
-
         const updateData: Partial<(typeof vendors)['$inferInsert']> = {
             name: form.name,
             description: form.description,
             price: form.price,
-            menuUrl: form.menuUrl,
             updatedAt: new Date(),
         };
         if (form.mealsOptions) {
@@ -188,7 +144,7 @@ export async function PUT(req: NextRequest) {
 // DELETE (soft-delete: sets deletedAt so the row is hidden but FKs/history remain intact)
 export async function DELETE(req: NextRequest) {
     try {
-        const user = await requireRole(['admin']);
+        const user = await requireRole(['superAdmin']);
 
         const vendorId = req.nextUrl.searchParams.get('id');
         if (!vendorId || !isUuid(vendorId)) {

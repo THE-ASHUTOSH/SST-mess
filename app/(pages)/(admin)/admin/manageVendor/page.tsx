@@ -20,13 +20,13 @@ import {
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
 import { Trash2 } from "lucide-react"
+import RequireRole from "../RequireRole"
 
 interface Vendor {
   id: string
   name: string
   description: string | null
   price: number
-  menuUrl: string | null
   breakfast: boolean | null
   lunch: boolean | null
   dinner: boolean | null
@@ -42,21 +42,19 @@ interface VendorFormValues {
   name: string
   description: string
   price: string
-  menuUrl: string
 }
 
-const emptyForm: VendorFormValues = { name: '', description: '', price: '', menuUrl: '' }
+const emptyForm: VendorFormValues = { name: '', description: '', price: '' }
 const defaultMeals: MealsOptions = { breakfast: true, lunch: true, dinner: true }
 
-// Build the multipart body shared by the create + update requests.
-function buildRequestBody(values: VendorFormValues, meals: MealsOptions, menuFile: File | null) {
+// Build the multipart body shared by the create + update requests. The menu (URL + CSV) is
+// managed separately on the Update Menu page, so it is intentionally not part of this form.
+function buildRequestBody(values: VendorFormValues, meals: MealsOptions) {
   const body = new FormData()
   body.append('name', values.name)
   body.append('description', values.description)
   body.append('price', values.price)
-  body.append('menuUrl', values.menuUrl)
   body.append('mealsOptions', JSON.stringify(meals))
-  if (menuFile) body.append('menuFile', menuFile)
   return body
 }
 
@@ -66,12 +64,11 @@ interface VendorFieldsProps {
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
   meals: MealsOptions
   onToggleMeal: (key: keyof MealsOptions) => void
-  onFile: (e: React.ChangeEvent<HTMLInputElement>) => void
   disabled?: boolean
 }
 
 // The vendor detail fields, shared by both the Add and Manage tabs.
-const VendorFields = ({ idPrefix, values, onChange, meals, onToggleMeal, onFile, disabled = false }: VendorFieldsProps) => (
+const VendorFields = ({ idPrefix, values, onChange, meals, onToggleMeal, disabled = false }: VendorFieldsProps) => (
   <>
     <div className="space-y-2">
       <Label htmlFor={`${idPrefix}-name`}>Vendor Name</Label>
@@ -132,31 +129,9 @@ const VendorFields = ({ idPrefix, values, onChange, meals, onToggleMeal, onFile,
       </div>
     </div>
 
-    <div className="space-y-2">
-      <Label htmlFor={`${idPrefix}-menuUrl`}>Menu URL</Label>
-      <Textarea
-        id={`${idPrefix}-menuUrl`}
-        name="menuUrl"
-        value={values.menuUrl}
-        onChange={onChange}
-        placeholder="Enter menu URL"
-        disabled={disabled}
-        rows={3}
-      />
-    </div>
-
-    <div className="space-y-2">
-      <Label htmlFor={`${idPrefix}-menuFile`}>Menu File (CSV)</Label>
-      <Input
-        type="file"
-        id={`${idPrefix}-menuFile`}
-        name="menuFile"
-        onChange={onFile}
-        accept=".csv"
-        disabled={disabled}
-        className="cursor-pointer file:cursor-pointer file:text-foreground file:bg-secondary hover:file:bg-secondary/80"
-      />
-    </div>
+    <p className="text-xs text-muted-foreground">
+      The menu (URL &amp; weekly CSV) is edited separately under <span className="font-medium text-foreground">Update Menu</span>.
+    </p>
   </>
 )
 
@@ -167,16 +142,12 @@ const ManageVendor = () => {
   // Add tab state
   const [addForm, setAddForm] = useState<VendorFormValues>(emptyForm)
   const [addMeals, setAddMeals] = useState<MealsOptions>(defaultMeals)
-  const [addFile, setAddFile] = useState<File | null>(null)
-  const [addKey, setAddKey] = useState(0) // bump to remount fields (clears the file input)
   const [isAdding, setIsAdding] = useState(false)
 
   // Manage tab state
   const [selectedVendorId, setSelectedVendorId] = useState<string>("")
   const [editForm, setEditForm] = useState<VendorFormValues>(emptyForm)
   const [editMeals, setEditMeals] = useState<MealsOptions>(defaultMeals)
-  const [editFile, setEditFile] = useState<File | null>(null)
-  const [editKey, setEditKey] = useState(0)
   const [isUpdating, setIsUpdating] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -206,15 +177,12 @@ const ManageVendor = () => {
       name: vendor.name,
       description: vendor.description ?? '',
       price: vendor.price.toString(),
-      menuUrl: vendor.menuUrl ?? '',
     })
     setEditMeals({
       breakfast: vendor.breakfast ?? true,
       lunch: vendor.lunch ?? true,
       dinner: vendor.dinner ?? true,
     })
-    setEditFile(null)
-    setEditKey(k => k + 1)
   }
 
   const handleAddChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -231,13 +199,11 @@ const ManageVendor = () => {
     e.preventDefault()
     setIsAdding(true)
     try {
-      await axiosInstance.post(`/api/vendor/manageVendor`, buildRequestBody(addForm, addMeals, addFile))
+      await axiosInstance.post(`/api/vendor/manageVendor`, buildRequestBody(addForm, addMeals))
       toast.success("Vendor added successfully!")
       // Reset the Add form and refresh the list so it shows up under Manage.
       setAddForm(emptyForm)
       setAddMeals(defaultMeals)
-      setAddFile(null)
-      setAddKey(k => k + 1)
       await loadVendors()
     } catch {
       toast.error("Failed to add vendor. Please try again.")
@@ -254,7 +220,7 @@ const ManageVendor = () => {
     }
     setIsUpdating(true)
     try {
-      await axiosInstance.put(`/api/vendor/manageVendor?id=${selectedVendorId}`, buildRequestBody(editForm, editMeals, editFile))
+      await axiosInstance.put(`/api/vendor/manageVendor?id=${selectedVendorId}`, buildRequestBody(editForm, editMeals))
       toast.success("Vendor updated successfully!", { description: "Changes have been saved." })
       await loadVendors()
     } catch {
@@ -315,13 +281,11 @@ const ManageVendor = () => {
           {tab === 'add' ? (
             <form onSubmit={handleAddSubmit} className="space-y-6">
               <VendorFields
-                key={`add-${addKey}`}
                 idPrefix="add"
                 values={addForm}
                 onChange={handleAddChange}
                 meals={addMeals}
                 onToggleMeal={(key) => setAddMeals(prev => ({ ...prev, [key]: !prev[key] }))}
-                onFile={(e) => setAddFile(e.target.files?.[0] ?? null)}
                 disabled={isAdding}
               />
               <Button
@@ -353,13 +317,12 @@ const ManageVendor = () => {
               {selectedVendorId && (
                 <>
                   <VendorFields
-                    key={`edit-${selectedVendorId}-${editKey}`}
+                    key={`edit-${selectedVendorId}`}
                     idPrefix="edit"
                     values={editForm}
                     onChange={handleEditChange}
                     meals={editMeals}
                     onToggleMeal={(key) => setEditMeals(prev => ({ ...prev, [key]: !prev[key] }))}
-                    onFile={(e) => setEditFile(e.target.files?.[0] ?? null)}
                     disabled={isUpdating || isDeleting}
                   />
 
@@ -412,4 +375,10 @@ const ManageVendor = () => {
   )
 }
 
-export default ManageVendor
+const ManageVendorPage = () => (
+  <RequireRole roles={["superAdmin"]}>
+    <ManageVendor />
+  </RequireRole>
+)
+
+export default ManageVendorPage

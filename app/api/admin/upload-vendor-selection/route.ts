@@ -29,7 +29,7 @@ interface SelectionInfo {
 
 export async function POST(req: Request) {
     try {
-        const adminUser = await requireRole(['admin']);
+        const adminUser = await requireRole(['superAdmin']);
         console.log("Menu Upload triggered by user:", adminUser.email);
 
         const formData = await req.formData();

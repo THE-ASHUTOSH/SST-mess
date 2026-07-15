@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 
 import { Button } from "@/components/ui/button";
+import RequireRole from "../RequireRole";
 
 interface VerifiedUser {
   id: string;
@@ -250,4 +251,10 @@ const VerifyStudentQRPage = () => {
   );
 };
 
-export default VerifyStudentQRPage;
+const GuardedVerifyStudentQRPage = () => (
+  <RequireRole roles={["superAdmin"]}>
+    <VerifyStudentQRPage />
+  </RequireRole>
+);
+
+export default GuardedVerifyStudentQRPage;

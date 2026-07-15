@@ -13,7 +13,8 @@ interface QrCodePayload extends JwtPayload {
 
 export async function POST(req: Request) {
     try {
-        const byUser = await requireRole(['vendor', 'admin']);
+        // QR verification is a vendor task; plain admins no longer have it (superAdmin passes via override).
+        const byUser = await requireRole(['vendor']);
 
         const body = await req.json();
         const { token, vendorId } = body;

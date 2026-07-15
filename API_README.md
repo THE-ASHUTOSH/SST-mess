@@ -18,7 +18,7 @@ The API endpoints are organized into the following categories:
 
 ### `POST /api/admin/upload-vendor-selection`
 
-This endpoint is for admins to upload a spreadsheet (.xlsx) of vendor selections for a specific month. It processes the spreadsheet, creates new users if they don't exist, updates existing user information, and creates new vendor selections. It also handles duplicates and errors in the uploaded data.
+This endpoint uploads a spreadsheet (.xlsx) of vendor selections for a specific month. It processes the spreadsheet, creates new users if they don't exist, updates existing user information, and creates new vendor selections. It also handles duplicates and errors in the uploaded data. **superAdmin only.**
 
 **Request Body:**
 
@@ -40,6 +40,35 @@ This endpoint is for admins to upload a spreadsheet (.xlsx) of vendor selections
       "error": "Vendor with name 'Non-Existent Vendor' not found"
     }
   ]
+}
+```
+
+### `GET /api/admin/users`
+
+Search/list users for role administration. **superAdmin only.** With `?search=<q>` it matches email or name (case-insensitive); without a query it returns the current privileged users (admins, vendors, superAdmins). Capped at 100 rows.
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "users": [
+    { "id": "user-id", "name": "Jane", "email": "jane@sst.scaler.com", "role": "admin", "roll": null, "hostel": null, "batch": null }
+  ]
+}
+```
+
+### `PATCH /api/admin/users?id=[id]`
+
+Change a user's role. **superAdmin only.** Body: `{ "role": "admin" | "student" | "vendor" | "superAdmin" }`. A superAdmin **cannot change their own role** (guards against self-lockout → `400`). Returns `400` for an invalid id/role and `404` if the user does not exist.
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Role updated successfully",
+  "user": { "id": "user-id", "name": "Jane", "email": "jane@sst.scaler.com", "role": "vendor" }
 }
 ```
 
@@ -192,18 +221,16 @@ Fetches the currently authenticated user's details.
 
 ### `POST /api/vendor/manageVendor`
 
-For admins to add a new vendor. It takes vendor details like name, description, price, and meal options. It can also accept a menu file (CSV) which it parses and associates with the new vendor.
+To add a new vendor. It takes vendor details: name, description, price, and meal options. **superAdmin only.**
 
-> **Note:** This endpoint merges the former `POST /api/vendor/addVendor` and `PUT /api/vendor/updateVendor/[id]` routes and adds a `DELETE` operation. `POST` creates, `PUT ?id=` updates, and `DELETE ?id=` soft-deletes. All require the `admin` role.
+> **Note:** This endpoint manages the vendor **record** — `POST` creates, `PUT ?id=` updates details, and `DELETE ?id=` soft-deletes. All three are **superAdmin only**. The vendor's **menu** (URL + weekly CSV) is managed separately via `PUT /api/vendor/updateMenu` (see below), which admins can also access.
 
 **Request Body (form-data):**
 
 - `name` (string, required): Vendor's name.
 - `description` (string): Vendor's description.
 - `price` (number, required): Price.
-- `menuUrl` (string): URL to the menu.
 - `mealsOptions` (JSON string): e.g., `{"breakfast": true, "lunch": true, "dinner": false}`
-- `menuFile` (file): CSV file for the menu.
 
 **Response:**
 
@@ -220,7 +247,7 @@ For admins to add a new vendor. It takes vendor details like name, description, 
 
 ### `PUT /api/vendor/manageVendor?id=[id]`
 
-For admins to update an existing (non-deleted) vendor's details. Same form-data body as the `POST` above. Returns `404` if the vendor does not exist or has been soft-deleted.
+To update an existing (non-deleted) vendor's details (name, description, price, meal options). Same form-data body as the `POST` above. **superAdmin only.** Returns `404` if the vendor does not exist or has been soft-deleted.
 
 **Response:**
 
@@ -237,7 +264,7 @@ For admins to update an existing (non-deleted) vendor's details. Same form-data 
 
 ### `DELETE /api/vendor/manageVendor?id=[id]`
 
-For admins to soft-delete a vendor. Sets `deletedAt` so the vendor is hidden from `getVendors` and all listings, while its meal/feedback/selection history and menu row are preserved (no FK cascade). Returns `404` if the vendor does not exist or is already deleted.
+To soft-delete a vendor. **superAdmin only.** Sets `deletedAt` so the vendor is hidden from `getVendors` and all listings, while its meal/feedback/selection history and menu row are preserved (no FK cascade). Returns `404` if the vendor does not exist or is already deleted.
 
 **Response:**
 
@@ -248,6 +275,28 @@ For admins to soft-delete a vendor. Sets `deletedAt` so the vendor is hidden fro
   "vendor": {
     "id": "vendor-id",
     "name": "Deleted Vendor Name"
+  }
+}
+```
+
+### `PUT /api/vendor/updateMenu?id=[id]`
+
+To update a vendor's **menu** — the menu URL and/or the weekly menu parsed from an uploaded CSV. Accessible to **admin and superAdmin**. Does not touch the vendor's name/price/meal options (those live in `manageVendor`). Returns `404` if the vendor does not exist or has been soft-deleted.
+
+**Request Body (form-data):**
+
+- `menuUrl` (string): URL to the menu (empty clears it).
+- `menuFile` (file, optional): CSV file for the weekly menu. If provided, it replaces the vendor's existing weekly menu; if omitted, only the URL is updated.
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Menu updated successfully",
+  "vendor": {
+    "id": "vendor-id",
+    "name": "Vendor Name"
   }
 }
 ```

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import RequireRole from "../RequireRole";
 
 const UploadVendorSelectionPage = () => {
     const [month, setMonth] = useState('');
@@ -124,4 +125,10 @@ const UploadVendorSelectionPage = () => {
     );
 };
 
-export default UploadVendorSelectionPage;
+const GuardedUploadVendorSelectionPage = () => (
+    <RequireRole roles={["superAdmin"]}>
+        <UploadVendorSelectionPage />
+    </RequireRole>
+);
+
+export default GuardedUploadVendorSelectionPage;

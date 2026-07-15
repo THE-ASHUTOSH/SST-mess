@@ -7,7 +7,7 @@ import { eq } from "drizzle-orm";
 export interface IUser {
     id: string;
     email: string;
-    role: 'admin' | 'student' | 'vendor'; // or string if relying on raw string
+    role: 'admin' | 'student' | 'vendor' | 'superAdmin'; // or string if relying on raw string
     name: string;
     picture?: string | null;
     roll?: string | null;
@@ -59,6 +59,12 @@ export async function requireRole(allowedRoles: string[]) {
 
     if (!user) {
         throw new Error("Unauthorized");
+    }
+
+    // superAdmin is a superset of every role: it can access anything an admin (or below) can,
+    // so it passes every role check without being listed explicitly on each endpoint.
+    if (user.role === 'superAdmin') {
+        return user;
     }
 
     if (!allowedRoles.includes(user.role || 'student')) {

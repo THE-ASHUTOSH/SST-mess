@@ -4,25 +4,22 @@ import React, { useEffect } from 'react'
 import { useUser } from "@/context/UserContext";
 import { useRouter } from "next/navigation";
 
+// The admin shell is shared by admin and superAdmin; per-page guards further restrict
+// superAdmin-only pages (see RequireRole).
+const ADMIN_AREA_ROLES = ["admin", "superAdmin"];
+
 const Protected: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { user, loading } = useUser();
     const router = useRouter();
 
-    // useEffect(() => {
-    //     if (!loading) {
-    //         // require admin role
-    //         if (!user || user?.role !== "admin") {
-    //             router.push('/login');
-    //         }
-    //     }
-    // }, [loading, user, router]);
+    const allowed = !!user && ADMIN_AREA_ROLES.includes(user.role ?? "");
 
     // Immediate redirect effect
     useEffect(() => {
-        if (!loading && (!user || user.role !== "admin")) {
+        if (!loading && !allowed) {
             router.replace('/login');
         }
-    }, [loading, user, router]);
+    }, [loading, allowed, router]);
 
     if (loading) {
         return (
@@ -33,8 +30,8 @@ const Protected: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         );
     }
 
-    // Prevent render if not admin, but let the effect handle redirect
-    if (!user || user.role !== "admin") {
+    // Prevent render if not authorized, but let the effect handle redirect
+    if (!allowed) {
         return null;
     }
     return (

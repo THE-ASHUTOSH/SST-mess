@@ -2,12 +2,20 @@
 
 import Protected from "./Protected";
 import AppLayoutShell from "@/components/common/layout/AppLayoutShell";
-import { roleNavConfig } from "@/lib/dashboard/navigation";
+import { roleNavConfig, filterNavConfigByRole } from "@/lib/dashboard/navigation";
+import { useUser } from "@/context/UserContext";
 
-const layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { user } = useUser();
+    // Show only the nav items this role is allowed to see (superAdmin sees all).
+    const navConfig = {
+        ...filterNavConfigByRole(roleNavConfig.admin, user?.role),
+        label: user?.role === "superAdmin" ? "Super Admin" : "Admin",
+    };
+
     return (
         <Protected>
-            <AppLayoutShell navConfig={roleNavConfig.admin}>
+            <AppLayoutShell navConfig={navConfig}>
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
                     <div className="max-w-7xl mx-auto">{children}</div>
                 </div>
@@ -16,4 +24,4 @@ const layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     );
 };
 
-export default layout;
+export default AdminLayout;

@@ -6,6 +6,8 @@ import { unstable_cache } from 'next/cache';
 const getCachedVendors = unstable_cache(
     async () => {
         return await db.query.vendors.findMany({
+            // Hide soft-deleted vendors (deletedAt set by DELETE /api/vendor/manageVendor).
+            where: (vendor, { isNull }) => isNull(vendor.deletedAt),
             with: {
                 menu: true,
             },

@@ -190,9 +190,11 @@ Fetches the currently authenticated user's details.
 
 ## Vendor
 
-### `POST /api/vendor/addVendor`
+### `POST /api/vendor/manageVendor`
 
 For admins to add a new vendor. It takes vendor details like name, description, price, and meal options. It can also accept a menu file (CSV) which it parses and associates with the new vendor.
+
+> **Note:** This endpoint merges the former `POST /api/vendor/addVendor` and `PUT /api/vendor/updateVendor/[id]` routes and adds a `DELETE` operation. `POST` creates, `PUT ?id=` updates, and `DELETE ?id=` soft-deletes. All require the `admin` role.
 
 **Request Body (form-data):**
 
@@ -212,6 +214,40 @@ For admins to add a new vendor. It takes vendor details like name, description, 
   "vendor": {
     "id": "new-vendor-id",
     "name": "New Vendor"
+  }
+}
+```
+
+### `PUT /api/vendor/manageVendor?id=[id]`
+
+For admins to update an existing (non-deleted) vendor's details. Same form-data body as the `POST` above. Returns `404` if the vendor does not exist or has been soft-deleted.
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Vendor updated successfully",
+  "vendor": {
+    "id": "vendor-id",
+    "name": "Updated Vendor Name"
+  }
+}
+```
+
+### `DELETE /api/vendor/manageVendor?id=[id]`
+
+For admins to soft-delete a vendor. Sets `deletedAt` so the vendor is hidden from `getVendors` and all listings, while its meal/feedback/selection history and menu row are preserved (no FK cascade). Returns `404` if the vendor does not exist or is already deleted.
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Vendor deleted successfully",
+  "vendor": {
+    "id": "vendor-id",
+    "name": "Deleted Vendor Name"
   }
 }
 ```
@@ -279,7 +315,7 @@ For admins to get paginated vendor feedback.
 
 ### `GET /api/vendor/getVendors`
 
-Fetches all vendors and their associated menus.
+Fetches all active (non-soft-deleted) vendors and their associated menus.
 
 **Response:**
 
@@ -296,31 +332,6 @@ Fetches all vendors and their associated menus.
       }
     }
   ]
-}
-```
-
-### `PUT /api/vendor/updateVendor/[id]`
-
-For admins to update an existing vendor's details.
-
-**Request Body (form-data):**
-
-- `name` (string): Vendor's name.
-- `description` (string): Vendor's description.
-- `price` (number): Price.
-- `menuUrl` (string): URL to the menu.
-- `mealsOptions` (JSON string): e.g., `{"breakfast": true, "lunch": true, "dinner": false}`
-- `menuFile` (file): CSV file for the menu.
-
-**Response:**
-
-```json
-{
-  "message": "Vendor updated successfully",
-  "vendor": {
-    "id": "vendor-id",
-    "name": "Updated Vendor Name"
-  }
 }
 ```
 

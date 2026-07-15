@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { users, vendors, vendorSelections, hostels, preferenceEnum, hostelEnum } from '@/lib/db/schema';
 import { requireRole } from '@/lib/auth-helper';
 import * as xlsx from 'xlsx';
-import { eq } from 'drizzle-orm';
+import { eq, isNull } from 'drizzle-orm';
 
 type Preference = (typeof preferenceEnum.enumValues)[number];
 type Hostel = (typeof hostelEnum.enumValues)[number];
@@ -53,8 +53,10 @@ export async function POST(req: Request) {
 
         const issues: Issue[] = [];
 
-        // Fetch all vendors to map name -> vendor
-        const allVendors = await db.select().from(vendors);
+        // Fetch active vendors to map name -> vendor. Soft-deleted vendors are excluded so
+        // selections can never bind to a hidden/removed vendor (and a stale name in the sheet
+        // surfaces as a "vendor not found" issue instead of silently attaching to a dead row).
+        const allVendors = await db.select().from(vendors).where(isNull(vendors.deletedAt));
         const vendorsMap = new Map(allVendors.map(vendor => [vendor.name, vendor]));
 
         // Map hostel name -> record (case-insensitive + trimmed) for FK resolution.

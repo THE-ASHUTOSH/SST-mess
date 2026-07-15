@@ -8,7 +8,6 @@ import {
   Sliders,
   Store,
   Upload,
-  Utensils,
   UtensilsCrossed,
 } from "lucide-react";
 import EventCard from "@/components/common/EventCard";
@@ -30,15 +29,9 @@ const Dashboard = () => {
           icon={ScanLine}
         />
         <EventCard
-          title="Update Vendor Menu"
-          description="Edit menus, price and meal options"
-          redirectUrl="/admin/updateVendorMenu"
-          icon={Utensils}
-        />
-        <EventCard
-          title="Add Vendor"
-          description="Onboard a new vendor"
-          redirectUrl="/admin/addVendor"
+          title="Manage Vendors"
+          description="Add, edit menus/prices, or remove vendors"
+          redirectUrl="/admin/manageVendor"
           icon={Store}
         />
         <EventCard

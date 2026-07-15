@@ -8,7 +8,6 @@ import {
   Sliders,
   Store,
   Upload,
-  Utensils,
   UtensilsCrossed,
 } from "lucide-react";
 
@@ -75,15 +74,9 @@ export const roleNavConfig: Record<ShellVariant, RoleNavConfig> = {
         icon: ScanLine,
       },
       {
-        id: "admin-update-vendor",
-        label: "Update Menu",
-        href: "/admin/updateVendorMenu",
-        icon: Utensils,
-      },
-      {
-        id: "admin-add-vendor",
-        label: "Add Vendor",
-        href: "/admin/addVendor",
+        id: "admin-manage-vendor",
+        label: "Manage Vendors",
+        href: "/admin/manageVendor",
         icon: Store,
       },
       {

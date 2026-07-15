@@ -169,11 +169,12 @@ The backend is built with Next.js API Routes. Here are the primary endpoints:
 - `POST /api/meal/verify-qr`: Used by vendors to verify a student's QR code.
 - `GET /api/user/latest-vendor`: Fetches the most recently selected vendor for the logged-in user.
 - `GET /api/user/me`: Retrieves details for the currently logged-in user.
-- `POST /api/vendor/addVendor`: Adds a new vendor to the database.
+- `POST /api/vendor/manageVendor`: Adds a new vendor to the database.
+- `PUT /api/vendor/manageVendor?id=[id]`: Updates details for a specific vendor.
+- `DELETE /api/vendor/manageVendor?id=[id]`: Soft-deletes a vendor (hides it from listings; records are preserved).
 - `GET /api/vendor/choice-analysis`: Fetches data for vendor choice analysis.
 - `GET /api/vendor/feedback-analysis`: Fetches data for vendor feedback analysis.
-- `GET /api/vendor/getVendors`: Retrieves a list of all vendors.
-- `PUT /api/vendor/updateVendor/[id]`: Updates details for a specific vendor.
+- `GET /api/vendor/getVendors`: Retrieves a list of all active (non-deleted) vendors.
 - `POST /api/vendor/vendorFeedbackForm`: Submits feedback for a vendor from a student.
 
 ## 🗄️ Database Schema

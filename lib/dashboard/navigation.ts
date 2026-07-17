@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  CalendarCheck,
   ClipboardList,
   Home,
   type LucideIcon,
@@ -47,6 +48,12 @@ export const roleNavConfig: Record<ShellVariant, RoleNavConfig> = {
         label: "Home",
         href: "/student/dashboard",
         icon: Home,
+      },
+      {
+        id: "student-meal-history",
+        label: "Meal History",
+        href: "/student/mealHistory",
+        icon: CalendarCheck,
       },
       {
         id: "student-vendors",

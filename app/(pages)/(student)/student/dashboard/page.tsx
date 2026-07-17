@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { BookOpen, MessageSquare } from "lucide-react";
+import { BookOpen, CalendarCheck, MessageSquare } from "lucide-react";
 import EventCard from "@/components/common/EventCard";
 import LatestVendorCard from "@/components/common/LatestVendorCard";
 import MealQRPanel from "@/components/features/meal/MealQRPanel";
@@ -57,6 +57,13 @@ const Dashboard = () => {
             description="Daily and weekly menus by vendor"
             redirectUrl="/student/vendorDetails"
             icon={BookOpen}
+          />
+
+          <EventCard
+            title="Meal History"
+            description="The months you've opted in for mess"
+            redirectUrl="/student/mealHistory"
+            icon={CalendarCheck}
           />
 
           <EventCard

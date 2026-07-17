@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { db } from '@/lib/db';
 import { users, vendors, vendorSelections, hostels, preferenceEnum, hostelEnum } from '@/lib/db/schema';
 import { requireRole } from '@/lib/auth-helper';
@@ -179,6 +180,9 @@ export async function POST(req: Request) {
         console.log(duplicates.length + " duplicates found.");
         console.log(issues.length + " issues found.");
         console.log(newEntries.length + " new entries added.");
+
+        // Opt-ins changed → invalidate every user's cached meal history (all entries share this tag).
+        revalidateTag('meal-history');
 
         return NextResponse.json({
             message: "Vendor selection upload processed.",

@@ -96,8 +96,6 @@ export const vendorSelections = pgTable("vendor_selections", {
     userId: uuid("user_id").references(() => users.id).notNull(),
     vendorId: uuid("vendor_id").references(() => vendors.id).notNull(),
     preference: preferenceEnum("preference").default("Vegetarian"),
-    hostel: hostelEnum("hostel"),
-    hostelId: uuid("hostel_id").references(() => hostels.id),
     forMonth: timestamp("for_month").notNull(), // Using timestamp to store month start date
     dateofEntry: timestamp("date_of_entry").notNull(),
     createdAt: timestamp("created_at").defaultNow(),

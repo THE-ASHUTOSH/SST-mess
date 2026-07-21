@@ -16,31 +16,62 @@ The API endpoints are organized into the following categories:
 
 ## Admin
 
-### `POST /api/admin/upload-vendor-selection`
+Vendor selections are uploaded **per vendor**: the admin picks a vendor + month and supplies a list of
+student **emails** (pasted or in a CSV/XLSX). It's a two-step flow — **verify** (dry-run) then **commit**.
+Both are **superAdmin only**.
 
-This endpoint uploads a spreadsheet (.xlsx) of vendor selections for a specific month. It processes the spreadsheet, creates new users if they don't exist, updates existing user information, and creates new vendor selections. It also handles duplicates and errors in the uploaded data. **superAdmin only.**
+**Limits & capacity.** Each upload is capped at **10,000 emails/students** and a **5 MB** file — anything
+larger returns `400` (split into batches). Both steps are bulk, so DB round-trips stay low regardless of
+list size: **verify** ≈ 4 queries (flat); **commit** ≈ `3 + ⌈inserts / 500⌉` (e.g. 1k → ~5, 5k → ~13).
+Comfortable throughput is **~2,000–5,000 students per upload** (finishes in well under ~2.5 s); workable up
+to ~20k on Pro-tier timeouts. The 10k cap deliberately keeps requests clear of Postgres' ~65,535
+bind-parameter-per-statement ceiling. Raise `MAX_UPLOAD_EMAILS` in `lib/vendor-selection-upload.ts` only
+together with chunking the read/update queries.
 
-**Request Body:**
+### `POST /api/admin/upload-vendor-selection/verify`
 
-- `month` (string, required): The month for the vendor selections (e.g., "2024-08").
-- `vendor-selection` (file, required): The spreadsheet file containing the vendor selections.
+Dry-run. Parses emails from the pasted text and/or uploaded file, then classifies them against the DB
+**without writing anything**, so the admin can review before committing.
+
+**Request Body (form-data):**
+
+- `vendorId` (uuid, required): The vendor these students opted into.
+- `month` (string, required): `YYYY-MM`.
+- `emails` (string, optional): Pasted emails separated by spaces/commas/newlines.
+- `file` (file, optional): CSV/XLSX; any cell containing an email is picked up (other columns ignored).
 
 **Response:**
 
 ```json
 {
-  "message": "Vendor selection upload processed.",
-  "newEntries": 100,
-  "duplicates": 5,
-  "issues": [
-    {
-      "row": {
-        "Email Address": "test@example.com"
-      },
-      "error": "Vendor with name 'Non-Existent Vendor' not found"
-    }
-  ]
+  "success": true,
+  "vendor": { "id": "vendor-id", "name": "Sodexo" },
+  "month": "2026-07",
+  "toCreate": [{ "email": "a@sst.scaler.com", "userId": "…", "name": "A" }],
+  "duplicates": [{ "email": "b@sst.scaler.com", "userId": "…", "name": "B", "currentVendorId": "…", "currentVendorName": "Other", "alreadyThisVendor": false }],
+  "notFound": ["ghost@sst.scaler.com"],
+  "invalid": ["not-an-email"],
+  "counts": { "detected": 4, "toCreate": 1, "duplicates": 1, "notFound": 1, "invalid": 1 }
 }
+```
+
+### `POST /api/admin/upload-vendor-selection/commit`
+
+Writes the reviewed decisions in bulk (a few queries total — no per-row round-trips). `createUserIds` get a
+new selection for the vendor; `overwriteUserIds` (duplicates the admin chose to move) have their existing
+month selection reassigned to this vendor. Not-found/invalid emails are simply omitted by the client. Busts
+the `meal-history` cache.
+
+**Request Body (JSON):**
+
+- `vendorId` (uuid, required), `month` (`YYYY-MM`, required)
+- `createUserIds` (uuid[]): students with no selection this month.
+- `overwriteUserIds` (uuid[]): duplicates to reassign to this vendor.
+
+**Response:**
+
+```json
+{ "success": true, "message": "Vendor selections saved.", "created": 40, "overwritten": 3 }
 ```
 
 ### `GET /api/admin/users`

@@ -162,7 +162,9 @@ Stores all static assets that are publicly accessible, such as images and other 
 
 The backend is built with Next.js API Routes. Here are the primary endpoints:
 
-- `POST /api/admin/upload-vendor-selection`: Uploads a file of vendor selections. **superAdmin only.**
+- `POST /api/admin/upload-vendor-selection/verify`: Dry-run — classify pasted/uploaded emails for a vendor+month (to-add / already-opted / not-found / invalid); no writes. **superAdmin only.**
+- `POST /api/admin/upload-vendor-selection/commit`: Bulk-create/overwrite the reviewed selections. **superAdmin only.**
+  - **Limits:** max **10,000 emails/students** and **5 MB** per upload (larger → `400`; split into batches). Comfortably handles ~2,000–5,000 students/upload; the cap keeps requests clear of Postgres' ~65k bind-parameter ceiling.
 - `GET /api/admin/users`: Search/list users for administration. **superAdmin only.**
 - `PATCH /api/admin/users?id=[id]`: Change a user's role. **superAdmin only.**
 - `GET/POST /api/controls/feedback-toggle`: Manages the global setting for enabling or disabling the feedback form.

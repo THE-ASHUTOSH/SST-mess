@@ -28,7 +28,7 @@ export function isUuid(value: string): boolean {
     return UUID_RE.test(value);
 }
 
-// "YYYY-MM" -> UTC month-start Date (explicit UTC avoids the timezone drift noted in docs/PLAN.md).
+// "YYYY-MM" -> UTC month-start Date (explicit UTC avoids timezone drift across hosts).
 export function monthToUtcDate(month: string): Date | null {
     if (!/^\d{4}-\d{2}$/.test(month)) return null;
     const d = new Date(`${month}-01T00:00:00.000Z`);

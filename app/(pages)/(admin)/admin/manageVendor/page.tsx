@@ -25,6 +25,7 @@ import RequireRole from "../RequireRole"
 interface Vendor {
   id: string
   name: string
+  email: string | null
   description: string | null
   price: number
   breakfast: boolean | null
@@ -40,11 +41,12 @@ interface MealsOptions {
 
 interface VendorFormValues {
   name: string
+  email: string
   description: string
   price: string
 }
 
-const emptyForm: VendorFormValues = { name: '', description: '', price: '' }
+const emptyForm: VendorFormValues = { name: '', email: '', description: '', price: '' }
 const defaultMeals: MealsOptions = { breakfast: true, lunch: true, dinner: true }
 
 // Build the multipart body shared by the create + update requests. The menu (URL + CSV) is
@@ -52,6 +54,7 @@ const defaultMeals: MealsOptions = { breakfast: true, lunch: true, dinner: true 
 function buildRequestBody(values: VendorFormValues, meals: MealsOptions) {
   const body = new FormData()
   body.append('name', values.name)
+  body.append('email', values.email)
   body.append('description', values.description)
   body.append('price', values.price)
   body.append('mealsOptions', JSON.stringify(meals))
@@ -82,6 +85,22 @@ const VendorFields = ({ idPrefix, values, onChange, meals, onToggleMeal, disable
         disabled={disabled}
         required
       />
+    </div>
+
+    <div className="space-y-2">
+      <Label htmlFor={`${idPrefix}-email`}>Vendor Login Email</Label>
+      <Input
+        type="email"
+        id={`${idPrefix}-email`}
+        name="email"
+        value={values.email}
+        onChange={onChange}
+        placeholder="vendor@scaler.com"
+        disabled={disabled}
+      />
+      <p className="text-xs text-muted-foreground">
+        The account this vendor signs in with — scopes their scanner &amp; stats to this vendor.
+      </p>
     </div>
 
     <div className="space-y-2">
@@ -154,7 +173,8 @@ const ManageVendor = () => {
 
   const loadVendors = useCallback(async () => {
     try {
-      const response = await axiosInstance.get(`/api/vendor/getVendors`)
+      // superAdmin endpoint — includes the login email so the edit form can prefill it.
+      const response = await axiosInstance.get(`/api/admin/vendors`)
       if (Array.isArray(response.data.vendors)) {
         setVendors(response.data.vendors)
       }
@@ -175,6 +195,7 @@ const ManageVendor = () => {
     if (!vendor) return
     setEditForm({
       name: vendor.name,
+      email: vendor.email ?? '',
       description: vendor.description ?? '',
       price: vendor.price.toString(),
     })

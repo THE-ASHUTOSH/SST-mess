@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { meals, users, vendorSelections } from '@/lib/db/schema';
 import { requireRole } from '@/lib/auth-helper';
+import { getVendorForEmail } from '@/lib/vendor-scope';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { and, eq, gte, lt } from 'drizzle-orm';
 import { getCurrentMealType, getISTDayBounds, getISTNow } from '@/lib/utils/timezone';
@@ -17,15 +18,28 @@ export async function POST(req: Request) {
         const byUser = await requireRole(['vendor']);
 
         const body = await req.json();
-        const { token, vendorId } = body;
+        const { token, vendorId: clientVendorId } = body;
 
         // Validate required fields
         if (!token || typeof token !== 'string' || token.length > 1000) {
             return NextResponse.json({ success: false, message: "Invalid token" }, { status: 400 });
         }
 
-        if (!vendorId) {
-            return NextResponse.json({ success: false, message: "Vendor ID is required" }, { status: 400 });
+        // Resolve which vendor this scan is for. A vendor user is ALWAYS pinned to their own
+        // mapped vendor (server-resolved from their login email); any client-supplied vendorId is
+        // ignored, so one vendor can never scan for another. superAdmin may pass any vendorId.
+        let effectiveVendorId: string | string[];
+        if (byUser.role === 'vendor') {
+            const myVendor = await getVendorForEmail(byUser.email);
+            if (!myVendor) {
+                return NextResponse.json({ success: false, message: "No vendor is linked to your account. Contact an admin." }, { status: 403 });
+            }
+            effectiveVendorId = myVendor.id;
+        } else {
+            if (!clientVendorId) {
+                return NextResponse.json({ success: false, message: "Vendor ID is required" }, { status: 400 });
+            }
+            effectiveVendorId = clientVendorId;
         }
 
         // Validate JWT secret
@@ -40,9 +54,9 @@ export async function POST(req: Request) {
         const forUserId = decoded.userId;
         const userVendorId = decoded.vendorId;
 
-        const isVendorAuthorized = Array.isArray(vendorId)
-            ? vendorId.includes(userVendorId.toString())
-            : userVendorId.toString() === vendorId.toString();
+        const isVendorAuthorized = Array.isArray(effectiveVendorId)
+            ? effectiveVendorId.includes(userVendorId.toString())
+            : userVendorId.toString() === effectiveVendorId.toString();
 
         if (!isVendorAuthorized) {
             return NextResponse.json({ success: false, message: "This student is not assigned to your vendor." }, { status: 403 });

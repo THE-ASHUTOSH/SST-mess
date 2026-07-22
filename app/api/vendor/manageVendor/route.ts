@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
 import { db } from '@/lib/db';
-import { vendors } from '@/lib/db/schema';
+import { users, vendors } from '@/lib/db/schema';
 import { requireRole } from '@/lib/auth-helper';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 
 /**
  * Vendor-entity management endpoint (superAdmin only). Handles the vendor record
@@ -18,6 +18,7 @@ import { and, eq, isNull } from 'drizzle-orm';
 
 interface ParsedVendorForm {
     name: string;
+    email: string | null;
     description: string | null;
     price: number;
     mealsOptions?: { breakfast?: boolean; lunch?: boolean; dinner?: boolean };
@@ -33,9 +34,12 @@ function isUuid(value: string): boolean {
     return UUID_RE.test(value);
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 async function parseVendorForm(req: Request): Promise<ParsedVendorForm> {
     const formData = await req.formData();
     const name = formData.get('name') as string;
+    const email = formData.get('email') as string | null;
     const description = formData.get('description') as string | null;
     const price = formData.get('price') as string;
     const mealsOptions = formData.get('mealsOptions') as string | null;
@@ -45,6 +49,16 @@ async function parseVendorForm(req: Request): Promise<ParsedVendorForm> {
     }
     if (!price || isNaN(Number(price)) || Number(price) < 0) {
         throw new VendorFormError('Valid price is required');
+    }
+
+    // Email is optional; when present it must be well-formed. Stored lowercased so the
+    // vendor↔user mapping (getVendorForEmail) and the active-unique index are consistent.
+    let normalizedEmail: string | null = null;
+    if (email && email.trim()) {
+        normalizedEmail = email.trim().toLowerCase();
+        if (!EMAIL_RE.test(normalizedEmail)) {
+            throw new VendorFormError('Invalid vendor email');
+        }
     }
 
     let parsedMealsOptions: ParsedVendorForm['mealsOptions'];
@@ -58,6 +72,7 @@ async function parseVendorForm(req: Request): Promise<ParsedVendorForm> {
 
     return {
         name: name.trim(),
+        email: normalizedEmail,
         description: description?.trim() || null,
         price: Number(price),
         mealsOptions: parsedMealsOptions,
@@ -69,11 +84,43 @@ function mapError(error: unknown, action: string) {
         return NextResponse.json({ success: false, message: error.message }, { status: 400 });
     }
     if (error instanceof Error) {
+        // Duplicate active vendor email hits the partial unique index — surface a clean 400.
+        if (error.message.includes('vendors_email_active_unique')) {
+            return NextResponse.json({ success: false, message: 'This email is already linked to another vendor.' }, { status: 400 });
+        }
         if (error.message === 'Unauthorized') return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
         if (error.message === 'Forbidden') return NextResponse.json({ success: false, message: 'Forbidden' }, { status: 403 });
         return NextResponse.json({ success: false, message: `Error ${action} vendor`, error: error.message }, { status: 500 });
     }
     return NextResponse.json({ success: false, message: `An unknown error occurred while ${action} vendor` }, { status: 500 });
+}
+
+/**
+ * When a vendor's login email is set, ensure a matching user exists AND is a vendor — this is the
+ * ONLY way a vendor account is created now (the User Management role dropdown no longer offers it).
+ *  - existing student (or roleless) user with that email → promote to 'vendor'
+ *  - no such user → create one as 'vendor', so they're ready at first login
+ *  - existing admin/superAdmin → left untouched (never silently demote a privileged account)
+ * `email` is already lowercased by parseVendorForm. Best-effort: logs but never fails the vendor save.
+ */
+async function linkVendorUser(email: string | null, name: string): Promise<void> {
+    if (!email) return;
+    try {
+        const [existing] = await db
+            .select({ id: users.id, role: users.role })
+            .from(users)
+            .where(sql`lower(${users.email}) = ${email}`)
+            .limit(1);
+
+        if (existing) {
+            if (existing.role === 'admin' || existing.role === 'superAdmin' || existing.role === 'vendor') return;
+            await db.update(users).set({ role: 'vendor' }).where(eq(users.id, existing.id));
+        } else {
+            await db.insert(users).values({ email, name, role: 'vendor' });
+        }
+    } catch (err) {
+        console.error('Failed to link vendor user for', email, err);
+    }
 }
 
 // CREATE
@@ -86,12 +133,16 @@ export async function POST(req: NextRequest) {
 
         const [newVendor] = await db.insert(vendors).values({
             name: form.name,
+            email: form.email,
             description: form.description,
             price: form.price,
             breakfast: form.mealsOptions?.breakfast ?? true,
             lunch: form.mealsOptions?.lunch ?? true,
             dinner: form.mealsOptions?.dinner ?? true,
         }).returning();
+
+        // Link/create the vendor's login account (grants the 'vendor' role).
+        await linkVendorUser(form.email, form.name);
 
         revalidateTag('vendors');
         return NextResponse.json({ success: true, message: 'Vendor added successfully', vendor: newVendor }, { status: 201 });
@@ -122,6 +173,7 @@ export async function PUT(req: NextRequest) {
 
         const updateData: Partial<(typeof vendors)['$inferInsert']> = {
             name: form.name,
+            email: form.email,
             description: form.description,
             price: form.price,
             updatedAt: new Date(),
@@ -133,6 +185,9 @@ export async function PUT(req: NextRequest) {
         }
 
         const [updatedVendor] = await db.update(vendors).set(updateData).where(eq(vendors.id, vendorId)).returning();
+
+        // Keep the vendor's login account in sync (promote/create on the current email).
+        await linkVendorUser(form.email, form.name);
 
         revalidateTag('vendors');
         return NextResponse.json({ success: true, message: 'Vendor updated successfully', vendor: updatedVendor });

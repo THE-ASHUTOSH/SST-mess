@@ -9,54 +9,49 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Loader2 } from 'lucide-react';
+import { Loader2, Store } from 'lucide-react';
 
-interface Vendor {
+interface MyVendor {
     id: string;
     name: string;
 }
 
 const TotalMealsPage = () => {
     const [date, setDate] = useState<string>('');
-    const [vendors, setVendors] = useState<Vendor[]>([]);
-    const [selectedVendor, setSelectedVendor] = useState<string>('');
+    const [myVendor, setMyVendor] = useState<MyVendor | null>(null);
+    const [loadingVendor, setLoadingVendor] = useState(true);
     const [mealType, setMealType] = useState<string>('');
     const [count, setCount] = useState<number | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
     useEffect(() => {
-        const fetchVendors = async () => {
+        const loadMyVendor = async () => {
             try {
-                const response = await axiosInstance.get('/api/vendor/getVendors');
-                if (response.data.success && Array.isArray(response.data.vendors)) {
-                    setVendors(response.data.vendors);
-
-                    // Recover saved vendor choice
-                    const savedVendorId = localStorage.getItem('selectedVendorId');
-                    if (savedVendorId) {
-                        const vendorExists = response.data.vendors.some((v: Vendor) => v.id === savedVendorId);
-                        if (vendorExists) {
-                            setSelectedVendor(savedVendorId);
-                        }
-                    }
-                }
+                const response = await axiosInstance.get('/api/vendor/my-vendor');
+                setMyVendor(response.data.vendor ?? null);
             } catch (err) {
-                console.error("Failed to fetch vendors", err);
-                toast.error("Failed to fetch vendors");
+                console.error("Failed to load your vendor", err);
+                toast.error("Failed to load your vendor");
+            } finally {
+                setLoadingVendor(false);
             }
         };
-        fetchVendors();
+        loadMyVendor();
 
-        // Set default date to today
-        const today = new Date().toISOString().split('T')[0];
-        setDate(today);
+        // Default date to today
+        setDate(new Date().toISOString().split('T')[0]);
     }, []);
 
     const handleCalculate = async () => {
-        if (!date || !selectedVendor || !mealType) {
-            toast.error("Please fill all fields");
+        if (!myVendor) {
+            toast.error("No vendor is linked to your account.");
+            return;
+        }
+        if (!date || !mealType) {
+            toast.error("Please select a date and meal type");
             return;
         }
 
@@ -65,10 +60,10 @@ const TotalMealsPage = () => {
         setCount(null);
 
         try {
+            // No vendorId sent — the server pins stats to THIS vendor account (from the session).
             const response = await axiosInstance.post('/api/meal/total-meals', {
                 date,
-                vendorId: selectedVendor,
-                mealType
+                mealType,
             });
 
             if (response.data.success) {
@@ -101,6 +96,24 @@ const TotalMealsPage = () => {
                 </CardHeader>
                 <CardContent className="space-y-6">
 
+                    {/* Vendor (fixed to this account) */}
+                    {loadingVendor ? (
+                        <Skeleton className="h-14 w-full rounded-xl" />
+                    ) : myVendor ? (
+                        <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
+                            <Store className="h-5 w-5 shrink-0 text-primary" />
+                            <div className="min-w-0">
+                                <p className="text-xs text-muted-foreground">Counting for</p>
+                                <p className="truncate text-base font-semibold text-foreground">{myVendor.name}</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-center">
+                            <p className="text-sm font-medium text-foreground">No vendor is linked to your account.</p>
+                            <p className="text-xs text-muted-foreground">Ask an admin to set your vendor&apos;s login email.</p>
+                        </div>
+                    )}
+
                     {/* Date Selection */}
                     <div className="space-y-2">
                         <Label htmlFor="date-input">Select Date</Label>
@@ -110,36 +123,14 @@ const TotalMealsPage = () => {
                             value={date}
                             onChange={(e) => setDate(e.target.value)}
                             className="w-full"
+                            disabled={!myVendor}
                         />
-                    </div>
-
-                    {/* Vendor Selection */}
-                    <div className="space-y-2">
-                        <Label htmlFor="vendor-select">Select Vendor</Label>
-                        <Select
-                            value={selectedVendor}
-                            onValueChange={(value) => {
-                                setSelectedVendor(value);
-                                localStorage.setItem('selectedVendorId', value);
-                            }}
-                        >
-                            <SelectTrigger id="vendor-select">
-                                <SelectValue placeholder="Choose a vendor" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {vendors.map((v) => (
-                                    <SelectItem key={v.id} value={v.id}>
-                                        {v.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
                     </div>
 
                     {/* Meal Type Selection */}
                     <div className="space-y-2">
                         <Label htmlFor="meal-type-select">Meal Type</Label>
-                        <Select value={mealType} onValueChange={setMealType}>
+                        <Select value={mealType} onValueChange={setMealType} disabled={!myVendor}>
                             <SelectTrigger id="meal-type-select">
                                 <SelectValue placeholder="Choose meal type" />
                             </SelectTrigger>
@@ -155,7 +146,7 @@ const TotalMealsPage = () => {
                     <Button
                         onClick={handleCalculate}
                         className="w-full text-lg font-semibold h-12"
-                        disabled={loading}
+                        disabled={loading || !myVendor}
                     >
                         {loading ? (
                             <>
@@ -177,7 +168,7 @@ const TotalMealsPage = () => {
                                     <p className="text-sm uppercase tracking-wide font-semibold opacity-70 mb-1">Total Meals Recorded</p>
                                     <p className="text-5xl font-extrabold">{count}</p>
                                     <p className="text-xs mt-2 opacity-60">
-                                        For {vendors.find(v => v.id === selectedVendor)?.name} on {new Date(date).toLocaleDateString()}
+                                        For {myVendor?.name} on {new Date(date).toLocaleDateString()}
                                     </p>
                                 </div>
                             )}

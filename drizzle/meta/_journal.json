@@ -64,6 +64,13 @@
       "when": 1784536204580,
       "tag": "0008_drop_vendor_selection_hostel",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1784621769936,
+      "tag": "0009_add_vendor_email",
+      "breakpoints": true
     }
   ]
 }

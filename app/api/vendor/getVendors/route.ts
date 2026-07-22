@@ -8,6 +8,9 @@ const getCachedVendors = unstable_cache(
         return await db.query.vendors.findMany({
             // Hide soft-deleted vendors (deletedAt set by DELETE /api/vendor/manageVendor).
             where: (vendor, { isNull }) => isNull(vendor.deletedAt),
+            // `email` is the vendor's login mapping — superAdmin-only. Never expose it on this
+            // public endpoint (consumed by students/vendors); see GET /api/admin/vendors instead.
+            columns: { email: false },
             with: {
                 menu: true,
             },

@@ -22,7 +22,9 @@ interface ManagedUser {
   batch: string | null;
 }
 
-const ROLE_OPTIONS = ["student", "vendor", "admin", "superAdmin"] as const;
+// "vendor" is intentionally NOT assignable here — a vendor account is defined by its login email
+// under Manage Vendors, not by hand-assigning the role. Existing vendor rows render read-only below.
+const ROLE_OPTIONS = ["student", "admin", "superAdmin"] as const;
 
 const roleBadgeClass = (role: string) => {
   switch (role) {
@@ -128,20 +130,24 @@ const UserManagement = () => {
                     </div>
                     <p className="truncate text-xs text-muted-foreground">{u.email}</p>
                   </div>
-                  <Select
-                    value={u.role}
-                    onValueChange={value => handleRoleChange(u, value)}
-                    disabled={isSelf || updatingId === u.id}
-                  >
-                    <SelectTrigger className="w-[140px] shrink-0">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ROLE_OPTIONS.map(r => (
-                        <SelectItem key={r} value={r}>{r}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {u.role === "vendor" ? (
+                    <span className="shrink-0 text-xs italic text-muted-foreground">Managed in Manage Vendors</span>
+                  ) : (
+                    <Select
+                      value={u.role}
+                      onValueChange={value => handleRoleChange(u, value)}
+                      disabled={isSelf || updatingId === u.id}
+                    >
+                      <SelectTrigger className="w-[140px] shrink-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ROLE_OPTIONS.map(r => (
+                          <SelectItem key={r} value={r}>{r}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </li>
               );
             })}

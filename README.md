@@ -167,19 +167,21 @@ The backend is built with Next.js API Routes. Here are the primary endpoints:
   - **Limits:** max **10,000 emails/students** and **5 MB** per upload (larger → `400`; split into batches). Comfortably handles ~2,000–5,000 students/upload; the cap keeps requests clear of Postgres' ~65k bind-parameter ceiling.
 - `GET /api/admin/users`: Search/list users for administration. **superAdmin only.**
 - `PATCH /api/admin/users?id=[id]`: Change a user's role. **superAdmin only.**
+- `GET /api/admin/vendors`: Lists active vendors **including their login email** (for the editor + read-only directory). **superAdmin only.**
 - `GET/POST /api/controls/feedback-toggle`: Manages the global setting for enabling or disabling the feedback form.
 - `POST /api/meal/generate-qr`: Generates a meal QR code for a student.
 - `GET /api/meal/status`: Checks the current meal status for a student (instead of the web sockets).
-- `POST /api/meal/verify-qr`: Used by vendors to verify a student's QR code.
+- `POST /api/meal/verify-qr`: Verify a student's QR. A **vendor** account is pinned to its own vendor (server-resolved from its login email); a client-supplied `vendorId` is ignored so one vendor can't scan for another.
 - `GET /api/user/latest-vendor`: Fetches the most recently selected vendor for the logged-in user.
 - `GET /api/user/me`: Retrieves details for the currently logged-in user.
-- `POST /api/vendor/manageVendor`: Adds a new vendor (name, price, meal options). **superAdmin only.**
-- `PUT /api/vendor/manageVendor?id=[id]`: Updates a vendor's details. **superAdmin only.**
+- `POST /api/vendor/manageVendor`: Adds a new vendor (name, **login email**, price, meal options). **superAdmin only.**
+- `PUT /api/vendor/manageVendor?id=[id]`: Updates a vendor's details (incl. login email). **superAdmin only.**
 - `DELETE /api/vendor/manageVendor?id=[id]`: Soft-deletes a vendor (hides it from listings; records are preserved). **superAdmin only.**
 - `PUT /api/vendor/updateMenu?id=[id]`: Updates a vendor's menu (menu URL + weekly CSV). **admin + superAdmin.**
+- `GET /api/vendor/my-vendor`: Returns the vendor mapped to the current **vendor** account (by login email); `null` if unlinked.
 - `GET /api/vendor/choice-analysis`: Fetches data for vendor choice analysis.
 - `GET /api/vendor/feedback-analysis`: Fetches data for vendor feedback analysis.
-- `GET /api/vendor/getVendors`: Retrieves a list of all active (non-deleted) vendors.
+- `GET /api/vendor/getVendors`: Retrieves all active (non-deleted) vendors. **Excludes the login email** (superAdmin-only field).
 - `POST /api/vendor/vendorFeedbackForm`: Submits feedback for a vendor from a student.
 
 ## 🗄️ Database Schema

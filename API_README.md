@@ -250,15 +250,23 @@ Fetches the currently authenticated user's details.
 
 ## Vendor
 
+> **Vendor accounts & scoping.** Each vendor row can carry a login **`email`** (superAdmin-managed). A `vendor`-role
+> user is mapped to their vendor by that email (case-insensitive, active vendors only), which **scopes their scanner
+> and stats to their own vendor**: `verify-qr` and `total-meals` re-resolve the vendor server-side from the session
+> and ignore any client-supplied `vendorId`, so one vendor can never act on another's students or stats. The `email`
+> is superAdmin-only — it is **omitted** from the public `getVendors` and only returned by `GET /api/admin/vendors`
+> and `GET /api/vendor/my-vendor` (which returns just the caller's own `{id, name}`).
+
 ### `POST /api/vendor/manageVendor`
 
-To add a new vendor. It takes vendor details: name, description, price, and meal options. **superAdmin only.**
+To add a new vendor. It takes vendor details: name, login email, description, price, and meal options. **superAdmin only.**
 
 > **Note:** This endpoint manages the vendor **record** — `POST` creates, `PUT ?id=` updates details, and `DELETE ?id=` soft-deletes. All three are **superAdmin only**. The vendor's **menu** (URL + weekly CSV) is managed separately via `PUT /api/vendor/updateMenu` (see below), which admins can also access.
 
 **Request Body (form-data):**
 
 - `name` (string, required): Vendor's name.
+- `email` (string, optional): The vendor's login email (stored lowercased). Must be unique among active vendors; a duplicate returns `400`.
 - `description` (string): Vendor's description.
 - `price` (number, required): Price.
 - `mealsOptions` (JSON string): e.g., `{"breakfast": true, "lunch": true, "dinner": false}`

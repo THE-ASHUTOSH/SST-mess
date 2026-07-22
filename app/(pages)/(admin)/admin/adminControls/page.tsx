@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useUser } from "@/context/UserContext";
 import UserManagement from "./UserManagement";
+import VendorDirectory from "./VendorDirectory";
 
 const AdminControlsPage = () => {
     const { user } = useUser();
@@ -86,7 +87,8 @@ const AdminControlsPage = () => {
                 </CardContent>
             </Card>
 
-            {/* User administration — superAdmin only (the API is also superAdmin-gated). */}
+            {/* superAdmin-only sections (the APIs are also superAdmin-gated). */}
+            {user?.role === "superAdmin" && <VendorDirectory />}
             {user?.role === "superAdmin" && <UserManagement />}
         </div>
     );

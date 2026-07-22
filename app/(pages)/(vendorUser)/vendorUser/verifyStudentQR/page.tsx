@@ -5,10 +5,8 @@ import axiosInstance from '@/lib/axiosInstance';
 import { isAxiosError } from 'axios';
 import { Html5Qrcode } from 'html5-qrcode';
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-
 import { Button } from "@/components/ui/button";
+import { Store } from "lucide-react";
 
 interface VerifiedUser {
   id: string;
@@ -17,7 +15,7 @@ interface VerifiedUser {
   picture: string;
 }
 
-interface Vendor {
+interface MyVendor {
   id: string;
   name: string;
 }
@@ -27,51 +25,28 @@ const VerifyStudentQRPage = () => {
   const [error, setError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [verifiedUser, setVerifiedUser] = useState<VerifiedUser | null>(null);
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [selectedVendor, setSelectedVendor] = useState<string>('');
+  const [myVendor, setMyVendor] = useState<MyVendor | null>(null);
+  const [loadingVendor, setLoadingVendor] = useState(true);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerContainerId = 'qr-code-full-region';
 
+  // Resolve which vendor this account is scanning for (server-mapped from the login email).
   useEffect(() => {
-    const fetchVendors = async () => {
+    const loadMyVendor = async () => {
       try {
-        const response = await axiosInstance.get(`/api/vendor/getVendors`);
-        if (Array.isArray(response.data.vendors)) {
-          const fetchedVendors: Vendor[] = response.data.vendors;
-          const gaurasVendors = fetchedVendors.filter(v => v.name.includes("Gaura's Secret Recipe"));
-          const otherVendors = fetchedVendors.filter(v => !v.name.includes("Gaura's Secret Recipe"));
-
-          let finalVendors = fetchedVendors;
-          if (gaurasVendors.length > 0) {
-            const combinedGauraVendor: Vendor = {
-              id: gaurasVendors.map(v => v.id).join(','),
-              name: "Gaura's Secret Recipe",
-            };
-            finalVendors = [combinedGauraVendor, ...otherVendors];
-            setVendors(finalVendors);
-          } else {
-            setVendors(fetchedVendors);
-          }
-
-          const savedVendorId = localStorage.getItem('selectedVendorId');
-          if (savedVendorId) {
-            const vendorExists = finalVendors.some(v => v.id === savedVendorId);
-            if (vendorExists) {
-              setSelectedVendor(savedVendorId);
-            }
-          }
-        } else {
-          setError('Failed to fetch vendors: Invalid data format.');
-        }
-      } catch (err) {
-        setError('Failed to fetch vendors.');
+        const response = await axiosInstance.get(`/api/vendor/my-vendor`);
+        setMyVendor(response.data.vendor ?? null);
+      } catch {
+        setError('Failed to load your vendor.');
+      } finally {
+        setLoadingVendor(false);
       }
     };
-    fetchVendors();
+    loadMyVendor();
   }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !selectedVendor) {
+    if (typeof window === 'undefined' || !myVendor) {
       return;
     }
 
@@ -115,13 +90,12 @@ const VerifyStudentQRPage = () => {
               }
               handleVerify(decodedText);
             },
-            (errorMessage) => {
-              // ignore
+            () => {
+              // ignore per-frame decode errors
             }
           );
         } catch (err) {
           console.error("Error starting scanner", err);
-          // Only show error if not processing (processing might cause unmount/stop which throws)
           if (!isProcessing) {
             setError("Failed to start camera. Please ensure camera permissions are granted.");
           }
@@ -138,19 +112,18 @@ const VerifyStudentQRPage = () => {
       clearTimeout(timerId);
       cleanupScanner();
     };
-  }, [isProcessing, selectedVendor]);
+  }, [isProcessing, myVendor]);
 
   const handleVerify = async (token: string) => {
-    if (!selectedVendor) {
-      setError('Please select a vendor first.');
+    if (!myVendor) {
+      setError('No vendor is linked to your account.');
       return;
     }
     setIsProcessing(true);
     try {
-      // const response = await axiosInstance.post(`/meal/verify-qr`, { token, vendorId: selectedVendor });
-      const vendorIds = selectedVendor.includes(',') ? selectedVendor.split(',') : [selectedVendor];
-      const response = await axiosInstance.post(`/api/meal/verify-qr`, { token, vendorId: vendorIds });
-      // console.log('Meal verified:', response.data);
+      // The server pins the scan to THIS vendor account (from the session), so we don't send a
+      // vendorId — a client-supplied one would be ignored for vendor accounts anyway.
+      const response = await axiosInstance.post(`/api/meal/verify-qr`, { token });
       setMessage(`Meal verified for ${response.data.user.name}.`);
       setVerifiedUser(response.data.user);
       setError('');
@@ -174,35 +147,37 @@ const VerifyStudentQRPage = () => {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 flex flex-col items-center pt-10 sm:pt-20 min-h-[calc(100vh-4rem)]">
-      <h1 className="text-3xl sm:text-4xl font-extrabold text-center mb-10 text-primary tracking-tight">
+      <h1 className="text-3xl sm:text-4xl font-extrabold text-center mb-6 text-primary tracking-tight">
         Verify Student QR
       </h1>
 
-      <div className="mb-8 w-full max-w-sm space-y-4">
-        <Label htmlFor="vendor-select" className="text-base">Select Vendor</Label>
-        <Select
-          value={selectedVendor}
-          onValueChange={(value) => {
-            setSelectedVendor(value);
-            localStorage.setItem('selectedVendorId', value);
-          }}
-          disabled={isProcessing}
-        >
-          <SelectTrigger id="vendor-select" className="w-full">
-            <SelectValue placeholder="-- Please choose a vendor --" />
-          </SelectTrigger>
-          <SelectContent>
-            {vendors.map((vendor) => (
-              <SelectItem key={vendor.id} value={vendor.id}>
-                {vendor.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        
+      {/* Which vendor this account scans for (fixed — set by an admin, not chosen here). */}
+      <div className="mb-8 w-full max-w-sm">
+        {loadingVendor ? (
+          <Skeleton className="h-14 w-full rounded-xl" />
+        ) : myVendor ? (
+          <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
+            <Store className="h-5 w-5 shrink-0 text-primary" />
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Scanning for</p>
+              <p className="truncate text-base font-semibold text-foreground">{myVendor.name}</p>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-center">
+            {error ? (
+              <p className="text-sm font-medium text-foreground">{error}</p>
+            ) : (
+              <>
+                <p className="text-sm font-medium text-foreground">No vendor is linked to your account.</p>
+                <p className="text-xs text-muted-foreground">Ask an admin to set your vendor&apos;s login email.</p>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
-      {selectedVendor && (
+      {myVendor && (
         <div className="w-full max-w-sm relative" style={{ minHeight: '300px' }}>
           <div id={scannerContainerId} style={{ display: isProcessing ? 'none' : 'block' }} className="rounded-lg overflow-hidden border-2 border-primary/20 bg-black"></div>
           {isProcessing && (
@@ -230,7 +205,6 @@ const VerifyStudentQRPage = () => {
                       <p className="text-xl font-medium">{error}</p>
                     </div>
                   )}
-                  {/* PLEASE WAIT STATE */}
                   {!message && !error && (
                     <div className="flex flex-col items-center gap-4">
                       <Skeleton className="h-32 w-32 rounded-full" />

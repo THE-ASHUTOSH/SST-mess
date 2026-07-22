@@ -44,6 +44,7 @@ export const menus = pgTable("menus", {
 export const vendors = pgTable("vendors", {
     id: uuid("id").defaultRandom().primaryKey(),
     name: text("name").notNull(),
+    email: text("email"), // login email that maps a vendor user to this vendor (superAdmin-managed)
     description: text("description"),
     price: integer("price").notNull(), // Storing as integer (e.g., cents/pysa) or just number
     menuUrl: text("menu_url"),
@@ -57,6 +58,8 @@ export const vendors = pgTable("vendors", {
 }, (table) => ({
     // Soft-delete: a menu can only bind to ONE *active* vendor; the menu becomes reusable once the vendor is soft-deleted.
     menuIdActiveUnique: uniqueIndex("vendors_menu_id_active_unique").on(table.menuId).where(sql`${table.deletedAt} IS NULL`),
+    // At most one ACTIVE vendor per login email (emails are stored lowercased). NULL emails are allowed & non-conflicting.
+    emailActiveUnique: uniqueIndex("vendors_email_active_unique").on(table.email).where(sql`${table.deletedAt} IS NULL`),
     deletedAtIdx: index("vendors_deleted_at_idx").on(table.deletedAt),
 }));
 

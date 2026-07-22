@@ -68,7 +68,9 @@ export async function PUT(req: NextRequest) {
         const [updatedVendor] = await db.update(vendors)
             .set({ menuUrl: menuUrl?.trim() || null, updatedAt: new Date() })
             .where(eq(vendors.id, vendorId))
-            .returning();
+            // Project explicit columns — this endpoint is admin-accessible, and the superAdmin-only
+            // login email must never be returned to a plain admin.
+            .returning({ id: vendors.id, name: vendors.name, menuUrl: vendors.menuUrl });
 
         revalidateTag('vendors');
         return NextResponse.json({ success: true, message: 'Menu updated successfully', vendor: updatedVendor });

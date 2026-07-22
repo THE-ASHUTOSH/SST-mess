@@ -6,7 +6,9 @@ import { and, gte, lt } from 'drizzle-orm';
 
 export async function POST(req: Request) {
     try {
-        await requireRole(['vendor', 'admin']);
+        // Admin analytics across ALL vendors — not for vendor accounts (they'd see other vendors'
+        // students). superAdmin passes via override.
+        await requireRole(['admin']);
 
         const body = await req.json();
         let { month, year } = body;
@@ -34,7 +36,7 @@ export async function POST(req: Request) {
                 lt(vendorSelections.forMonth, endDate)
             ),
             with: {
-                vendor: true
+                vendor: { columns: { email: false } } // never expose the superAdmin-only login email
             }
         });
 

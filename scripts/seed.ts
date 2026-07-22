@@ -79,19 +79,23 @@ async function main() {
     };
     const [menuA, menuB] = await db.insert(menus).values([{ ...sampleMenu }, { ...sampleMenu }]).returning();
 
-    // --- Vendors (Vendor A is mapped to YOUR email → lets you explore the vendor portal) ---
+    // --- Vendors (their own demo login emails — NOT the dev's email) ---
     const [vendorA, vendorB] = await db.insert(vendors).values([
-        { name: 'Demo Mess A (Sodexo)', email: devEmail, description: 'Primary demo vendor', price: 3000, menuId: menuA.id },
+        { name: 'Demo Mess A (Sodexo)', email: 'demo-vendor-a@scaler.com', description: 'Primary demo vendor', price: 3000, menuId: menuA.id },
         { name: "Demo Mess B (Gaura's)", email: 'demo-vendor-b@scaler.com', description: 'Second demo vendor', price: 2800, menuId: menuB.id },
     ]).returning();
 
-    // --- Users (one per role; your email is the superAdmin) ---
+    // --- Users: your email is ONLY the superAdmin (not a vendor). Demo vendor/admin users are
+    //     separate accounts mapped to the demo vendors above. ---
     const [devUser] = await db.insert(users).values({
         email: devEmail, name: 'Dev (You)', role: 'superAdmin', hostelId: hostelA.id, batch: 'B1',
     }).returning();
 
-    await db.insert(users).values({ email: 'demo-admin@scaler.com', name: 'Demo Admin', role: 'admin' });
-    await db.insert(users).values({ email: 'demo-vendor-b@scaler.com', name: "Demo Vendor B", role: 'vendor' });
+    await db.insert(users).values([
+        { email: 'demo-admin@scaler.com', name: 'Demo Admin', role: 'admin' },
+        { email: 'demo-vendor-a@scaler.com', name: 'Demo Vendor A', role: 'vendor' },
+        { email: 'demo-vendor-b@scaler.com', name: 'Demo Vendor B', role: 'vendor' },
+    ]);
 
     const studentRows = Array.from({ length: 6 }, (_, i) => ({
         email: `demo-student-${i + 1}@scaler.com`,
@@ -116,7 +120,7 @@ async function main() {
         })),
     );
 
-    // --- A few recorded meals today (scanned by the vendor-A account = you) ---
+    // --- A few recorded meals today (byUser = the dev/superAdmin acting as scanner in seed data) ---
     await db.insert(meals).values(
         students.slice(0, 3).flatMap((s) => ([
             { forUserId: s.id, byUserId: devUser.id, mealType: 'breakfast' as const, date: now },
@@ -132,8 +136,9 @@ async function main() {
         `  • 2 hostels, 2 menus, 2 vendors\n` +
         `  • users: 1 superAdmin (you), 1 admin, 1 vendor, ${students.length} students\n` +
         `  • ${students.length} vendor selections (this month), 6 meals today, feedback window OPEN\n\n` +
-        `Log in as ${devEmail} → you're a superAdmin. To explore other portals, switch your role:\n` +
-        `  npx tsx scripts/set-role.ts ${devEmail} student   (then admin / vendor / superAdmin)\n`,
+        `Log in as ${devEmail} → you're a superAdmin (only). To preview the student/admin portals,\n` +
+        `switch your role and refresh:  npx tsx scripts/set-role.ts ${devEmail} student   (or admin / superAdmin)\n` +
+        `For the vendor portal, first map a demo vendor's login email to yours in Manage Vendors.\n`,
     );
     process.exit(0);
 }

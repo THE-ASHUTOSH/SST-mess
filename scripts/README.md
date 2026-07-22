@@ -25,6 +25,16 @@ The dev role-switcher (explore each portal) and the first-superAdmin bootstrap.
 npx tsx scripts/set-role.ts <email> <student|vendor|admin|superAdmin>
 ```
 
+### `seed-bulk-users.ts` — bulk load-test students
+Inserts N dummy students (default 3000, chunked/idempotent) and, after insertion, saves their emails to
+`fixtures/bulk-emails.csv` (tracked, in the project) so you can exercise the vendor-selection bulk upload —
+speed and every case (to-create / duplicates / not-found / invalid / over-limit). The CSV works for both
+the file-upload and paste paths.
+
+```bash
+npx tsx scripts/seed-bulk-users.ts 3000 --yes
+```
+
 ## Safety
 
 Both scripts print the **target database host** before acting — verify it's your **dev branch**, never

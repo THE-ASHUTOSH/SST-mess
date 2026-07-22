@@ -69,11 +69,14 @@ this on production.
 |---|---|
 | `superAdmin` | Everything — Manage Vendors, Upload Selection, Verify QR, Controls (User Mgmt + Vendor Directory), analytics |
 | `admin` | Update Menu, Choice/Feedback Analysis, Controls, Total Meals |
-| `vendor` | Scanner + Total Meals **scoped to Demo Mess A** (seeded with your email), no vendor picker |
+| `vendor` | Scanner + Total Meals scoped to the vendor your email maps to (none by default — see note) |
 | `student` | Dashboard + meal QR, vendors/menu, feedback, meal history |
 
-> The seed maps **Demo Mess A** to `DEV_SEED_EMAIL`, so when you switch to `vendor` you're scoped to
-> that vendor and the scanner/stats work end-to-end.
+> **Your dev account is superAdmin only** — it is deliberately **not** a vendor. The demo vendors have
+> their own login emails (`demo-vendor-a@…`, `demo-vendor-b@…`). To preview the **vendor** portal end-to-end,
+> first (as superAdmin) open **Manage Vendors** and set a demo vendor's login email to *your* email, then
+> switch your role to `vendor`. Without a vendor mapped to your email, the vendor portal shows
+> "no vendor linked to your account."
 
 ## Reset
 

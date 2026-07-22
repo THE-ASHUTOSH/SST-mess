@@ -48,5 +48,6 @@ next-env.d.ts
 scripts/*
 !scripts/seed.ts
 !scripts/set-role.ts
+!scripts/seed-bulk-users.ts
 !scripts/README.md
 reports

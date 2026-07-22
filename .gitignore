@@ -30,8 +30,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files (secrets) — but keep the committed template
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -43,5 +44,9 @@ next-env.d.ts
 # clerk configuration (can include secrets)
 /.clerk/
 
-scripts
+# local/experimental ops scripts are ignored; shared onboarding scripts are tracked explicitly
+scripts/*
+!scripts/seed.ts
+!scripts/set-role.ts
+!scripts/README.md
 reports

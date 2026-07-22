@@ -39,10 +39,14 @@ pnpm drizzle-kit generate --name <desc>   # create a migration after editing lib
 pnpm drizzle-kit migrate                  # apply migrations
 ```
 
+> **New here?** [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) walks you through a seeded local dev
+> environment (on a Neon dev branch) where you can explore the app as every role.
+
 ## Documentation
 
 | Doc | What's in it |
 |---|---|
+| [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) | New-dev setup: Neon dev branch, env, migrate, **seed**, and viewing every role |
 | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | System overview, stack, auth flow, core meal flow, deploy notes |
 | [docs/backend/CONVENTIONS.md](./docs/backend/CONVENTIONS.md) | Route patterns: roles/access, error mapping, validation, DB/writes, caching, migrations |
 | [docs/backend/API.md](./docs/backend/API.md) | Endpoint reference (request/response for every route) |

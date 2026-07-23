@@ -102,7 +102,10 @@ export const vendorSelections = pgTable("vendor_selections", {
     forMonth: timestamp("for_month").notNull(), // Using timestamp to store month start date
     dateofEntry: timestamp("date_of_entry").notNull(),
     createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+    // One selection per user per month — lets the bulk upload upsert atomically (ON CONFLICT).
+    userMonthUnique: uniqueIndex("vendor_selections_user_month_uniq").on(table.userId, table.forMonth),
+}));
 
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({

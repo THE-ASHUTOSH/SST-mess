@@ -71,6 +71,13 @@
       "when": 1784621769936,
       "tag": "0009_add_vendor_email",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784747296496,
+      "tag": "0010_vendor_selection_user_month_unique",
+      "breakpoints": true
     }
   ]
 }

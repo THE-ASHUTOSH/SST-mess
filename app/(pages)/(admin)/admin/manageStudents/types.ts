@@ -4,7 +4,6 @@ export interface StudentRow {
     email: string;
     roll: string | null;
     batch: string | null;
-    hostel: string | null;
     picture: string | null;
     optedIn: boolean;
     vendorId: string | null;
@@ -20,7 +19,6 @@ export interface VendorOption {
 export interface FilterOptions {
     vendors: VendorOption[];
     batches: string[];
-    hostels: string[];
     preferences: string[];
 }
 

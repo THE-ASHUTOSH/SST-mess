@@ -8,20 +8,14 @@ migrations with `pnpm drizzle-kit generate` after editing the schema.
 - `role` — `admin` · `student` · `vendor` · `superAdmin`
 - `meal_type` — `breakfast` · `lunch` · `dinner`
 - `preference` — `Vegetarian` · `Non-Vegetarian` · `Eggetarian`
-- `hostel` — *(legacy enum; being replaced by the `hostels` table — kept during transition)*
 
 ## Tables
 
 ### `users`
 The identity for every human (and vendor account). `id` uuid PK · `email` text **unique, not null** ·
-`name` not null · `role` (default `student`) · `roll` · `picture` · `hostel` (text, legacy) ·
-`hostelId` → `hostels.id` · `batch` · `createdAt`.
+`name` not null · `role` (default `student`) · `roll` · `picture` · `batch` · `createdAt`.
 > Created on first Clerk login for whitelisted domains; a vendor account is created/promoted when its
 > login email is saved in Manage Vendors. Emails are effectively lowercase (Google SSO).
-
-### `hostels`
-Lookup table replacing the `hostel` enum. `id` uuid PK · `name` **unique, not null** · `createdAt`.
-Seeded/backfilled by `scripts/migrate-hostels.ts`.
 
 ### `vendors`
 A mess vendor. `id` uuid PK · `name` not null · **`email`** (nullable, login mapping — superAdmin-only) ·
@@ -39,9 +33,8 @@ dinner: string[] }` · `createdAt`/`updatedAt`. Parsed from an uploaded CSV via 
 A student's monthly opt-in. `id` uuid PK · `userId` → `users.id` not null · `vendorId` → `vendors.id`
 not null · `preference` (default Vegetarian) · `forMonth` timestamp not null (UTC month-start) ·
 `dateofEntry` not null · `createdAt`.
-> Convention: **one selection per user per month.** Enforced app-side today (no DB unique index yet —
-> a `(user_id, for_month)` unique index is a recommended hardening). `hostel`/`hostelId` were dropped
-> (migration `0009`) — hostel is read from the user's own record where needed.
+> **One selection per user per month**, enforced by the unique index `vendor_selections_user_month_uniq`
+> on `(user_id, for_month)` (migration `0010`) — which is what lets the bulk upload upsert atomically.
 
 ### `meals`
 A recorded (eaten) meal. `id` uuid PK · `forUserId` → `users.id` not null (the student) ·
@@ -59,10 +52,10 @@ Feature flags. `id` uuid PK · `name` unique not null · `enabled` bool (default
 ## Relationships (ERD)
 
 ```
-hostels ──< users ──< meals >── (byUser) users
-                │        (forUser) ↑
-                ├──< vendorSelections >── vendors ──> menus
-                └──< vendorFeedbacks  >── vendors
+users ──< meals >── (byUser) users
+    │        (forUser) ↑
+    ├──< vendorSelections >── vendors ──> menus
+    └──< vendorFeedbacks  >── vendors
 ```
 
 - `users` 1─N `vendorSelections`, `vendorFeedbacks`, `meals` (as eater and as scanner).

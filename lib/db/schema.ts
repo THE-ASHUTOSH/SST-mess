@@ -4,15 +4,6 @@ import { relations, sql } from "drizzle-orm";
 export const roleEnum = pgEnum("role", ["admin", "student", "vendor", "superAdmin"]);
 export const mealTypeEnum = pgEnum("meal_type", ["breakfast", "lunch", "dinner"]);
 export const preferenceEnum = pgEnum("preference", ["Vegetarian", "Non-Vegetarian", "Eggetarian"]);
-export const hostelEnum = pgEnum("hostel", ["Velankani Micro Campus (Uniworld 2)", "Neeladri Micro Campus (Uniworld 1)"]);
-
-// Lookup table that replaces the hostel enum. Seeded + backfilled by scripts/migrate-hostels.ts.
-// The hostelEnum + the *.hostel columns are kept during the transition (dual-write) and dropped later.
-export const hostels = pgTable("hostels", {
-    id: uuid("id").defaultRandom().primaryKey(),
-    name: text("name").notNull().unique(),
-    createdAt: timestamp("created_at").defaultNow(),
-});
 
 export const users = pgTable("users", {
     id: uuid("id").defaultRandom().primaryKey(),
@@ -20,8 +11,6 @@ export const users = pgTable("users", {
     roll: text("roll"), // Roll number
     role: roleEnum("role").default("student"),
     picture: text("picture"),
-    hostel: text("hostel"),
-    hostelId: uuid("hostel_id").references(() => hostels.id),
     batch: text("batch"),
     name: text("name").notNull(),
     createdAt: timestamp("created_at").defaultNow(),

@@ -26,7 +26,6 @@ const publicColumns = {
     email: users.email,
     role: users.role,
     roll: users.roll,
-    hostel: users.hostel,
     batch: users.batch,
 };
 

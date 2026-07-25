@@ -49,7 +49,6 @@ export function StudentDirectory() {
     const [options, setOptions] = useState<FilterOptions | null>(null);
     const [selVendors, setSelVendors] = useState<string[]>([]);
     const [selBatches, setSelBatches] = useState<string[]>([]);
-    const [selHostels, setSelHostels] = useState<string[]>([]);
     const [selPrefs, setSelPrefs] = useState<string[]>([]);
 
     const [page, setPage] = useState(1);
@@ -76,7 +75,6 @@ export function StudentDirectory() {
                 setOptions(opts);
                 setSelVendors(opts.vendors.map((v) => v.id));
                 setSelBatches(opts.batches);
-                setSelHostels(opts.hostels);
                 setSelPrefs(opts.preferences);
             })
             .catch(() => toast.error("Failed to load filters."));
@@ -105,7 +103,6 @@ export function StudentDirectory() {
         if (options) {
             if (subset(selVendors, options.vendors.length)) params.vendorIds = selVendors.join(",");
             if (subset(selBatches, options.batches.length)) params.batches = selBatches.join(",");
-            if (subset(selHostels, options.hostels.length)) params.hostels = selHostels.join(",");
             if (subset(selPrefs, options.preferences.length)) params.preferences = selPrefs.join(",");
         }
 
@@ -126,7 +123,7 @@ export function StudentDirectory() {
         return () => {
             cancelled = true;
         };
-    }, [month, searchQuery, optedIn, selVendors, selBatches, selHostels, selPrefs, page, pageSize, options, reloadKey]);
+    }, [month, searchQuery, optedIn, selVendors, selBatches, selPrefs, page, pageSize, options, reloadKey]);
 
     const resetFilters = () => {
         setMonth(currentMonth());
@@ -135,7 +132,6 @@ export function StudentDirectory() {
         if (options) {
             setSelVendors(options.vendors.map((v) => v.id));
             setSelBatches(options.batches);
-            setSelHostels(options.hostels);
             setSelPrefs(options.preferences);
         }
         setPage(1);
@@ -184,9 +180,6 @@ export function StudentDirectory() {
                 {options && options.batches.length > 0 && (
                     <MultiSelect label="Batch" options={options.batches.map((b) => ({ value: b, label: b }))} selected={selBatches} onChange={withReset(setSelBatches)} />
                 )}
-                {options && options.hostels.length > 0 && (
-                    <MultiSelect label="Hostel" options={options.hostels.map((h) => ({ value: h, label: h }))} selected={selHostels} onChange={withReset(setSelHostels)} />
-                )}
                 <MultiSelect label="Preference" options={(options?.preferences ?? []).map((p) => ({ value: p, label: p }))} selected={selPrefs} onChange={withReset(setSelPrefs)} />
                 <Button variant="ghost" size="sm" onClick={resetFilters} className="ml-auto gap-1.5 text-muted-foreground">
                     <RotateCcw className="h-3.5 w-3.5" /> Reset
@@ -209,7 +202,6 @@ export function StudentDirectory() {
                             <TableHead>Student</TableHead>
                             <TableHead className="hidden md:table-cell">Roll</TableHead>
                             <TableHead className="hidden lg:table-cell">Batch</TableHead>
-                            <TableHead className="hidden lg:table-cell">Hostel</TableHead>
                             <TableHead>{label}</TableHead>
                             <TableHead className="w-10 text-right">Actions</TableHead>
                         </TableRow>
@@ -218,12 +210,12 @@ export function StudentDirectory() {
                         {loading ? (
                             Array.from({ length: 8 }).map((_, i) => (
                                 <TableRow key={i}>
-                                    <TableCell colSpan={6}><Skeleton className="h-8 w-full" /></TableCell>
+                                    <TableCell colSpan={5}><Skeleton className="h-8 w-full" /></TableCell>
                                 </TableRow>
                             ))
                         ) : error ? (
                             <TableRow>
-                                <TableCell colSpan={6}>
+                                <TableCell colSpan={5}>
                                     <div className="flex flex-col items-center gap-3 py-10 text-center">
                                         <p className="text-sm text-destructive">{error}</p>
                                         <Button variant="outline" size="sm" onClick={() => setReloadKey((k) => k + 1)}>Retry</Button>
@@ -232,7 +224,7 @@ export function StudentDirectory() {
                             </TableRow>
                         ) : students.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6}><p className="py-10 text-center text-sm text-muted-foreground">No students found.</p></TableCell>
+                                <TableCell colSpan={5}><p className="py-10 text-center text-sm text-muted-foreground">No students found.</p></TableCell>
                             </TableRow>
                         ) : (
                             students.map((s) => (
@@ -245,7 +237,6 @@ export function StudentDirectory() {
                                     </TableCell>
                                     <TableCell className="hidden text-muted-foreground md:table-cell">{s.roll || "—"}</TableCell>
                                     <TableCell className="hidden text-muted-foreground lg:table-cell">{s.batch || "—"}</TableCell>
-                                    <TableCell className="hidden max-w-[180px] truncate text-muted-foreground lg:table-cell">{s.hostel || "—"}</TableCell>
                                     <TableCell>
                                         {s.optedIn ? (
                                             <div className="flex flex-col items-start gap-0.5">

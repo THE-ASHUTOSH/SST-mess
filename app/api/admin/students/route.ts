@@ -13,7 +13,7 @@ import { isUuid, monthToUtcDate } from '@/lib/vendor-selection-upload';
  * IMPORTANT: only `vendors.name` is ever selected here — `vendors.email` must never reach a client.
  *
  *   GET /api/admin/students?month=YYYY-MM&page=1&pageSize=25
- *       &search=<q>&optedIn=yes|no|all&vendorIds=a,b&batches=..&hostels=..&preferences=..
+ *       &search=<q>&optedIn=yes|no|all&vendorIds=a,b&batches=..&preferences=..
  */
 
 const DEFAULT_PAGE_SIZE = 25;
@@ -44,7 +44,6 @@ export async function GET(req: NextRequest) {
         const search = sp.get('search')?.trim();
         const vendorIds = multi(sp.get('vendorIds')).filter(isUuid);
         const batches = multi(sp.get('batches'));
-        const hostels = multi(sp.get('hostels'));
         const preferences = multi(sp.get('preferences')).filter((p) => VALID_PREFERENCES.includes(p));
 
         // --- WHERE conditions (shared by the page query and the count query) ---
@@ -57,7 +56,6 @@ export async function GET(req: NextRequest) {
             if (like) conditions.push(like);
         }
         if (batches.length) conditions.push(inArray(users.batch, batches));
-        if (hostels.length) conditions.push(inArray(users.hostel, hostels));
 
         // Opt-in filters reference the month-scoped selection join below.
         if (optedIn === 'yes') conditions.push(isNotNull(vendorSelections.id));
@@ -77,7 +75,6 @@ export async function GET(req: NextRequest) {
                 email: users.email,
                 roll: users.roll,
                 batch: users.batch,
-                hostel: users.hostel,
                 picture: users.picture,
                 selectionId: vendorSelections.id,
                 vendorId: vendorSelections.vendorId,
@@ -106,7 +103,6 @@ export async function GET(req: NextRequest) {
             email: r.email,
             roll: r.roll,
             batch: r.batch,
-            hostel: r.hostel,
             picture: r.picture,
             optedIn: r.selectionId !== null,
             vendorId: r.vendorId,

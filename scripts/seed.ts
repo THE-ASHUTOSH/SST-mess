@@ -17,7 +17,7 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../lib/db/schema';
 
-const { users, hostels, menus, vendors, meals, controls, vendorSelections, vendorFeedbacks } = schema;
+const { users, menus, vendors, meals, controls, vendorSelections, vendorFeedbacks } = schema;
 
 async function main() {
     const url = process.env.DATABASE_URL;
@@ -56,15 +56,8 @@ async function main() {
     await db.delete(vendors);
     await db.delete(menus);
     await db.delete(users);
-    await db.delete(hostels);
     await db.delete(controls);
     console.log('• Cleared existing domain data');
-
-    // --- Hostels ---
-    const [hostelA, hostelB] = await db.insert(hostels).values([
-        { name: 'Velankani Micro Campus (Uniworld 2)' },
-        { name: 'Neeladri Micro Campus (Uniworld 1)' },
-    ]).returning();
 
     // --- Menus (one per demo vendor) ---
     const week = (b: string[], l: string[], d: string[]) => ({ breakfast: b, lunch: l, dinner: d });
@@ -88,7 +81,7 @@ async function main() {
     // --- Users: your email is ONLY the superAdmin (not a vendor). Demo vendor/admin users are
     //     separate accounts mapped to the demo vendors above. ---
     const [devUser] = await db.insert(users).values({
-        email: devEmail, name: 'Dev (You)', role: 'superAdmin', hostelId: hostelA.id, batch: 'B1',
+        email: devEmail, name: 'Dev (You)', role: 'superAdmin', batch: 'B1',
     }).returning();
 
     await db.insert(users).values([
@@ -101,7 +94,6 @@ async function main() {
         email: `demo-student-${i + 1}@scaler.com`,
         name: `Demo Student ${i + 1}`,
         role: 'student' as const,
-        hostelId: i % 2 === 0 ? hostelA.id : hostelB.id,
         batch: i % 2 === 0 ? 'B1' : 'B2',
     }));
     const students = await db.insert(users).values(studentRows).returning();
@@ -133,7 +125,7 @@ async function main() {
 
     console.log(
         `\n✓ Seed complete:\n` +
-        `  • 2 hostels, 2 menus, 2 vendors\n` +
+        `  • 2 menus, 2 vendors\n` +
         `  • users: 1 superAdmin (you), 1 admin, 1 vendor, ${students.length} students\n` +
         `  • ${students.length} vendor selections (this month), 6 meals today, feedback window OPEN\n\n` +
         `Log in as ${devEmail} → you're a superAdmin (only). To preview the student/admin portals,\n` +

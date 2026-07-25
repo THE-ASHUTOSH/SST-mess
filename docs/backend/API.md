@@ -84,7 +84,7 @@ Search/list users for role administration. **superAdmin only.** With `?search=<q
 {
   "success": true,
   "users": [
-    { "id": "user-id", "name": "Jane", "email": "jane@sst.scaler.com", "role": "admin", "roll": null, "hostel": null, "batch": null }
+    { "id": "user-id", "name": "Jane", "email": "jane@sst.scaler.com", "role": "admin", "roll": null, "batch": null }
   ]
 }
 ```
@@ -460,7 +460,6 @@ import { relations } from "drizzle-orm";
 export const roleEnum = pgEnum("role", ["admin", "student", "vendor"]);
 export const mealTypeEnum = pgEnum("meal_type", ["breakfast", "lunch", "dinner"]);
 export const preferenceEnum = pgEnum("preference", ["Vegetarian", "Non-Vegetarian", "Eggetarian"]);
-export const hostelEnum = pgEnum("hostel", ["Velankani Micro Campus (Uniworld 2)", "Neeladri Micro Campus (Uniworld 1)"]);
 
 export const users = pgTable("users", {
     id: uuid("id").defaultRandom().primaryKey(),
@@ -468,7 +467,6 @@ export const users = pgTable("users", {
     roll: text("roll"), // Roll number
     role: roleEnum("role").default("student"),
     picture: text("picture"),
-    hostel: text("hostel"),
     batch: text("batch"),
     name: text("name").notNull(),
     createdAt: timestamp("created_at").defaultNow(),
@@ -538,7 +536,6 @@ export const vendorSelections = pgTable("vendor_selections", {
     userId: uuid("user_id").references(() => users.id).notNull(),
     vendorId: uuid("vendor_id").references(() => vendors.id).notNull(),
     preference: preferenceEnum("preference").default("Vegetarian"),
-    hostel: hostelEnum("hostel"),
     forMonth: timestamp("for_month").notNull(), // Using timestamp to store month start date
     dateofEntry: timestamp("date_of_entry").notNull(),
     createdAt: timestamp("created_at").defaultNow(),

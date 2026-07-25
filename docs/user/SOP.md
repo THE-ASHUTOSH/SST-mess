@@ -34,7 +34,6 @@ Your Excel file **MUST** contain the following headers exactly as written (case-
 | `Email Address` | Student's official email. | `john.doe@sst.edu.in` |
 | `Choose your preference` | **Exact name** of the vendor selected. | `Spice Kitchen` |
 | `Meal Option` | Dietary preference. | `Vegetarian`, `Non-Vegetarian`, `Eggetarian` |
-| `Hostel` | Assigned campus/hostel. | `Velankani Micro Campus (Uniworld 2)` |
 | `Batch` | Student's batch identifier. | `2027` |
 | `Name` | (New Users Only) Student's full name. | `John Doe` |
 

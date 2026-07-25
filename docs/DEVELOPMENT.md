@@ -34,7 +34,7 @@ points at, so keep `.env.local` pointed at your dev branch.
    ```bash
    npx tsx scripts/seed.ts --yes
    ```
-   It prints the target host first — confirm it's your dev branch. It creates 2 hostels, 2 vendors
+   It prints the target host first — confirm it's your dev branch. It creates 2 vendors
    (+ menus), 1 admin, 1 vendor user, 6 students, this month's opt-ins, some recorded meals, and opens
    the feedback window.
 

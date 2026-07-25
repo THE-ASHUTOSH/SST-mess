@@ -18,7 +18,6 @@ interface ManagedUser {
   email: string;
   role: string;
   roll: string | null;
-  hostel: string | null;
   batch: string | null;
 }
 

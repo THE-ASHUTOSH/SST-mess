@@ -78,6 +78,13 @@
       "when": 1784747296496,
       "tag": "0010_vendor_selection_user_month_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1784962753786,
+      "tag": "0011_drop_hostel",
+      "breakpoints": true
     }
   ]
 }

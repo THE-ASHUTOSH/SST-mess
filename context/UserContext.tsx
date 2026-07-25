@@ -9,8 +9,6 @@ type User = {
   picture?: string;
   role?: string;
   roll?: string;
-  hostel?: string;
-  hostelId?: string;
   batch?: string;
   id?: string;
 } | null;

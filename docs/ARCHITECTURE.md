@@ -70,7 +70,7 @@ Totals & analytics: /api/meal/total-meals, /api/vendor/choice-analysis, feedback
 ```
 
 Key domain tables: `users`, `vendors`, `menus`, `vendorSelections`, `meals`, `vendorFeedbacks`,
-`controls`, `hostels`. Full schema in [backend/DATA_MODEL.md](./backend/DATA_MODEL.md).
+`controls`. Full schema in [backend/DATA_MODEL.md](./backend/DATA_MODEL.md).
 
 ## Vendor accounts
 

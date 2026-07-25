@@ -60,7 +60,7 @@ Two layers, both client-side (the **API** `requireRole` is the real security bou
 ## Contexts
 
 - **`context/UserContext.tsx`** → `useUser()` gives `{ user, loading }`. On Clerk load it fetches
-  `/api/user/me` for the DB user (role, email, hostel, …), enforces the domain whitelist, and exposes
+  `/api/user/me` for the DB user (role, email, batch, …), enforces the domain whitelist, and exposes
   `authError`. **This is how the client knows the role.**
 - **`context/DashboardContext.tsx`** → student dashboard data (`latestSelection`, `isFeedbackEnabled`).
 

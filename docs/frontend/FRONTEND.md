@@ -10,8 +10,8 @@ Pages live under `app/(pages)/` in **route groups by role** (the `(group)` folde
 ```
 (pages)/(student)/student/…     → /student/dashboard, /student/vendorDetails, /student/feedback, /student/mealHistory
 (pages)/(admin)/admin/…         → /admin/dashboard, /admin/manageVendor, /admin/updateMenu,
-                                  /admin/uploadVendorSelection, /admin/adminControls,
-                                  /admin/choiceAnalysis, /admin/feedBackAnalysis, /admin/totalMeals,
+                                  /admin/manageStudents (directory + bulk upload), /admin/adminControls,
+                                  /admin/analytics (demand + meals), /admin/feedBackAnalysis,
                                   /admin/verifyStudentQR
 (pages)/(vendorUser)/vendorUser/…→ /vendorUser/dashboard, /vendorUser/verifyStudentQR, /vendorUser/totalMeals
 (pages)/login/…                 → Clerk sign-in + role redirect

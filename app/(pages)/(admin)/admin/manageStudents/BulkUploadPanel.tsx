@@ -17,7 +17,6 @@ import {
   Loader2, CheckCircle2, Home,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import RequireRole from "../RequireRole";
 
 interface VendorOption { id: string; name: string }
 interface CreateEntry { email: string; userId: string; name: string }
@@ -48,7 +47,7 @@ const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?
   { key: "invalid", label: "Invalid", icon: XCircle, tone: "zinc" },
 ];
 
-const UploadVendorSelectionPage = () => {
+export const BulkUploadPanel = () => {
   const router = useRouter();
   const [vendors, setVendors] = useState<VendorOption[]>([]);
   const [vendorId, setVendorId] = useState("");
@@ -185,7 +184,7 @@ const UploadVendorSelectionPage = () => {
       )}
 
       {committed ? (
-        <ResultsView summary={committed} onHome={() => router.replace("/admin/dashboard")} />
+        <ResultsView summary={committed} onHome={() => router.replace("/admin/dashboard")} onAnother={resetAll} />
       ) : result ? (
         <ReviewView
           result={result}
@@ -200,10 +199,10 @@ const UploadVendorSelectionPage = () => {
           onCommit={handleCommit}
         />
       ) : (
-        <div className="mx-auto flex w-full max-w-4xl flex-col px-4 py-8 sm:px-6 animate-in fade-in slide-in-from-bottom-6 duration-500">
+        <div className="mx-auto flex w-full max-w-4xl flex-col animate-in fade-in slide-in-from-bottom-6 duration-500">
           <Card className="border-border bg-card shadow-lg">
             <CardHeader>
-              <CardTitle className="text-xl font-bold text-primary sm:text-2xl">Upload Vendor Selection</CardTitle>
+              <CardTitle className="text-xl font-bold text-primary sm:text-2xl">Bulk upload selections</CardTitle>
               <CardDescription>Pick a vendor and month, then add the students&apos; emails.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -351,7 +350,7 @@ const ReviewView = ({
   const willSave = result.toCreate.length + overwriteIds.size;
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 lg:px-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="mx-auto w-full max-w-4xl animate-in fade-in slide-in-from-bottom-4 duration-500">
       <Card className="border-border bg-card shadow-lg">
         <CardHeader>
           <CardTitle className="text-xl font-bold text-primary sm:text-2xl">Review &amp; Confirm</CardTitle>
@@ -464,13 +463,13 @@ const actionBadge: Record<ResultRow["action"], string> = {
   kept: "bg-zinc-500/15 text-zinc-600 dark:text-zinc-300",
 };
 
-const ResultsView = ({ summary, onHome }: { summary: CommitSummary; onHome: () => void }) => {
+const ResultsView = ({ summary, onHome, onAnother }: { summary: CommitSummary; onHome: () => void; onAnother: () => void }) => {
   const added = summary.rows.filter((r) => r.action === "added").length;
   const moved = summary.rows.filter((r) => r.action === "moved").length;
   const kept = summary.rows.filter((r) => r.action === "kept").length;
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="mx-auto w-full max-w-4xl animate-in fade-in slide-in-from-bottom-4 duration-500">
       <Card className="border-border bg-card shadow-lg">
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -504,7 +503,10 @@ const ResultsView = ({ summary, onHome }: { summary: CommitSummary; onHome: () =
             </div>
           </div>
 
-          <div className="flex border-t border-border pt-4 sm:justify-end">
+          <div className="flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end">
+            <Button type="button" variant="outline" onClick={onAnother} className="w-full sm:w-auto">
+              <RotateCcw className="h-4 w-4" /> Upload another
+            </Button>
             <Button onClick={onHome} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white sm:w-auto sm:min-w-48">
               <Home className="h-4 w-4" /> Back to Home
             </Button>
@@ -514,11 +516,3 @@ const ResultsView = ({ summary, onHome }: { summary: CommitSummary; onHome: () =
     </div>
   );
 };
-
-const GuardedUploadVendorSelectionPage = () => (
-  <RequireRole roles={["superAdmin"]}>
-    <UploadVendorSelectionPage />
-  </RequireRole>
-);
-
-export default GuardedUploadVendorSelectionPage;

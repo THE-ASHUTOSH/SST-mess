@@ -7,9 +7,8 @@ import {
   ScanLine,
   Sliders,
   Store,
-  Upload,
+  Users,
   Utensils,
-  UtensilsCrossed,
   type LucideIcon,
 } from "lucide-react";
 import EventCard from "@/components/common/EventCard";
@@ -34,11 +33,11 @@ const CARDS: DashboardCard[] = [
     roles: ["admin", "superAdmin"],
   },
   {
-    title: "Choice Analysis",
-    description: "Vendor popularity and student picks",
-    redirectUrl: "/admin/choiceAnalysis",
+    title: "Analytics",
+    description: "Vendor demand and meals served, with charts",
+    redirectUrl: "/admin/analytics",
     icon: BarChart3,
-    roles: ["admin", "superAdmin"],
+    roles: ["superAdmin"],
   },
   {
     title: "Feedback Analysis",
@@ -52,13 +51,6 @@ const CARDS: DashboardCard[] = [
     description: "Toggle feedback window and system flags",
     redirectUrl: "/admin/adminControls",
     icon: Sliders,
-    roles: ["admin", "superAdmin"],
-  },
-  {
-    title: "Total Meals",
-    description: "Calculate served meals for billing",
-    redirectUrl: "/admin/totalMeals",
-    icon: UtensilsCrossed,
     roles: ["admin", "superAdmin"],
   },
   // superAdmin-only
@@ -77,10 +69,10 @@ const CARDS: DashboardCard[] = [
     roles: ["superAdmin"],
   },
   {
-    title: "Upload Vendor Selection",
-    description: "Bulk-upload the monthly xlsx",
-    redirectUrl: "/admin/uploadVendorSelection",
-    icon: Upload,
+    title: "Manage Students",
+    description: "Opt-ins, vendor changes, meal history & bulk upload",
+    redirectUrl: "/admin/manageStudents",
+    icon: Users,
     roles: ["superAdmin"],
   },
 ];

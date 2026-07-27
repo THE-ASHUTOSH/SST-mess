@@ -5,16 +5,15 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth, useClerk, useSignIn } from "@clerk/nextjs";
 import { useTheme } from "next-themes";
-import {
-  AlertCircle,
-  ArrowLeft,
-  GraduationCap,
-  Loader2,
-  Moon,
-  Sun,
-} from "lucide-react";
+import { ArrowLeft, GraduationCap, Loader2, Moon, Sun } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import AuthErrorNotice from "@/components/common/AuthErrorNotice";
+import {
+  authErrorFromCode,
+  authErrorFromException,
+  type AuthErrorInfo,
+} from "@/lib/auth-errors";
 import { useUser } from "@/context/UserContext";
 
 function GoogleIcon({ className }: { className?: string }) {
@@ -49,7 +48,7 @@ function SignInContent() {
   const { resolvedTheme, setTheme } = useTheme();
   const { user, loading, authError, setAuthError } = useUser();
 
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AuthErrorInfo | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -57,39 +56,41 @@ function SignInContent() {
   useEffect(() => setMounted(true), []);
   const isDark = mounted && resolvedTheme === "dark";
 
-  // Surface domain-rejection toasts from UserContext
+  // Surface auth rejections raised by UserContext (e.g. a non-SST Google account)
   useEffect(() => {
-    if (authError) {
-      toast.error(authError);
-      setAuthError(null);
-    }
+    if (!authError) return;
+    const info = authErrorFromCode(authError);
+    setError(info);
+    toast.error(info.title, { description: info.message });
+    setAuthError(null);
   }, [authError, setAuthError]);
 
-  // Once UserContext resolves a DB user, route by role
+  // Any ?error=<code> handed over by the SSO callback or a route guard
   useEffect(() => {
-    if (loading || !user) return;
+    const errorParam = searchParams.get("error");
+    if (!errorParam) return;
+    setError(authErrorFromCode(errorParam));
+  }, [searchParams]);
+
+  // Once UserContext resolves a DB user, route by role — unless we're showing a failure
+  useEffect(() => {
+    if (loading || !user || error) return;
     if (user.role === "admin" || user.role === "superAdmin") router.replace("/admin/dashboard");
     else if (user.role === "vendor") router.replace("/vendorUser/dashboard");
     else router.replace("/student/dashboard");
-  }, [user, loading, router]);
+  }, [user, loading, router, error]);
 
-  // Handle ?error=not_registered → force sign-out so the user can retry
+  // These codes leave a Clerk session with no usable app account — drop it so the retry is clean
   useEffect(() => {
     const errorParam = searchParams.get("error");
-    if (
-      errorParam === "not_registered" &&
-      authLoaded &&
-      isSignedIn &&
-      !isSigningOut
-    ) {
-      setIsSigningOut(true);
-      setError(
-        "You are not a registered user. Please contact your administrator.",
-      );
-      signOut().then(() => {
-        router.replace("/login");
-      });
-    }
+    const orphanSession =
+      errorParam === "not_registered" || errorParam === "unauthorized_domain";
+    if (!orphanSession || !authLoaded || !isSignedIn || isSigningOut) return;
+
+    setIsSigningOut(true);
+    signOut().then(() => {
+      router.replace("/login");
+    });
   }, [searchParams, authLoaded, isSignedIn, signOut, router, isSigningOut]);
 
   const handleGoogleSignIn = async () => {
@@ -112,7 +113,7 @@ function SignInContent() {
       });
     } catch (err) {
       console.error("Google sign-in error:", err);
-      setError("Failed to start Google sign-in. Please try again.");
+      setError(authErrorFromException(err));
       setIsRedirecting(false);
     }
   };
@@ -164,14 +165,7 @@ function SignInContent() {
               </p>
             </div>
 
-            {error && (
-              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-xl">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
-                  <p className="text-destructive text-sm">{error}</p>
-                </div>
-              </div>
-            )}
+            {error && <AuthErrorNotice error={error} className="mb-6" />}
 
             <Button
               variant="outline"
@@ -189,6 +183,14 @@ function SignInContent() {
                 ? "Redirecting to Google..."
                 : "Continue with Google"}
             </Button>
+
+            {/* Clerk Smart CAPTCHA mounts here — a custom flow must supply its own container */}
+            <div
+              id="clerk-captcha"
+              data-cl-theme="auto"
+              data-cl-size="flexible"
+              className="mt-4 empty:mt-0"
+            />
 
             <div className="relative my-8">
               <div className="absolute inset-0 flex items-center">

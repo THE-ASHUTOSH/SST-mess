@@ -46,7 +46,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const allowedDomains = ["sst.scaler.com", "scaler.com"];
 
         if (domain && !allowedDomains.includes(domain)) {
-          setAuthError("Access denied: unauthorized domain");
+          // Emit a code, not prose — /login maps it through lib/auth-errors for the copy.
+          setAuthError("unauthorized_domain");
           await signOut();
           setUser(null);
           setLoading(false);

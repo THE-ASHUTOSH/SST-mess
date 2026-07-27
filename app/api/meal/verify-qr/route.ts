@@ -126,19 +126,21 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: true, message: "Meal verified successfully.", user: forUser });
 
     } catch (error: unknown) {
-        console.error("Error verifying QR code:", error);
-
+        // Classify before logging. A stale or malformed QR is a routine scan outcome that the
+        // vendor sees in the UI — logging it as an error buries real faults in noise.
         if (error instanceof Error) {
-            if (error.name === "JsonWebTokenError") {
-                return NextResponse.json({ success: false, message: "Invalid QR code." }, { status: 401 });
-            }
             if (error.name === "TokenExpiredError") {
                 return NextResponse.json({ success: false, message: "QR code has expired." }, { status: 401 });
+            }
+            if (error.name === "JsonWebTokenError") {
+                return NextResponse.json({ success: false, message: "Invalid QR code." }, { status: 401 });
             }
             if (error.message === "Unauthorized") return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
             if (error.message === "Forbidden") return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
         }
 
+        // Unclassified — a genuine fault, so keep the full stack.
+        console.error("Error verifying QR code:", error);
         return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
     }
 }

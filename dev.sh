@@ -9,7 +9,8 @@
 #       --no-migrate    Skip applying migrations
 #   -h, --help          Show this help and exit
 #
-# With NO options, an interactive menu lets you choose what to do.
+# With NO options, an interactive menu lets you choose what to do. The menu options that write to the
+# database (2-4) print the target host first and ask you to confirm it's your DEV branch.
 #
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -34,6 +35,42 @@ for arg in "$@"; do
   esac
 done
 
+# --- 1. Env (needed before the menu so we can show which database we'd write to) ---
+if [ ! -f .env.local ]; then
+  echo "✗ Missing .env.local — copy .env.example to .env.local and fill it in (see docs/DEVELOPMENT.md)."
+  exit 1
+fi
+
+# Host + database name from DATABASE_URL — deliberately drops the credentials so the
+# confirmation prompt can name the target without printing the password.
+db_target() {
+  local url rest
+  url="$(sed -nE 's/^[[:space:]]*DATABASE_URL[[:space:]]*=[[:space:]]*//p' .env.local \
+        | tail -n1 | tr -d '\r' | sed -E 's/^["'\'']//; s/["'\'']$//')"
+  [ -n "$url" ] || return 1
+  rest="${url#*://}"
+  rest="${rest##*@}"        # longest match: a host can't contain '@', a password can
+  printf '%s\n' "${rest%%\?*}"
+}
+
+# Safety gate for the menu options that write to the DB. Aborts unless the answer is yes.
+confirm_db_write() {
+  local target
+  if ! target="$(db_target)"; then
+    echo "✗ DATABASE_URL is not set in .env.local — refusing to run a database step blind."
+    exit 1
+  fi
+  echo
+  echo "⚠ About to $1."
+  echo "  Target database: $target"
+  echo "  Confirm this is your Neon DEV branch — never production (see docs/DEVELOPMENT.md)."
+  read -r -p "Continue? [y/N]: " ok || ok=""
+  case "$ok" in
+    y|Y|yes|YES) ;;
+    *) echo "Aborted — the database was not touched."; exit 0 ;;
+  esac
+}
+
 # --- Interactive menu when no action flag was given ---
 if [ "$EXPLICIT" = "no" ]; then
   echo "What do you want to do?"
@@ -45,21 +82,17 @@ if [ "$EXPLICIT" = "no" ]; then
   read -r -p "Choose [1-4, q] (default 1): " choice || choice="1"
   case "${choice:-1}" in
     1) MIGRATE="no" ;;
-    2) MIGRATE="yes" ;;
-    3) MIGRATE="yes"; SEED="yes" ;;
+    2) MIGRATE="yes"
+       confirm_db_write "apply pending migrations" ;;
+    3) MIGRATE="yes"; SEED="yes"
+       confirm_db_write "apply pending migrations, then WIPE and reseed demo data" ;;
     4) MIGRATE="yes"; SEED="yes"; BULK="yes"
        read -r -p "How many bulk students? [default $BULK_N] " n || n=""
        if [[ "$n" =~ ^[0-9]+$ ]]; then BULK_N="$n"; fi
-       ;;
+       confirm_db_write "apply pending migrations, WIPE and reseed demo data, then insert $BULK_N bulk students" ;;
     q|Q) echo "Aborted."; exit 0 ;;
     *) echo "Unrecognized choice — just starting the dev server."; MIGRATE="no" ;;
   esac
-fi
-
-# --- 1. Env ---
-if [ ! -f .env.local ]; then
-  echo "✗ Missing .env.local — copy .env.example to .env.local and fill it in (see docs/DEVELOPMENT.md)."
-  exit 1
 fi
 
 # --- 2. Dependencies (first run / fresh clone) ---

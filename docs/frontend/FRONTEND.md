@@ -59,9 +59,15 @@ Two layers, both client-side (the **API** `requireRole` is the real security bou
 
 ## Contexts
 
-- **`context/UserContext.tsx`** → `useUser()` gives `{ user, loading }`. On Clerk load it fetches
-  `/api/user/me` for the DB user (role, email, batch, …), enforces the domain whitelist, and exposes
-  `authError`. **This is how the client knows the role.**
+- **`context/UserContext.tsx`** → `useUser()` gives `{ user, loading, notRegistered, authError }`.
+  On Clerk load it fetches `/api/user/me` for the DB user (role, email, batch, …) and enforces the
+  domain restriction. **This is how the client knows the role.**
+  - It **never synthesises a user from Clerk data.** A row in `users` is the authorization, so a
+    role-less stand-in would slip past the guards and land an admin on the student dashboard.
+  - `403 { code: "not_registered" }` sets `notRegistered`; the login page and every `Protected`
+    shell route those users to **`/noAccess`** instead of `/login`, which they already passed.
+  - Any other failure leaves `user` null, so a transient DB outage fails closed (back to `/login`)
+    rather than silently downgrading the role.
 - **`context/DashboardContext.tsx`** → student dashboard data (`latestSelection`, `isFeedbackEnabled`).
 
 ## Data fetching

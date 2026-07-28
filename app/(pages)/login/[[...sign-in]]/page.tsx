@@ -46,7 +46,7 @@ function SignInContent() {
   const { isLoaded: authLoaded, isSignedIn } = useAuth();
   const { signIn, isLoaded: signInLoaded } = useSignIn();
   const { resolvedTheme, setTheme } = useTheme();
-  const { user, loading, authError, setAuthError } = useUser();
+  const { user, loading, notRegistered, authError, setAuthError } = useUser();
 
   const [error, setError] = useState<AuthErrorInfo | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -71,6 +71,13 @@ function SignInContent() {
     if (!errorParam) return;
     setError(authErrorFromCode(errorParam));
   }, [searchParams]);
+
+  // Authenticated with Google but absent from the roster — there is no dashboard to send
+  // them to, so explain it rather than bouncing them into a role they don't have.
+  useEffect(() => {
+    if (loading || !notRegistered) return;
+    router.replace("/noAccess");
+  }, [loading, notRegistered, router]);
 
   // Once UserContext resolves a DB user, route by role — unless we're showing a failure
   useEffect(() => {

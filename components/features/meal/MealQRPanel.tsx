@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQRCode } from "next-qrcode";
-import { Loader2, RefreshCw } from "lucide-react";
+import { AlertCircle, Info, Loader2, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMealQR } from "@/context/MealQRContext";
@@ -11,6 +12,7 @@ export default function MealQRPanel() {
   const {
     token,
     error,
+    errorRetryable,
     loading,
     refreshing,
     scanned,
@@ -69,16 +71,49 @@ export default function MealQRPanel() {
           <Skeleton className="h-4 w-32" />
         </div>
       ) : error ? (
-        <div className="w-full text-center py-6">
-          <p className="text-sm font-medium text-destructive">{error}</p>
-          <button
-            type="button"
-            onClick={refresh}
-            className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+        // A rule the server is stating (outside meal hours, not opted in) is information, not a
+        // failure — so it gets a calmer tone and no retry, because retrying cannot change it.
+        <div className="w-full px-4 sm:px-0 pb-5 sm:pb-0" role="status" aria-live="polite">
+          <div
+            className={`mx-auto max-w-sm rounded-xl border px-5 py-6 text-center ${
+              errorRetryable
+                ? "border-destructive/30 bg-destructive/10"
+                : "border-warning/40 bg-warning/10"
+            }`}
           >
-            <RefreshCw className="h-3.5 w-3.5" />
-            Try again
-          </button>
+            <div
+              className={`mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl ${
+                errorRetryable ? "bg-destructive/10" : "bg-warning/10"
+              }`}
+            >
+              {errorRetryable ? (
+                <AlertCircle className="h-7 w-7 text-destructive" aria-hidden />
+              ) : (
+                <Info className="h-7 w-7 text-warning" aria-hidden />
+              )}
+            </div>
+
+            <p className="text-base font-semibold leading-snug text-foreground">{error}</p>
+
+            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+              {errorRetryable
+                ? "Your QR couldn't be generated."
+                : "No QR is available right now."}
+            </p>
+
+            {errorRetryable && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={refresh}
+                disabled={refreshing}
+                className="mt-4"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+                {refreshing ? "Retrying…" : "Try again"}
+              </Button>
+            )}
+          </div>
         </div>
       ) : scanned ? (
         <div className="flex flex-col items-center py-8 animate-in fade-in zoom-in duration-500">

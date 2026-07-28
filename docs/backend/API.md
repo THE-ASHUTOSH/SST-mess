@@ -89,9 +89,50 @@ Search/list users for role administration. **superAdmin only.** With `?search=<q
 }
 ```
 
+### `POST /api/admin/users`
+
+Create an account. **superAdmin only.** Body: `{ "email", "name", "role" }`.
+
+Since `getDbUser()` never auto-creates, this is the only way an admin/superAdmin/vendor account comes into existence.
+
+- `role` must be one of `admin`, `superAdmin`, `vendor` — **`student` is rejected** (`400`); students come from the roster.
+- `email` must be well-formed and on an allowed domain (`@sst.scaler.com` / `@scaler.com`) → otherwise `400`. Stored lowercased.
+- `name` is required, max 120 chars → otherwise `400`.
+- A duplicate email (matched case-insensitively) returns `409`.
+
+**Response** (`201`): `{ "success": true, "message": "User created successfully", "user": { … } }`
+
 ### `PATCH /api/admin/users?id=[id]`
 
-Change a user's role. **superAdmin only.** Body: `{ "role": "admin" | "student" | "vendor" | "superAdmin" }`. A superAdmin **cannot change their own role** (guards against self-lockout → `400`). Returns `400` for an invalid id/role and `404` if the user does not exist.
+Change a user's role. **superAdmin only.** Body: `{ "role": "admin" | "superAdmin" | "vendor" }`.
+
+`student` is **not assignable** — on create or on change (`400`). The roster owns students, so nobody can be promoted out of, or demoted into, that role here. A superAdmin **cannot change their own role** (guards against self-lockout → `400`). Returns `400` for an invalid id/role and `404` if the user does not exist.
+
+A user holds exactly one role, so moving a **vendor operator** off `vendor` while it is still linked to an active vendor returns `409` — unlink it under Manage Vendors first.
+
+### `DELETE /api/admin/users?id=[id]`
+
+Remove an account. **superAdmin only.** Refuses rather than cascading, so audit history is never destroyed:
+
+| Condition | Status |
+| --- | --- |
+| Removing yourself | `400` |
+| Target is a `student` (roster-owned) | `400` |
+| Linked to an active vendor | `409` (names the vendor) |
+| Has meals, feedback or vendor selections | `409` (names which) |
+| User not found | `404` |
+
+**Response:** `{ "success": true, "message": "Jane removed." }`
+
+### `GET /api/admin/vendor-users[?vendorId=[id]]`
+
+Vendor login accounts available to link to a vendor entity. **superAdmin only.** Returns accounts with role `vendor` that are not already claimed by another **active** vendor (soft-deleting a vendor releases its account). Pass `vendorId` when editing so that vendor's current account stays selectable. Capped at 200 rows.
+
+**Response:**
+
+```json
+{ "success": true, "users": [{ "id": "user-id", "name": "Vendor A", "email": "vendor-a@scaler.com" }] }
+```
 
 **Response:**
 
@@ -266,7 +307,7 @@ To add a new vendor. It takes vendor details: name, login email, description, pr
 **Request Body (form-data):**
 
 - `name` (string, required): Vendor's name.
-- `email` (string, optional): The vendor's login email (stored lowercased). Must be unique among active vendors; a duplicate returns `400`.
+- `email` (string, optional): The vendor's login email (stored lowercased). Must belong to an **existing account with role `vendor`** that no other active vendor has claimed — see `GET /api/admin/vendor-users` for the selectable set. A missing account, a non-vendor role, or an already-claimed account each return `400`. This endpoint never creates or promotes a `users` row. On `PUT`, an **unchanged** email skips this check so a legacy vendor stays editable.
 - `description` (string): Vendor's description.
 - `price` (number, required): Price.
 - `mealsOptions` (JSON string): e.g., `{"breakfast": true, "lunch": true, "dinner": false}`

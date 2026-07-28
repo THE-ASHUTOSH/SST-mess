@@ -5,8 +5,8 @@ import axiosInstance from '@/lib/axiosInstance';
 import { isAxiosError } from 'axios';
 import { Html5Qrcode } from 'html5-qrcode';
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import { Store } from "lucide-react";
+import ScanResultCard from "@/components/common/ScanResultCard";
 
 interface VerifiedUser {
   id: string;
@@ -124,7 +124,7 @@ const VerifyStudentQRPage = () => {
       // The server pins the scan to THIS vendor account (from the session), so we don't send a
       // vendorId — a client-supplied one would be ignored for vendor accounts anyway.
       const response = await axiosInstance.post(`/api/meal/verify-qr`, { token });
-      setMessage(`Meal verified for ${response.data.user.name}.`);
+      setMessage(response.data.message || 'Meal verified.');
       setVerifiedUser(response.data.user);
       setError('');
     } catch (err: unknown) {
@@ -164,55 +164,50 @@ const VerifyStudentQRPage = () => {
             </div>
           </div>
         ) : (
-          <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-center">
-            {error ? (
-              <p className="text-sm font-medium text-foreground">{error}</p>
-            ) : (
-              <>
-                <p className="text-sm font-medium text-foreground">No vendor is linked to your account.</p>
-                <p className="text-xs text-muted-foreground">Ask an admin to set your vendor&apos;s login email.</p>
-              </>
+          // Setup state, not a scan result: theme tokens so it tracks light/dark.
+          <div className="rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-center">
+            <p className="text-sm font-medium text-foreground">
+              {error || 'No vendor is linked to your account.'}
+            </p>
+            {!error && (
+              <p className="text-xs text-muted-foreground">
+                Ask an admin to set your vendor&apos;s login email.
+              </p>
             )}
           </div>
         )}
       </div>
 
+      {/* Camera / permission failures happen outside a scan, so without their own surface they
+          would be set and never shown. */}
+      {myVendor && error && !isProcessing && (
+        <div className="mb-8 w-full max-w-sm">
+          <ScanResultCard
+            variant="error"
+            message={error}
+            onAction={() => setError('')}
+            actionLabel="Dismiss"
+          />
+        </div>
+      )}
+
       {myVendor && (
         <div className="w-full max-w-sm relative" style={{ minHeight: '300px' }}>
           <div id={scannerContainerId} style={{ display: isProcessing ? 'none' : 'block' }} className="rounded-lg overflow-hidden border-2 border-primary/20 bg-black"></div>
           {isProcessing && (
-            <div className="flex flex-col items-center justify-center h-full mt-4 animate-in fade-in zoom-in duration-300">
-              {verifiedUser ? (
-                <div className="text-center space-y-4">
-                  <div className="relative inline-block">
-                    <img src={verifiedUser.picture} alt={verifiedUser.name} className="w-32 h-32 mx-auto rounded-full border-4 border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.5)]" referrerPolicy='no-referrer' />
-                    <div className="absolute bottom-0 right-0 bg-green-500 rounded-full p-2 border-4 border-background">
-                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="text-2xl font-bold">{verifiedUser.name}</h3>
-                    <p className="text-green-500 text-lg font-medium">{message}</p>
-                  </div>
-                  <Button onClick={resetScanner} size="lg" className="w-full">Scan Again</Button>
-                </div>
+            <div className="flex flex-col items-center justify-center h-full mt-4">
+              {message || error ? (
+                <ScanResultCard
+                  variant={error ? 'error' : 'success'}
+                  message={error || message}
+                  user={verifiedUser}
+                  onAction={resetScanner}
+                />
               ) : (
-                <div className="flex flex-col items-center space-y-4">
-                  {message && <p className="text-green-500 text-xl text-center font-medium">{message}</p>}
-                  {error && (
-                    <div className="text-red-500 text-center space-y-2">
-                      <svg className="w-12 h-12 mx-auto text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                      <p className="text-xl font-medium">{error}</p>
-                    </div>
-                  )}
-                  {!message && !error && (
-                    <div className="flex flex-col items-center gap-4">
-                      <Skeleton className="h-32 w-32 rounded-full" />
-                      <p className="text-xl font-semibold animate-pulse ">Please wait...</p>
-                      <p className="text-sm ">Verifying details</p>
-                    </div>
-                  )}
-                  {(message || error) && <Button onClick={resetScanner} size="lg" className="w-full">Scan Again</Button>}
+                <div className="flex flex-col items-center gap-4 animate-in fade-in duration-300">
+                  <Skeleton className="h-24 w-24 rounded-full" />
+                  <p className="text-lg font-semibold animate-pulse">Please wait…</p>
+                  <p className="text-sm text-muted-foreground">Verifying details</p>
                 </div>
               )}
             </div>

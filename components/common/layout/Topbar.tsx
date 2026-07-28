@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Menu, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { SignOutButton } from "@clerk/nextjs";
+import { SignOutButton, useAuth, useUser as useClerkUser } from "@clerk/nextjs";
 import { useUser } from "@/context/UserContext";
 import {
   DropdownMenu,
@@ -22,7 +22,8 @@ import { cn } from "@/lib/utils";
 interface TopbarProps {
   homeHref: string;
   roleLabel?: string;
-  onToggleSidebar: () => void;
+  /** Omit on shells with no sidebar (e.g. the no-access screen) — the menu button is hidden. */
+  onToggleSidebar?: () => void;
 }
 
 export default function Topbar({
@@ -33,10 +34,19 @@ export default function Topbar({
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const { user, setUser } = useUser();
+  const { isSignedIn } = useAuth();
+  const { user: clerkUser } = useClerkUser();
   const router = useRouter();
 
   useEffect(() => setMounted(true), []);
   const isDark = mounted && resolvedTheme === "dark";
+
+  // An unregistered user has a Clerk session but no app account, and still needs a way out —
+  // so the account menu keys off the session, falling back to Clerk's profile for display.
+  const showAccountMenu = !!user || !!isSignedIn;
+  const displayName = user?.name || clerkUser?.fullName || "Account";
+  const displayEmail = user?.email || clerkUser?.primaryEmailAddress?.emailAddress || "";
+  const displayPicture = user?.picture || clerkUser?.imageUrl || "/avatar_placeholder.png";
 
   return (
     <header
@@ -45,13 +55,17 @@ export default function Topbar({
       )}
     >
       <div className="h-16 pl-0 pr-3 md:pr-4 flex items-center gap-2 md:gap-3">
-        <button
-          className="w-[5.5rem] h-full flex items-center justify-center hover:bg-[color:var(--surface-hover)] transition-colors"
-          onClick={onToggleSidebar}
-          aria-label="Toggle menu"
-        >
-          <Menu className="h-6 w-6 text-muted-foreground" />
-        </button>
+        {onToggleSidebar ? (
+          <button
+            className="w-[5.5rem] h-full flex items-center justify-center hover:bg-[color:var(--surface-hover)] transition-colors"
+            onClick={onToggleSidebar}
+            aria-label="Toggle menu"
+          >
+            <Menu className="h-6 w-6 text-muted-foreground" />
+          </button>
+        ) : (
+          <div className="w-4 md:w-6" />
+        )}
 
         <Link href={homeHref} className="shrink-0 cursor-pointer">
           <span className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
@@ -80,7 +94,7 @@ export default function Topbar({
             )}
           </button>
 
-          {!user ? (
+          {!showAccountMenu ? (
             <Button asChild size="sm">
               <Link href="/login">Login</Link>
             </Button>
@@ -92,12 +106,9 @@ export default function Topbar({
                   className="relative h-9 w-9 rounded-full ring-2 ring-primary/20 hover:ring-primary/40 transition-all p-0"
                 >
                   <Avatar className="h-9 w-9">
-                    <AvatarImage
-                      src={user.picture || "/avatar_placeholder.png"}
-                      alt={user.name}
-                    />
+                    <AvatarImage src={displayPicture} alt={displayName} />
                     <AvatarFallback className="bg-primary/10 text-primary">
-                      {user.name?.charAt(0)}
+                      {displayName.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -106,18 +117,23 @@ export default function Topbar({
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">
-                      {user.name}
+                      {displayName}
                     </p>
                     <p className="text-xs leading-none text-muted-foreground">
-                      {user.email}
+                      {displayEmail}
                     </p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push(homeHref)}>
-                  Dashboard
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                {/* No app account means no dashboard to go to — logout is the only action. */}
+                {user && (
+                  <>
+                    <DropdownMenuItem onClick={() => router.push(homeHref)}>
+                      Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <SignOutButton redirectUrl="/login">
                   <DropdownMenuItem
                     onClick={() => setUser(null)}

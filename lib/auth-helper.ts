@@ -1,7 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "./db";
 import { users } from "./db/schema";
-import { eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
 // Define the User interface based on the SQL schema
 export interface IUser {
@@ -14,6 +14,15 @@ export interface IUser {
     batch?: string | null;
 }
 
+/**
+ * Resolves the caller's app account from their Clerk session.
+ *
+ * A row in `users` IS the authorization to use this app. Accounts are never created here — an
+ * unknown email gets `null`, and the caller is treated as unauthorized. New accounts come only
+ * from the superAdmin user panel (admin/superAdmin/vendor) or the student roster upload.
+ *
+ * Returns null when there is no Clerk session, no email on it, or no matching row.
+ */
 export async function getDbUser(): Promise<IUser | null> {
     const clerkUser = await currentUser();
 
@@ -27,29 +36,15 @@ export async function getDbUser(): Promise<IUser | null> {
         return null;
     }
 
-    const domain = email.split('@')[1];
-    const allowedDomains = ["sst.scaler.com", "scaler.com"];
+    // Case-insensitive match: Clerk echoes whatever casing the user typed, while stored emails
+    // are lowercased on write. Without this a mixed-case login silently misses its own row.
+    const [user] = await db
+        .select()
+        .from(users)
+        .where(sql`lower(${users.email}) = ${email.toLowerCase()}`)
+        .limit(1);
 
-    const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
-
-    // If user doesn't exist in DB, create new one
-    if (!user) {
-        if (!allowedDomains.includes(domain)) {
-            return null; // Don't create user for unauthorized domain
-        }
-
-        const [newUser] = await db.insert(users).values({
-            email,
-            name: `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || 'User',
-            picture: clerkUser.imageUrl,
-            role: 'student',
-        }).returning();
-
-        // Cast or map to IUser. Drizzle type should match mostly, but null vs undefined handling might be needed
-        return newUser as unknown as IUser;
-    }
-
-    return user as unknown as IUser;
+    return (user as unknown as IUser) ?? null;
 }
 
 export async function requireRole(allowedRoles: string[]) {

@@ -25,6 +25,8 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -62,6 +64,10 @@
   --accent: oklch(95.8% 0.011 260);
   --accent-foreground: oklch(27% 0.03 264);
   --destructive: oklch(62% 0.23 27);
+  /* Semantic outcome colours, matched in lightness to --destructive so a row of
+     success/warning/error states reads as one family. Dark values below. */
+  --success: oklch(58% 0.15 152);
+  --warning: oklch(64% 0.16 70);
   --border: oklch(90.5% 0.013 262);
   --input: oklch(90.5% 0.013 262);
   --ring: oklch(56% 0.2 265);
@@ -134,6 +140,9 @@
   --accent: rgba(19, 24, 42, 0.9);
   --accent-foreground: #f4f6ff;
   --destructive: #f26767;
+  /* Lifted for contrast against the dark canvas, mirroring --destructive's treatment. */
+  --success: oklch(72% 0.16 158);
+  --warning: oklch(78% 0.16 76);
   --border: rgba(126, 146, 222, 0.22);
   --input: rgba(126, 146, 222, 0.3);
   --ring: rgba(75, 124, 255, 0.6);

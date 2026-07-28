@@ -5,14 +5,15 @@ import { useUser } from "@/context/UserContext";
 import { useRouter } from "next/navigation";
 
 const Protected: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { user, loading } = useUser();
+    const { user, loading, notRegistered } = useUser();
     const router = useRouter();
 
     useEffect(() => {
         if (!loading && (!user || user.role !== "vendor")) {
-            router.replace('/login');
+            // Unregistered accounts get the explanation screen, not another login attempt.
+            router.replace(notRegistered ? '/noAccess' : '/login');
         }
-    }, [loading, user, router]);
+    }, [loading, user, notRegistered, router]);
 
     if (loading) {
         return (

@@ -73,10 +73,23 @@ this on production.
 | `student` | Dashboard + meal QR, vendors/menu, feedback, meal history |
 
 > **Your dev account is superAdmin only** — it is deliberately **not** a vendor. The demo vendors have
-> their own login emails (`demo-vendor-a@…`, `demo-vendor-b@…`). To preview the **vendor** portal end-to-end,
-> first (as superAdmin) open **Manage Vendors** and set a demo vendor's login email to *your* email, then
-> switch your role to `vendor`. Without a vendor mapped to your email, the vendor portal shows
-> "no vendor linked to your account."
+> their own login emails (`demo-vendor-a@…`, `demo-vendor-b@…`), already seeded as `vendor` accounts
+> and linked.
+>
+> Previewing the **vendor** portal now takes one deliberate step, because Manage Vendors only offers
+> accounts that already have role `vendor`, and the API blocks changing your *own* role (self-lockout
+> guard). Either:
+>
+> 1. **Use a second Google account** on an allowed domain — add it under **Admin Controls → User
+>    Management** as `vendor`, then pick it in **Manage Vendors**; or
+> 2. **Flip your own role in the DB** (SQL or a one-off script — not via the API), then link your
+>    email to a demo vendor.
+>
+> Without a vendor mapped to your email, the vendor portal shows "no vendor linked to your account."
+
+> **Signing in no longer creates an account.** A `users` row *is* the authorization, so an email that
+> isn't seeded lands on `/noAccess`. If you sign in with an address the seed doesn't know, add it via
+> User Management from a superAdmin session (or re-seed with that email as `DEV_EMAIL`).
 
 ## Reset
 

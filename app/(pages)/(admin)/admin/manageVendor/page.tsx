@@ -46,8 +46,27 @@ interface VendorFormValues {
   price: string
 }
 
+// A login account that may be linked to a vendor: role 'vendor', not claimed by another vendor.
+interface VendorAccount {
+  id: string
+  name: string
+  email: string
+}
+
 const emptyForm: VendorFormValues = { name: '', email: '', description: '', price: '' }
 const defaultMeals: MealsOptions = { breakfast: true, lunch: true, dinner: true }
+
+// Radix forbids an empty SelectItem value, so "unlinked" needs a sentinel.
+const NO_ACCOUNT = '__none__'
+
+// Prefer the API's message (missing account, wrong role, already linked) over a generic one.
+function requestErrorMessage(err: unknown, fallback: string): string {
+  const msg =
+    typeof err === 'object' && err !== null && 'response' in err
+      ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+      : undefined
+  return msg || fallback
+}
 
 // Build the multipart body shared by the create + update requests. The menu (URL + CSV) is
 // managed separately on the Update Menu page, so it is intentionally not part of this form.
@@ -65,13 +84,15 @@ interface VendorFieldsProps {
   idPrefix: string
   values: VendorFormValues
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
+  accounts: VendorAccount[]
+  onEmailChange: (email: string) => void
   meals: MealsOptions
   onToggleMeal: (key: keyof MealsOptions) => void
   disabled?: boolean
 }
 
 // The vendor detail fields, shared by both the Add and Manage tabs.
-const VendorFields = ({ idPrefix, values, onChange, meals, onToggleMeal, disabled = false }: VendorFieldsProps) => (
+const VendorFields = ({ idPrefix, values, onChange, accounts, onEmailChange, meals, onToggleMeal, disabled = false }: VendorFieldsProps) => (
   <>
     <div className="space-y-2">
       <Label htmlFor={`${idPrefix}-name`}>Vendor Name</Label>
@@ -88,18 +109,34 @@ const VendorFields = ({ idPrefix, values, onChange, meals, onToggleMeal, disable
     </div>
 
     <div className="space-y-2">
-      <Label htmlFor={`${idPrefix}-email`}>Vendor Login Email</Label>
-      <Input
-        type="email"
-        id={`${idPrefix}-email`}
-        name="email"
-        value={values.email}
-        onChange={onChange}
-        placeholder="vendor@scaler.com"
+      <Label htmlFor={`${idPrefix}-email`}>Vendor Login Account</Label>
+      <Select
+        value={values.email || NO_ACCOUNT}
+        onValueChange={value => onEmailChange(value === NO_ACCOUNT ? '' : value)}
         disabled={disabled}
-      />
+      >
+        <SelectTrigger id={`${idPrefix}-email`}>
+          <SelectValue placeholder="No account linked" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={NO_ACCOUNT}>No account linked</SelectItem>
+          {/* A link whose account was since removed or demoted still has to render, or saving
+              the form would silently drop it. */}
+          {values.email && !accounts.some(a => a.email === values.email) && (
+            <SelectItem value={values.email}>{values.email} (unavailable)</SelectItem>
+          )}
+          {accounts.map(account => (
+            <SelectItem key={account.id} value={account.email}>
+              {account.name} — {account.email}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <p className="text-xs text-muted-foreground">
         The account this vendor signs in with — scopes their scanner &amp; stats to this vendor.
+        {accounts.length === 0
+          ? ' No unlinked vendor accounts exist yet — create one under Admin Controls → User Management.'
+          : ' Only accounts with the vendor role that aren’t already linked elsewhere are listed.'}
       </p>
     </div>
 
@@ -162,6 +199,11 @@ const ManageVendor = () => {
   const [addForm, setAddForm] = useState<VendorFormValues>(emptyForm)
   const [addMeals, setAddMeals] = useState<MealsOptions>(defaultMeals)
   const [isAdding, setIsAdding] = useState(false)
+  const [addAccounts, setAddAccounts] = useState<VendorAccount[]>([])
+
+  // Manage tab needs its own list: it additionally includes the account this vendor already
+  // holds, which the Add list deliberately excludes as "taken".
+  const [editAccounts, setEditAccounts] = useState<VendorAccount[]>([])
 
   // Manage tab state
   const [selectedVendorId, setSelectedVendorId] = useState<string>("")
@@ -183,9 +225,24 @@ const ManageVendor = () => {
     }
   }, [])
 
+  // Selectable vendor login accounts. Pass a vendorId when editing so that vendor's own
+  // current account stays in the list instead of reading as claimed.
+  const loadAccounts = useCallback(async (vendorId?: string): Promise<VendorAccount[]> => {
+    try {
+      const response = await axiosInstance.get(`/api/admin/vendor-users`, {
+        params: vendorId ? { vendorId } : undefined,
+      })
+      return Array.isArray(response.data.users) ? response.data.users : []
+    } catch {
+      toast.error("Failed to load vendor accounts.")
+      return []
+    }
+  }, [])
+
   useEffect(() => {
     loadVendors()
-  }, [loadVendors])
+    loadAccounts().then(setAddAccounts)
+  }, [loadVendors, loadAccounts])
 
   // Prefill the edit form when the admin picks a vendor. Driven by the selection event only
   // (NOT by a `vendors` refetch), so a background list refresh never clobbers in-progress edits.
@@ -193,6 +250,7 @@ const ManageVendor = () => {
     setSelectedVendorId(id)
     const vendor = vendors.find(v => v.id === id)
     if (!vendor) return
+    loadAccounts(id).then(setEditAccounts)
     setEditForm({
       name: vendor.name,
       email: vendor.email ?? '',
@@ -222,12 +280,14 @@ const ManageVendor = () => {
     try {
       await axiosInstance.post(`/api/vendor/manageVendor`, buildRequestBody(addForm, addMeals))
       toast.success("Vendor added successfully!")
-      // Reset the Add form and refresh the list so it shows up under Manage.
+      // Reset the Add form and refresh the list so it shows up under Manage. The account just
+      // used is now claimed, so the options have to be refetched too.
       setAddForm(emptyForm)
       setAddMeals(defaultMeals)
       await loadVendors()
-    } catch {
-      toast.error("Failed to add vendor. Please try again.")
+      setAddAccounts(await loadAccounts())
+    } catch (err) {
+      toast.error(requestErrorMessage(err, "Failed to add vendor. Please try again."))
     } finally {
       setIsAdding(false)
     }
@@ -244,8 +304,9 @@ const ManageVendor = () => {
       await axiosInstance.put(`/api/vendor/manageVendor?id=${selectedVendorId}`, buildRequestBody(editForm, editMeals))
       toast.success("Vendor updated successfully!", { description: "Changes have been saved." })
       await loadVendors()
-    } catch {
-      toast.error("Failed to update vendor. Please try again.")
+      setAddAccounts(await loadAccounts())
+    } catch (err) {
+      toast.error(requestErrorMessage(err, "Failed to update vendor. Please try again."))
     } finally {
       setIsUpdating(false)
     }
@@ -261,9 +322,12 @@ const ManageVendor = () => {
       setSelectedVendorId("")
       setEditForm(emptyForm)
       setEditMeals(defaultMeals)
+      setEditAccounts([])
       await loadVendors()
-    } catch {
-      toast.error("Failed to delete vendor. Please try again.")
+      // Soft-deleting a vendor releases its account back into the pool.
+      setAddAccounts(await loadAccounts())
+    } catch (err) {
+      toast.error(requestErrorMessage(err, "Failed to delete vendor. Please try again."))
     } finally {
       setIsDeleting(false)
     }
@@ -305,6 +369,8 @@ const ManageVendor = () => {
                 idPrefix="add"
                 values={addForm}
                 onChange={handleAddChange}
+                accounts={addAccounts}
+                onEmailChange={(email) => setAddForm(prev => ({ ...prev, email }))}
                 meals={addMeals}
                 onToggleMeal={(key) => setAddMeals(prev => ({ ...prev, [key]: !prev[key] }))}
                 disabled={isAdding}
@@ -342,6 +408,8 @@ const ManageVendor = () => {
                     idPrefix="edit"
                     values={editForm}
                     onChange={handleEditChange}
+                    accounts={editAccounts}
+                    onEmailChange={(email) => setEditForm(prev => ({ ...prev, email }))}
                     meals={editMeals}
                     onToggleMeal={(key) => setEditMeals(prev => ({ ...prev, [key]: !prev[key] }))}
                     disabled={isUpdating || isDeleting}

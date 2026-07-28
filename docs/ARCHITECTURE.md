@@ -15,7 +15,7 @@ vendors, menus, monthly opt-ins, analytics, and system controls.
 |---|---|
 | Framework | Next.js 15 (App Router, Turbopack) · React 19 |
 | Styling / UI | Tailwind CSS v4 · shadcn-style Radix primitives (`components/ui`) |
-| Auth | Clerk (Google SSO), domain-whitelisted to `sst.scaler.com` / `scaler.com` |
+| Auth | Clerk (Google SSO), domain-restricted to `sst.scaler.com` / `scaler.com`, then roster-gated on a `users` row |
 | DB / ORM | Neon (serverless Postgres) · Drizzle ORM (`drizzle-orm/neon-http`) |
 | Runtime | Node 20 · pnpm · deployed on Vercel |
 
@@ -44,11 +44,17 @@ docs/          → this documentation
 
 1. User signs in with Google via Clerk. `middleware.ts` runs `auth.protect()` on every `/api/*`
    route, so unauthenticated API calls never reach a handler.
-2. `lib/auth-helper.ts:getDbUser()` resolves the Clerk session → a `users` row (creating a
-   `student` row on first login **only** for whitelisted domains). The user's role comes from the DB,
-   never from client input.
-3. **APIs** gate with `requireRole([...])`; **pages** gate client-side with `Protected` (shell) and
+2. `lib/auth-helper.ts:getDbUser()` resolves the Clerk session → a `users` row, matching on
+   `lower(users.email)`. It **never creates anything**: an existing row *is* the authorization to
+   use the app. The user's role comes from the DB, never from client input.
+3. An authenticated user with no row gets `403 { code: "not_registered" }` from `/api/user/me`;
+   the client routes them to **`/noAccess`** (explanation + logout), never into a dashboard.
+4. **APIs** gate with `requireRole([...])`; **pages** gate client-side with `Protected` (shell) and
    `RequireRole` (per-page). See [frontend/FRONTEND.md](./frontend/FRONTEND.md#guards).
+
+**Account creation** is roster-based, never self-service:
+- admin / superAdmin / vendor → `POST /api/admin/users` (superAdmin only, domain-restricted).
+- students → loaded into `users` out of band; the panel deliberately cannot create or remove them.
 
 ## Core data flow (a meal)
 
@@ -74,10 +80,17 @@ Key domain tables: `users`, `vendors`, `menus`, `vendorSelections`, `meals`, `ve
 
 ## Vendor accounts
 
-A `vendors` row carries a superAdmin-managed **login email**. Saving that email in Manage Vendors
-creates/promotes the matching `users` row to `vendor`. On login, that account is **scoped to its own
-vendor** — the scanner and stats resolve the vendor server-side from the session email and ignore any
-client-supplied `vendorId`, so one vendor can never act on another's students or stats.
+A `vendors` row carries a superAdmin-managed **login email**, which must belong to an account that
+already exists with role `vendor`. Manage Vendors offers a picker (`GET /api/admin/vendor-users`) of
+vendor accounts not yet claimed by another active vendor — it never creates or promotes a `users`
+row. Create the account first under Admin Controls → User Management.
+
+On login, that account is **scoped to its own vendor** — the scanner and stats resolve the vendor
+server-side from the session email and ignore any client-supplied `vendorId`, so one vendor can never
+act on another's students or stats.
+
+The link is by email, not a foreign key, so the API guards both ends: a vendor-linked account
+cannot be role-changed or removed until it is unlinked.
 
 ## Caching
 

@@ -96,30 +96,41 @@ function mapError(error: unknown, action: string) {
 }
 
 /**
- * When a vendor's login email is set, ensure a matching user exists AND is a vendor — this is the
- * ONLY way a vendor account is created now (the User Management role dropdown no longer offers it).
- *  - existing student (or roleless) user with that email → promote to 'vendor'
- *  - no such user → create one as 'vendor', so they're ready at first login
- *  - existing admin/superAdmin → left untouched (never silently demote a privileged account)
- * `email` is already lowercased by parseVendorForm. Best-effort: logs but never fails the vendor save.
+ * A vendor entity is bound to a login account that ALREADY exists with role 'vendor'.
+ *
+ * This endpoint deliberately creates and promotes nobody: accounts come only from the superAdmin
+ * user panel, so the vendor form can never conjure a `users` row as a side effect. Rejects when
+ * the account is missing, is not a vendor, or is already claimed by another active vendor.
+ *
+ * `email` is already lowercased by parseVendorForm. Pass `currentVendorId` when editing so the
+ * vendor's own existing link doesn't read as a conflict.
  */
-async function linkVendorUser(email: string | null, name: string): Promise<void> {
+async function assertLinkableVendorAccount(email: string | null, currentVendorId?: string): Promise<void> {
     if (!email) return;
-    try {
-        const [existing] = await db
-            .select({ id: users.id, role: users.role })
-            .from(users)
-            .where(sql`lower(${users.email}) = ${email}`)
-            .limit(1);
 
-        if (existing) {
-            if (existing.role === 'admin' || existing.role === 'superAdmin' || existing.role === 'vendor') return;
-            await db.update(users).set({ role: 'vendor' }).where(eq(users.id, existing.id));
-        } else {
-            await db.insert(users).values({ email, name, role: 'vendor' });
-        }
-    } catch (err) {
-        console.error('Failed to link vendor user for', email, err);
+    // One HTTP round trip for both lookups (neon-http has no db.transaction).
+    const [accountRows, claimRows] = await db.batch([
+        db.select({ id: users.id, role: users.role }).from(users)
+            .where(sql`lower(${users.email}) = ${email}`).limit(1),
+        db.select({ id: vendors.id, name: vendors.name }).from(vendors)
+            .where(and(sql`lower(${vendors.email}) = ${email}`, isNull(vendors.deletedAt))).limit(1),
+    ]);
+
+    const account = accountRows[0];
+    if (!account) {
+        throw new VendorFormError(
+            'No account exists for that email. Add it under Admin Controls → User Management first.',
+        );
+    }
+    if (account.role !== 'vendor') {
+        throw new VendorFormError(
+            `That account has the role "${account.role}". Change it to vendor under User Management first.`,
+        );
+    }
+
+    const claim = claimRows[0];
+    if (claim && claim.id !== currentVendorId) {
+        throw new VendorFormError(`That account is already linked to vendor "${claim.name}".`);
     }
 }
 
@@ -130,6 +141,7 @@ export async function POST(req: NextRequest) {
         console.log('Vendor addition triggered by user:', user.email);
 
         const form = await parseVendorForm(req);
+        await assertLinkableVendorAccount(form.email);
 
         const [newVendor] = await db.insert(vendors).values({
             name: form.name,
@@ -140,9 +152,6 @@ export async function POST(req: NextRequest) {
             lunch: form.mealsOptions?.lunch ?? true,
             dinner: form.mealsOptions?.dinner ?? true,
         }).returning();
-
-        // Link/create the vendor's login account (grants the 'vendor' role).
-        await linkVendorUser(form.email, form.name);
 
         revalidateTag('vendors');
         return NextResponse.json({ success: true, message: 'Vendor added successfully', vendor: newVendor }, { status: 201 });
@@ -171,6 +180,14 @@ export async function PUT(req: NextRequest) {
             return NextResponse.json({ success: false, message: 'Vendor not found' }, { status: 404 });
         }
 
+        // Only re-validate when the link actually changes. Leaving an existing link untouched
+        // must keep working even if that account was since removed or demoted — otherwise a
+        // legacy vendor becomes uneditable and you couldn't even fix its name or price.
+        const emailChanged = (form.email ?? '') !== (vendor.email?.toLowerCase() ?? '');
+        if (emailChanged) {
+            await assertLinkableVendorAccount(form.email, vendorId);
+        }
+
         const updateData: Partial<(typeof vendors)['$inferInsert']> = {
             name: form.name,
             email: form.email,
@@ -185,9 +202,6 @@ export async function PUT(req: NextRequest) {
         }
 
         const [updatedVendor] = await db.update(vendors).set(updateData).where(eq(vendors.id, vendorId)).returning();
-
-        // Keep the vendor's login account in sync (promote/create on the current email).
-        await linkVendorUser(form.email, form.name);
 
         revalidateTag('vendors');
         return NextResponse.json({ success: true, message: 'Vendor updated successfully', vendor: updatedVendor });

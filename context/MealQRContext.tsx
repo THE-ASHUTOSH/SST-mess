@@ -17,6 +17,14 @@ const QR_TTL_SECONDS = 30;
 interface MealQRContextValue {
   token: string;
   error: string;
+  /**
+   * Whether retrying could actually produce a QR.
+   *
+   * A 403 is the server stating a rule — outside meal hours, not opted in, already collected.
+   * No amount of retrying changes it, so the panel offers no retry. Anything else is a fault
+   * (network, 500) worth another attempt. Taken from the status code, never the message text.
+   */
+  errorRetryable: boolean;
   loading: boolean;
   refreshing: boolean;
   scanned: boolean;
@@ -30,6 +38,7 @@ const MealQRContext = createContext<MealQRContextValue | null>(null);
 export function MealQRProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState("");
   const [error, setError] = useState("");
+  const [errorRetryable, setErrorRetryable] = useState(false);
   // initialLoading is true only on the very first fetch of the session, so
   // navigating away and back doesn't re-show the skeleton.
   const [loading, setLoading] = useState(true);
@@ -41,6 +50,7 @@ export function MealQRProvider({ children }: { children: ReactNode }) {
   const fetchQrCode = useCallback(async () => {
     try {
       setError("");
+      setErrorRetryable(false);
       const response = await axiosInstance.get(`/api/meal/generate-qr`);
       setToken(response.data.token);
       setSecondsLeft(QR_TTL_SECONDS);
@@ -49,8 +59,10 @@ export function MealQRProvider({ children }: { children: ReactNode }) {
       setToken("");
       if (isAxiosError(err) && err.response?.status === 403) {
         setError(err.response.data?.message ?? "Cannot generate QR right now.");
+        setErrorRetryable(false);
       } else {
         setError("Error generating QR code. Please try again later.");
+        setErrorRetryable(true);
       }
     } finally {
       setLoading(false);
@@ -109,6 +121,7 @@ export function MealQRProvider({ children }: { children: ReactNode }) {
       value={{
         token,
         error,
+        errorRetryable,
         loading,
         refreshing,
         scanned,

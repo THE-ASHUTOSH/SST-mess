@@ -14,8 +14,10 @@ migrations with `pnpm drizzle-kit generate` after editing the schema.
 ### `users`
 The identity for every human (and vendor account). `id` uuid PK · `email` text **unique, not null** ·
 `name` not null · `role` (default `student`) · `roll` · `picture` · `batch` · `createdAt`.
-> Created on first Clerk login for whitelisted domains; a vendor account is created/promoted when its
-> login email is saved in Manage Vendors. Emails are effectively lowercase (Google SSO).
+> **Never created on login.** A row here *is* the authorization to use the app, so sign-in only ever
+> reads it (`lower(users.email)`). admin/superAdmin/vendor rows come from `POST /api/admin/users`
+> (superAdmin only, allowed domains only); students are loaded out of band. Every user has exactly
+> one `role`. Emails are stored lowercased.
 
 ### `vendors`
 A mess vendor. `id` uuid PK · `name` not null · **`email`** (nullable, login mapping — superAdmin-only) ·

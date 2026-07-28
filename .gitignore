@@ -49,5 +49,6 @@ scripts/*
 !scripts/seed.ts
 !scripts/set-role.ts
 !scripts/seed-bulk-users.ts
+!scripts/baseline-migrations.mjs
 !scripts/README.md
 reports

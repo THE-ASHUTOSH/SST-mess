@@ -91,6 +91,24 @@ this on production.
 > isn't seeded lands on `/noAccess`. If you sign in with an address the seed doesn't know, add it via
 > User Management from a superAdmin session (or re-seed with that email as `DEV_EMAIL`).
 
+## Migrations
+
+Changing the database is always these four steps:
+
+```bash
+# 1. edit lib/db/schema.ts
+pnpm drizzle-kit generate --name <desc>   # 2. writes drizzle/NNNN_<desc>.sql + a snapshot
+#    3. review the generated SQL, then commit it
+pnpm drizzle-kit migrate                  # 4. apply it
+```
+
+`pnpm drizzle-kit migrate` is the only way to apply a schema change. It runs the reviewed SQL files
+in `drizzle/` in order and records each one, so every environment converges on the same schema and a
+second run is a no-op.
+
+Never hand-edit a migration that has already been applied — history is append-only. Correct a
+mistake with a new migration.
+
 ## Reset
 
 Re-run the seed any time to get back to a clean state (`npx tsx scripts/seed.ts --yes`). To wipe your

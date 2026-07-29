@@ -14,6 +14,9 @@
  *   npx tsx scripts/import-students.ts "C:/path/to/students_batch_2024.csv" --yes    # commit
  *
  * Options:
+ *   --analyse             fetch EVERY existing user and report what an import would do, including the
+ *                         differences this script will not fix (names, roles, batches, missing rolls).
+ *                         Read-only — it overrides --yes and never writes.
  *   --yes                 actually write. Without it the script is a full dry run (reads only).
  *   --role <role>         role for every imported row (default: student)
  *   --batch "<label>"     batch to use when a row's batch cell is blank / the column is missing
@@ -39,7 +42,7 @@ config({ path: path.resolve(process.cwd(), '.env.local') });
 
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { inArray, sql } from 'drizzle-orm';
+import { asc, inArray, sql } from 'drizzle-orm';
 import * as xlsx from 'xlsx';
 import * as schema from '../lib/db/schema';
 import { ALLOWED_EMAIL_DOMAINS_LABEL, isAllowedEmailDomain } from '../lib/email-domains';
@@ -47,6 +50,7 @@ import { ALLOWED_EMAIL_DOMAINS_LABEL, isAllowedEmailDomain } from '../lib/email-
 // --- bounds -------------------------------------------------------------------------------------
 const INSERT_CHUNK = 500;   // rows per INSERT — 500 x 5 cols = 2.5k bind params, far under PG's ~65k
 const LOOKUP_CHUNK = 1_000; // emails per existence probe — keeps each IN (...) list bounded
+const SCAN_PAGE = 5_000;    // rows per page when --analyse walks the whole users table
 const MAX_ROWS = 50_000;    // refuse absurd files rather than OOM (a real roster is hundreds–thousands)
 const MAX_EMAIL_LENGTH = 254;
 const WARN_NAME_LENGTH = 120; // matches MAX_NAME_LENGTH in app/api/admin/users/route.ts
@@ -206,7 +210,142 @@ function parseArgs(argv: string[]) {
         deriveRoll: !flag('no-roll'),
         tidy: flag('tidy-names'),
         rejectsPath: value('rejects') ?? null,
+        analyse: flag('analyse') || flag('analyze'),
     };
+}
+
+interface DbUser {
+    email: string;
+    name: string;
+    role: Role | null;
+    batch: string | null;
+    roll: string | null;
+}
+
+/** Build the client. Wrapped so `Db` below infers the schema-aware type rather than the default. */
+function makeDb(connectionString: string) {
+    return drizzle(neon(connectionString), { schema });
+}
+type Db = ReturnType<typeof makeDb>;
+
+/**
+ * Walk the ENTIRE users table in pages. Used only by --analyse, which needs full DB state to say
+ * what is already there and how it differs — the normal path uses bounded IN (...) probes instead.
+ * Ordered by email so paging is stable.
+ */
+async function fetchAllUsers(db: Db): Promise<DbUser[]> {
+    const all: DbUser[] = [];
+    for (let offset = 0; ; offset += SCAN_PAGE) {
+        const page = await db
+            .select({
+                email: schema.users.email,
+                name: schema.users.name,
+                role: schema.users.role,
+                batch: schema.users.batch,
+                roll: schema.users.roll,
+            })
+            .from(schema.users)
+            .orderBy(asc(schema.users.email))
+            .limit(SCAN_PAGE)
+            .offset(offset);
+        all.push(...page);
+        process.stdout.write('.');
+        if (page.length < SCAN_PAGE) break;
+    }
+    return all;
+}
+
+/** Group a list into "label (count)" text, biggest first. */
+function tally(values: (string | null)[]): string {
+    const counts = new Map<string, number>();
+    for (const v of values) {
+        const key = v ?? '(none)';
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return Array.from(counts.entries())
+        .sort((a, b) => b[1] - a[1])
+        .map(([k, c]) => `${k} (${n(c)})`)
+        .join(', ');
+}
+
+/**
+ * --analyse: fetch every existing user and report exactly what an import would do, plus the
+ * discrepancies this script will NOT fix (it only ever inserts). Read-only; never writes.
+ */
+function reportAnalysis(candidates: StudentRow[], dbUsers: DbUser[], role: Role) {
+    const byLowerEmail = new Map(dbUsers.map((u) => [u.email.toLowerCase(), u]));
+
+    console.log('\n--- Database snapshot ---');
+    console.log(`  total users         : ${n(dbUsers.length)}`);
+    console.log(`  by role             : ${tally(dbUsers.map((u) => u.role))}`);
+    const students = dbUsers.filter((u) => u.role === 'student');
+    console.log(`  student batches     : ${students.length ? tally(students.map((u) => u.batch)) : '(no students yet)'}`);
+    console.log(`  students with roll  : ${n(students.filter((u) => u.roll).length)}/${n(students.length)}`);
+
+    const toInsert: StudentRow[] = [];
+    const caseMismatch: { csv: string; db: string }[] = [];
+    const nameDiff: { email: string; csv: string; db: string }[] = [];
+    const roleDiff: { email: string; db: string }[] = [];
+    const batchDiff: { email: string; csv: string | null; db: string | null }[] = [];
+    const missingRoll: string[] = [];
+
+    for (const row of candidates) {
+        const existing = byLowerEmail.get(row.email);
+        if (!existing) {
+            toInsert.push(row);
+            continue;
+        }
+        // Present already. Record every way the stored row disagrees with the file, because this
+        // script will NOT update any of it — those need a separate, deliberate fix.
+        if (existing.email !== row.email) caseMismatch.push({ csv: row.email, db: existing.email });
+        if (existing.name.trim().toLowerCase() !== row.name.trim().toLowerCase()) {
+            nameDiff.push({ email: row.email, csv: row.name, db: existing.name });
+        }
+        if (existing.role !== role) roleDiff.push({ email: row.email, db: existing.role ?? '(null)' });
+        if ((existing.batch ?? null) !== (row.batch ?? null)) {
+            batchDiff.push({ email: row.email, csv: row.batch, db: existing.batch });
+        }
+        if (row.roll && !existing.roll) missingRoll.push(row.email);
+    }
+
+    const alreadyThere = candidates.length - toInsert.length;
+    // Set membership, not a nested scan — at a few thousand rows on each side the naive
+    // filter+some would be millions of comparisons.
+    const fileEmails = new Set(candidates.map((c) => c.email));
+    const notInFile = dbUsers.filter((u) => u.role === 'student' && !fileEmails.has(u.email.toLowerCase()));
+
+    console.log('\n--- What an import would do ---');
+    console.log(`  rows in file        : ${n(candidates.length)}`);
+    console.log(`  WOULD INSERT        : ${n(toInsert.length)}`);
+    console.log(`  already in DB (skip): ${n(alreadyThere)}`);
+    console.log(`  DB students not in this file: ${n(notInFile.length)} (untouched — other batches, or left over)`);
+
+    const sample = (label: string, lines: string[]) => {
+        if (!lines.length) return;
+        console.log(`\n  ${label} — ${n(lines.length)}:`);
+        for (const l of lines.slice(0, 10)) console.log(`    ${l}`);
+        if (lines.length > 10) console.log(`    …and ${n(lines.length - 10)} more`);
+    };
+
+    if (caseMismatch.length) {
+        console.log('\n  ⚠ STORED WITH DIFFERENT LETTER-CASE — these are the rows the unique index alone');
+        console.log('    would have duplicated. They are correctly skipped here.');
+        sample('case mismatches', caseMismatch.map((c) => `${c.csv}  (stored as ${c.db})`));
+    }
+    sample('name differs from the file (NOT updated)', nameDiff.map((d) => `${d.email}: file "${d.csv}" vs db "${d.db}"`));
+    sample(`role in DB is not "${role}" (NOT changed)`, roleDiff.map((d) => `${d.email}: ${d.db}`));
+    sample('batch differs from the file (NOT updated)', batchDiff.map((d) => `${d.email}: file ${d.csv ?? '—'} vs db ${d.db ?? '—'}`));
+    sample('already present but has no roll (NOT backfilled)', missingRoll);
+
+    if (toInsert.length) {
+        console.log(`\n  New rows that would be created — ${n(toInsert.length)}:`);
+        for (const r of toInsert.slice(0, 10)) {
+            console.log(`    ${r.email}  |  ${r.name}  |  batch=${r.batch ?? '—'}  roll=${r.roll ?? '—'}  role=${r.role}`);
+        }
+        if (toInsert.length > 10) console.log(`    …and ${n(toInsert.length - 10)} more`);
+    }
+
+    console.log('\nANALYSIS ONLY — nothing was written. Drop --analyse and add --yes to import.\n');
 }
 
 /** Write the skipped rows to a CSV so the source data can be fixed and the import re-run. */
@@ -234,7 +373,7 @@ async function main() {
 
     if (!args.file) {
         console.error(
-            '\nUsage: npx tsx scripts/import-students.ts <file.csv> [--yes] [--role student]\n' +
+            '\nUsage: npx tsx scripts/import-students.ts <file.csv> [--analyse] [--yes] [--role student]\n' +
                 '       [--batch "Batch 2024"] [--force-batch] [--no-roll] [--tidy-names] [--rejects <path>]\n',
         );
         process.exit(1);
@@ -278,7 +417,15 @@ async function main() {
     console.log(`\nTarget database host: ${host}`);
     console.log(`Roster file:          ${file}`);
     console.log(`Role for new rows:    ${args.role}`);
-    console.log(`Mode:                 ${args.commit ? 'COMMIT (--yes)' : 'DRY RUN — nothing will be written'}\n`);
+    const mode = args.analyse
+        ? 'ANALYSE — full DB comparison, nothing will be written'
+        : args.commit
+          ? 'COMMIT (--yes)'
+          : 'DRY RUN — nothing will be written';
+    console.log(`Mode:                 ${mode}\n`);
+    if (args.analyse && args.commit) {
+        console.log('⚠ --analyse wins over --yes: this run only reports, it will not write.\n');
+    }
 
     // ---- 1. parse ------------------------------------------------------------------------------
     const rows = readSheetRows(file);
@@ -397,11 +544,22 @@ async function main() {
         return;
     }
 
-    // ---- 3. which emails already exist? --------------------------------------------------------
+    const db = makeDb(url);
+
+    // ---- 3a. --analyse: full-table comparison, then stop ---------------------------------------
+    if (args.analyse) {
+        process.stdout.write('\n--- Fetching all existing users ');
+        const dbUsers = await fetchAllUsers(db);
+        console.log(' done');
+        if (rejects.length) writeRejects(file, args.rejectsPath, rejects);
+        reportAnalysis(candidates, dbUsers, args.role);
+        return;
+    }
+
+    // ---- 3b. which emails already exist? -------------------------------------------------------
     // Case-insensitive on purpose: stored emails are not guaranteed lowercase (getDbUser saves the
     // Clerk address verbatim), and the unique index is on the RAW column — so a pre-existing
     // "Foo@sst.scaler.com" would not collide with an incoming "foo@sst.scaler.com".
-    const db = drizzle(neon(url), { schema });
     const emails = candidates.map((r) => r.email);
     const present = new Set<string>();
 
@@ -467,7 +625,38 @@ async function main() {
     console.log(`  Skipped ${n(skipped)} already-existing row(s); no existing row was modified.\n`);
 }
 
+/**
+ * DrizzleQueryError stringifies the entire failed query AND every bind parameter, which for a
+ * 447-email IN (...) probe buries the actual cause under thousands of lines. Unwrap to the real
+ * message and print only that.
+ */
+function explainError(err: unknown): string {
+    const cause = (err as { cause?: unknown } | null)?.cause;
+    if (cause instanceof Error) return cause.message;
+    if (err instanceof Error) return err.message.split('\nparams:')[0];
+    return String(err);
+}
+
 main().catch((err) => {
-    console.error('\nImport failed:', err);
+    const message = explainError(err);
+    console.error(`\n✗ Import failed: ${message}`);
+
+    if (/authentication failed|password authentication/i.test(message)) {
+        console.error(
+            '\n  Neon rejected the DATABASE_URL credentials. This is an environment problem, not a data\n' +
+                '  problem — the failure happens on a read, so nothing was written. Check that:\n' +
+                '    • the connection string in .env.local is for the branch you actually meant to use;\n' +
+                '    • the password has not been rotated — Neon shows it once, so reset it in the console\n' +
+                '      and copy the full pooled connection string again;\n' +
+                '    • the branch still exists and has not been recreated.\n' +
+                '  Confirm independently with: npx tsx scripts/check-db.ts\n',
+        );
+    } else if (/ENOTFOUND|EAI_AGAIN|ECONNREFUSED|fetch failed|ETIMEDOUT/i.test(message)) {
+        console.error('\n  Could not reach the database host — check the hostname in DATABASE_URL and your network.\n');
+    } else if (/relation .*users.* does not exist/i.test(message)) {
+        console.error('\n  The users table is missing — run `pnpm drizzle-kit migrate` against this branch first.\n');
+    } else {
+        console.error('\n  Re-run with NODE_OPTIONS=--stack-trace-limit=50 for more, or inspect the query above.\n');
+    }
     process.exit(1);
 });

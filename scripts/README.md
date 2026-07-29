@@ -42,13 +42,20 @@ existence. **Strictly additive:** the only statement it issues is `INSERT … ON
 no `UPDATE`/`DELETE` anywhere, so existing rows are never touched and re-running is a no-op.
 
 ```bash
-npx tsx scripts/import-students.ts "C:/path/to/students_batch_2024.csv"          # dry run (default)
-npx tsx scripts/import-students.ts "C:/path/to/students_batch_2024.csv" --yes    # commit
+npx tsx scripts/import-students.ts "C:/path/to/students.csv"             # dry run (default)
+npx tsx scripts/import-students.ts "C:/path/to/students.csv" --analyse   # full DB comparison
+npx tsx scripts/import-students.ts "C:/path/to/students.csv" --yes       # commit
 ```
 
 Emails are lowercased and matched against `lower(users.email)` before inserting, so a stored mixed-case
 address still counts as a duplicate. Skipped rows are written to `scripts/out/<file>-rejects.csv` with a
-reason. Flags: `--role` (default `student`; `superAdmin` refused), `--batch`/`--force-batch`, `--no-roll`,
+reason.
+
+`--analyse` fetches **every** existing user (paged) and reports exactly how many rows would be created,
+plus the discrepancies the import will *not* fix — since it only inserts, a stored row whose name, role or
+batch disagrees with the file stays as it is. Read-only; overrides `--yes`.
+
+Other flags: `--role` (default `student`; `superAdmin` refused), `--batch`/`--force-batch`, `--no-roll`,
 `--tidy-names`, `--rejects <path>`.
 
 ## Safety

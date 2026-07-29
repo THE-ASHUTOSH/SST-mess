@@ -16,7 +16,7 @@ export async function GET(req: Request) {
 
         const feedback = await db.query.vendorFeedbacks.findMany({
             with: {
-                vendor: true
+                vendor: { columns: { email: false } } // never expose the superAdmin-only login email
             },
             limit: limit,
             offset: offset,

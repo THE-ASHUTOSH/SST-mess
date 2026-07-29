@@ -36,6 +36,55 @@
       "when": 1767580575512,
       "tag": "0004_cold_living_tribunal",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1781719996459,
+      "tag": "0005_add_superadmin_role",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1781720031569,
+      "tag": "0006_vendor_soft_delete",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1781721506950,
+      "tag": "0007_hostel_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784536204580,
+      "tag": "0008_drop_vendor_selection_hostel",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1784621769936,
+      "tag": "0009_add_vendor_email",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784747296496,
+      "tag": "0010_vendor_selection_user_month_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1784962753786,
+      "tag": "0011_drop_hostel",
+      "breakpoints": true
     }
   ]
 }

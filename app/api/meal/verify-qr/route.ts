@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { meals, users } from '@/lib/db/schema';
+import { meals, users, vendorSelections } from '@/lib/db/schema';
 import { requireRole } from '@/lib/auth-helper';
+import { getVendorForEmail } from '@/lib/vendor-scope';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { and, eq, gte, lt } from 'drizzle-orm';
-import { getCurrentMealType, getISTDayBounds } from '@/lib/utils/timezone';
+import { getCurrentMealType, getISTDayBounds, getISTNow } from '@/lib/utils/timezone';
 
 interface QrCodePayload extends JwtPayload {
     userId: string;
@@ -13,18 +14,32 @@ interface QrCodePayload extends JwtPayload {
 
 export async function POST(req: Request) {
     try {
-        const byUser = await requireRole(['vendor', 'admin']);
+        // QR verification is a vendor task; plain admins no longer have it (superAdmin passes via override).
+        const byUser = await requireRole(['vendor']);
 
         const body = await req.json();
-        const { token, vendorId } = body;
+        const { token, vendorId: clientVendorId } = body;
 
         // Validate required fields
-        if (!token || typeof token !== 'string') {
-            return NextResponse.json({ success: false, message: "Token is required" }, { status: 400 });
+        if (!token || typeof token !== 'string' || token.length > 1000) {
+            return NextResponse.json({ success: false, message: "Invalid token" }, { status: 400 });
         }
 
-        if (!vendorId) {
-            return NextResponse.json({ success: false, message: "Vendor ID is required" }, { status: 400 });
+        // Resolve which vendor this scan is for. A vendor user is ALWAYS pinned to their own
+        // mapped vendor (server-resolved from their login email); any client-supplied vendorId is
+        // ignored, so one vendor can never scan for another. superAdmin may pass any vendorId.
+        let effectiveVendorId: string | string[];
+        if (byUser.role === 'vendor') {
+            const myVendor = await getVendorForEmail(byUser.email);
+            if (!myVendor) {
+                return NextResponse.json({ success: false, message: "No vendor is linked to your account. Contact an admin." }, { status: 403 });
+            }
+            effectiveVendorId = myVendor.id;
+        } else {
+            if (!clientVendorId) {
+                return NextResponse.json({ success: false, message: "Vendor ID is required" }, { status: 400 });
+            }
+            effectiveVendorId = clientVendorId;
         }
 
         // Validate JWT secret
@@ -34,17 +49,43 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false, message: "Server configuration error" }, { status: 500 });
         }
 
-        // Verify token from QR
-        const decoded = jwt.verify(token, jwtSecret) as QrCodePayload;
+        // Verify token from QR (enforce HS256 to prevent alg:none attacks)
+        const decoded = jwt.verify(token, jwtSecret, { algorithms: ['HS256'] }) as QrCodePayload;
         const forUserId = decoded.userId;
         const userVendorId = decoded.vendorId;
 
-        const isVendorAuthorized = Array.isArray(vendorId)
-            ? vendorId.includes(userVendorId.toString())
-            : userVendorId.toString() === vendorId.toString();
+        const isVendorAuthorized = Array.isArray(effectiveVendorId)
+            ? effectiveVendorId.includes(userVendorId.toString())
+            : userVendorId.toString() === effectiveVendorId.toString();
 
         if (!isVendorAuthorized) {
             return NextResponse.json({ success: false, message: "This student is not assigned to your vendor." }, { status: 403 });
+        }
+
+        // Validate that the user in the token actually exists
+        const forUser = await db.query.users.findFirst({
+            where: eq(users.id, forUserId)
+        });
+
+        if (!forUser) {
+            return NextResponse.json({ success: false, message: "Invalid QR code." }, { status: 401 });
+        }
+
+        // Verify user is opted in for the current month
+        const istNow = getISTNow();
+        const year = istNow.getFullYear();
+        const month = istNow.getMonth();
+
+        const selection = await db.query.vendorSelections.findFirst({
+            where: and(
+                eq(vendorSelections.userId, forUserId),
+                gte(vendorSelections.forMonth, new Date(year, month, 1)),
+                lt(vendorSelections.forMonth, new Date(year, month + 1, 1))
+            ),
+        });
+
+        if (!selection) {
+            return NextResponse.json({ success: false, message: "Student is not opted in for mess this month." }, { status: 403 });
         }
 
         const mealType = getCurrentMealType();
@@ -80,30 +121,26 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false, message: `User has already taken ${mealType} today.` }, { status: 403 });
         }
 
-        const foruser = await db.query.users.findFirst({
-            where: eq(users.id, forUserId)
-        });
+        console.log("Meal verified for user:", forUserId);
 
-        
-            console.log("Meal verified for", foruser?.name);
-        
-
-        return NextResponse.json({ success: true, message: "Meal verified successfully.", user: foruser });
+        return NextResponse.json({ success: true, message: "Meal verified successfully.", user: forUser });
 
     } catch (error: unknown) {
-        console.error("Error verifying QR code:", error);
-
+        // Classify before logging. A stale or malformed QR is a routine scan outcome that the
+        // vendor sees in the UI — logging it as an error buries real faults in noise.
         if (error instanceof Error) {
-            if (error.name === "JsonWebTokenError") {
-                return NextResponse.json({ success: false, message: "Invalid QR code." }, { status: 401 });
-            }
             if (error.name === "TokenExpiredError") {
                 return NextResponse.json({ success: false, message: "QR code has expired." }, { status: 401 });
+            }
+            if (error.name === "JsonWebTokenError") {
+                return NextResponse.json({ success: false, message: "Invalid QR code." }, { status: 401 });
             }
             if (error.message === "Unauthorized") return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
             if (error.message === "Forbidden") return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
         }
 
+        // Unclassified — a genuine fault, so keep the full stack.
+        console.error("Error verifying QR code:", error);
         return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
     }
 }

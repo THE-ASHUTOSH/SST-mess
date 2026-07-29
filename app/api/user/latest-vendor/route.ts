@@ -23,7 +23,7 @@ export async function GET() {
             ),
             orderBy: [desc(vendorSelections.createdAt)],
             with: {
-                vendor: true
+                vendor: { columns: { email: false } } // never expose the superAdmin-only login email
             }
         });
 

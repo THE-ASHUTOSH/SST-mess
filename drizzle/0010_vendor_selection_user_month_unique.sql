@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "vendor_selections_user_month_uniq" ON "vendor_selections" USING btree ("user_id","for_month");

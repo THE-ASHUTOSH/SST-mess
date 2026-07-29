@@ -8,7 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 
-import { Button } from "@/components/ui/button";
+import RequireRole from "../RequireRole";
+import ScanResultCard from "@/components/common/ScanResultCard";
 
 interface VerifiedUser {
   id: string;
@@ -148,11 +149,9 @@ const VerifyStudentQRPage = () => {
     }
     setIsProcessing(true);
     try {
-      // const response = await axiosInstance.post(`/meal/verify-qr`, { token, vendorId: selectedVendor });
       const vendorIds = selectedVendor.includes(',') ? selectedVendor.split(',') : [selectedVendor];
       const response = await axiosInstance.post(`/api/meal/verify-qr`, { token, vendorId: vendorIds });
-      // console.log('Meal verified:', response.data);
-      setMessage(`Meal verified for ${response.data.user.name}.`);
+      setMessage(response.data.message || 'Meal verified.');
       setVerifiedUser(response.data.user);
       setError('');
     } catch (err: unknown) {
@@ -202,44 +201,36 @@ const VerifyStudentQRPage = () => {
         </Select>
       </div>
 
+      {/* Vendor-fetch and camera/permission failures happen outside a scan, so without their own
+          surface they would be set and never shown. */}
+      {error && !isProcessing && (
+        <div className="mb-8 w-full max-w-sm">
+          <ScanResultCard
+            variant="error"
+            message={error}
+            onAction={() => setError('')}
+            actionLabel="Dismiss"
+          />
+        </div>
+      )}
+
       {selectedVendor && (
         <div className="w-full max-w-sm relative" style={{ minHeight: '300px' }}>
           <div id={scannerContainerId} style={{ display: isProcessing ? 'none' : 'block' }} className="rounded-lg overflow-hidden border-2 border-primary/20 bg-black"></div>
           {isProcessing && (
-            <div className="flex flex-col items-center justify-center h-full mt-4 animate-in fade-in zoom-in duration-300">
-              {verifiedUser ? (
-                <div className="text-center space-y-4">
-                  <div className="relative inline-block">
-                    <img src={verifiedUser.picture} alt={verifiedUser.name} className="w-32 h-32 mx-auto rounded-full border-4 border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.5)]" referrerPolicy='no-referrer' />
-                    <div className="absolute bottom-0 right-0 bg-green-500 rounded-full p-2 border-4 border-background">
-                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="text-2xl font-bold">{verifiedUser.name}</h3>
-                    <p className="text-green-500 text-lg font-medium">{message}</p>
-                  </div>
-                  <Button onClick={resetScanner} size="lg" className="w-full">Scan Again</Button>
-                </div>
+            <div className="flex flex-col items-center justify-center h-full mt-4">
+              {message || error ? (
+                <ScanResultCard
+                  variant={error ? 'error' : 'success'}
+                  message={error || message}
+                  user={verifiedUser}
+                  onAction={resetScanner}
+                />
               ) : (
-                <div className="flex flex-col items-center space-y-4">
-                  {message && <p className="text-green-500 text-xl text-center font-medium">{message}</p>}
-                  {error && (
-                    <div className="text-red-500 text-center space-y-2">
-                      <svg className="w-12 h-12 mx-auto text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                      <p className="text-xl font-medium">{error}</p>
-                    </div>
-                  )}
-                  {/* PLEASE WAIT STATE */}
-                  {!message && !error && (
-                    <div className="flex flex-col items-center gap-4">
-                      <Skeleton className="h-32 w-32 rounded-full" />
-                      <p className="text-xl font-semibold animate-pulse">Please wait...</p>
-                      <p className="text-sm ">Verifying details</p>
-                    </div>
-                  )}
-
-                  {(message || error) && <Button onClick={resetScanner} size="lg" className="w-full">Scan Again</Button>}
+                <div className="flex flex-col items-center gap-4 animate-in fade-in duration-300">
+                  <Skeleton className="h-24 w-24 rounded-full" />
+                  <p className="text-lg font-semibold animate-pulse">Please wait…</p>
+                  <p className="text-sm text-muted-foreground">Verifying details</p>
                 </div>
               )}
             </div>
@@ -250,4 +241,10 @@ const VerifyStudentQRPage = () => {
   );
 };
 
-export default VerifyStudentQRPage;
+const GuardedVerifyStudentQRPage = () => (
+  <RequireRole roles={["superAdmin"]}>
+    <VerifyStudentQRPage />
+  </RequireRole>
+);
+
+export default GuardedVerifyStudentQRPage;

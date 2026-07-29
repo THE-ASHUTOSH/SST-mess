@@ -1,197 +1,70 @@
 # SST Mess Management System
 
-## 📝 Overview
+Internal tool for Scaler's hostel mess. Students **opt in** to a vendor each month, generate a
+time-boxed **QR code** per meal, and vendors **scan** it to record the meal. Admins and superAdmins
+manage vendors, menus, monthly opt-ins, analytics, and system controls.
 
-This project is a comprehensive Mess Management System designed for educational institutions, specifically tailored for SST. It facilitates a seamless and digital-first experience for managing student meals, vendor selections, and feedback. The system is built with distinct roles for Students, Admins, and Vendors, each with a dedicated portal to manage their specific tasks.
+**Roles:** `student` · `vendor` · `admin` · `superAdmin` (a superset of admin).
 
-- **Students** can provide feedback, and generate a QR code to avail their daily meals, and see the daily menu.
-- **Admins** have oversight of the entire system. They can add or update vendor details, manage vendor menus, view analytics on student choices and feedback, and manage the meal selection cycle.
-- **Vendors** can verify student QR codes to confirm meal eligibility and view analytics related to their service.
+## Tech stack
 
-## 🛠️ Tech Stack
+Next.js 15 (App Router, Turbopack) · React 19 · TypeScript · Tailwind CSS v4 · shadcn/Radix UI ·
+Clerk (Google SSO) · Drizzle ORM + Neon (serverless Postgres) · pnpm · Node 20 · Vercel.
 
-- **Framework**: [Next.js](https://nextjs.org/)
-- **Language**: [TypeScript](https://www.typescriptlang.org/)
-- **Authentication**: [Clerk](https://clerk.com/)
-- **Database**: [PostgreSQL](https://www.postgresql.org/)
-- **ORM**: [Drizzle ORM](https://orm.drizzle.team/)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **UI Components**: Radix UI, Lucide React
-- **Deployment**: Assumed to be on a platform like Vercel.
+## Getting started
 
-## 🚀 Getting Started
-
-Follow these instructions to get a local copy up and running for development and testing purposes.
-
-### Prerequisites
-
-- Node.js (v20 or later recommended)
-- pnpm (as indicated by `pnpm-lock.yaml`)
+**Prerequisites:** Node 20+, pnpm (`npm i -g pnpm`).
 
 ```bash
-npm install -g pnpm
+pnpm install
 ```
 
-### Installation
+Create `.env.local` with:
 
-1. Clone the repository:
-   ```bash
-   git clone <your-repository-url>
-   ```
-2. Navigate to the project directory:
-   ```bash
-   cd SST-mess
-   ```
-3. Install the dependencies:
-   ```bash
-   pnpm install
-   ```
-4. Set up your environment variables. Create a `.env.local` file in the root of the project and add the necessary keys for Clerk, your PostgreSQL database (Neon), etc.
-   ```env
-   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
-   CLERK_SECRET_KEY=
-   POSTGRES_URL=
-   ```
+```env
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+DATABASE_URL=            # Neon Postgres connection string
+JWT_SECRET_KEY=          # signs the meal QR tokens (HS256)
+```
 
-### Running the Development Server
-
-Once the installation is complete, you can run the development server:
+Common commands:
 
 ```bash
-pnpm run dev
+pnpm dev          # dev server → http://localhost:3000
+pnpm build        # production build
+pnpm lint         # ESLint
+pnpm typecheck    # tsc --noEmit
+pnpm drizzle-kit generate --name <desc>   # create a migration after editing lib/db/schema.ts
+pnpm drizzle-kit migrate                  # apply migrations
 ```
 
-This will start the application on `http://localhost:3000`.
+> **New here?** [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) walks you through a seeded local dev
+> environment (on a Neon dev branch) where you can explore the app as every role.
 
-## ✨ Features & Pages
+## Documentation
 
-The application is organized into three main user-facing portals.
+| Doc | What's in it |
+|---|---|
+| [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) | New-dev setup: Neon dev branch, env, migrate, **seed**, and viewing every role |
+| [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | System overview, stack, auth flow, core meal flow, deploy notes |
+| [docs/backend/CONVENTIONS.md](./docs/backend/CONVENTIONS.md) | Route patterns: roles/access, error mapping, validation, DB/writes, caching, migrations |
+| [docs/backend/API.md](./docs/backend/API.md) | Endpoint reference (request/response for every route) |
+| [docs/backend/DATA_MODEL.md](./docs/backend/DATA_MODEL.md) | Tables, enums, relationships (ERD), and data conventions |
+| [docs/frontend/FRONTEND.md](./docs/frontend/FRONTEND.md) | App Router routing, layout shell, nav config, guards, contexts, UI kit |
+| [docs/user/USER_DOCUMENTATION.md](./docs/user/USER_DOCUMENTATION.md) · [docs/user/SOP.md](./docs/user/SOP.md) | End-user guide & standard operating procedures |
+| [CLAUDE.md](./CLAUDE.md) | Conventions & rules for AI-assisted development |
 
-### `/student`
-- **Dashboard**: Main landing page for students.
-- **Get Food**: Page to generate a unique QR code for the current meal (breakfast, lunch, or dinner).
-- **Vendor Details**: View information about available vendors.
-- **Feedback**: Submit feedback on vendor services.
-
-### `/admin`
-- **Dashboard**: Overview of system statistics and controls.
-- **Add Vendor**: Form to add a new vendor to the system.
-- **Update Vendor Menu**: Interface to update the weekly menu for a specific vendor.
-- **Upload Vendor Selection**: Bulk upload vendor selections for students.
-- **Choice Analysis**: Analytics on vendor popularity and student preferences.
-- **Feedback Analysis**: View and analyze feedback submitted by students.
-- **Verify Student QR**: A utility to manually verify a student's meal QR code.
-- **Admin Controls**: Toggle system features, like the feedback form availability.
-
-### `/vendorUser`
-- **Dashboard**: Main landing page for vendors.
-- **Verify Student QR**: The primary tool for vendors to scan and validate a student's meal QR code.
-- **Choice Analysis**: View analytics on how many students have selected them.
-
-## 📂 Project Structure
-
-This document outlines the structure of the SST Mess Management System project, providing an overview of the key directories and their purposes.
-
-### High-Level Overview
-
-The project follows the standard Next.js 14 (with App Router) conventions. The code is organized by feature and role, with clear separation between frontend pages, backend APIs, shared components, and database logic.
+## Project layout (short)
 
 ```
-c:\Users\ashub\Documents\PROGRAMMING\Internal Tools\SST-mess\
-├───.gitignore
-├───components.json
-├───drizzle.config.ts
-├───eslint.config.mjs
-├───middleware.ts
-├───next.config.ts
-├───package.json
-├───pnpm-lock.yaml
-├───postcss.config.mjs
-├───README.md
-├───tsconfig.json
-├───.git\
-├───.next\
-├───app\
-│   ├───(pages)\
-│   │   ├───(admin)\
-│   │   ├───(student)\
-│   │   ├───(vendorUser)\
-│   │   └───login\
-│   └───api\
-│       ├───admin\
-│       ├───controls\
-│       ├───meal\
-│       ├───user\
-│       └───vendor\
-├───components\
-│   ├───common\
-│   ├───features\
-│   └───ui\
-├───context\
-├───drizzle\
-├───lib\
-│   ├───db\
-│   ├───models\
-│   └───utils\
-├───node_modules\
-└───public\
+app/(pages)/(student|admin|vendorUser)/…   role-grouped UI
+app/api/{admin,meal,vendor,user,controls}/… route handlers (backend)
+components/{ui,common,features}             shadcn kit + shared components
+context/                                     UserContext (session→role), DashboardContext
+lib/                                         db client, db/schema.ts, auth-helper, domain helpers
+drizzle/                                     generated SQL migrations
+docs/                                        this documentation
 ```
 
-### Key Directories
-
-#### `app/`
-This is the core directory for the Next.js App Router.
-- **`app/(pages)/`**: This directory uses route grouping to organize the different user portals (Admin, Student, Vendor).
-- **`app/api/`**: Contains all the backend API route handlers, organized by resource type.
-
-#### `components/`
-This directory holds all the shared React components, separated into `ui` for basic elements, `common` for more complex shared components, and `features` for components tied to specific functionalities.
-
-#### `lib/`
-Contains shared libraries, utility functions, and business logic.
-- **`lib/db.ts`**: Drizzle ORM database client instance.
-- **`lib/db/schema.ts`**: The heart of the data model, defining all database tables, columns, and relations.
-
-#### `drizzle/`
-This folder is managed by Drizzle Kit and contains the SQL migration files that track changes to the database schema over time.
-
-#### `public/`
-Stores all static assets that are publicly accessible, such as images and other files.
-
-## 🔌 API Endpoints
-
-The backend is built with Next.js API Routes. Here are the primary endpoints:
-
-- `POST /api/admin/upload-vendor-selection`: Allows an admin to upload a file of vendor selections.
-- `GET/POST /api/controls/feedback-toggle`: Manages the global setting for enabling or disabling the feedback form.
-- `POST /api/meal/generate-qr`: Generates a meal QR code for a student.
-- `GET /api/meal/status`: Checks the current meal status for a student (instead of the web sockets).
-- `POST /api/meal/verify-qr`: Used by vendors to verify a student's QR code.
-- `GET /api/user/latest-vendor`: Fetches the most recently selected vendor for the logged-in user.
-- `GET /api/user/me`: Retrieves details for the currently logged-in user.
-- `POST /api/vendor/addVendor`: Adds a new vendor to the database.
-- `GET /api/vendor/choice-analysis`: Fetches data for vendor choice analysis.
-- `GET /api/vendor/feedback-analysis`: Fetches data for vendor feedback analysis.
-- `GET /api/vendor/getVendors`: Retrieves a list of all vendors.
-- `PUT /api/vendor/updateVendor/[id]`: Updates details for a specific vendor.
-- `POST /api/vendor/vendorFeedbackForm`: Submits feedback for a vendor from a student.
-
-## 🗄️ Database Schema
-
-The database schema is defined using Drizzle ORM. Here is an overview of the main tables:
-
-| Table             | Description                                                                 |
-| ----------------- | --------------------------------------------------------------------------- |
-| `users`           | Stores user information, including their role (student, admin, vendor).     |
-| `vendors`         | Contains details about each food vendor, including name, price, and menu.   |
-| `menus`           | Stores the weekly meal plan (breakfast, lunch, dinner) for each vendor.     |
-| `meals`           | Records each meal transaction, linking a student to the vendor who served them. |
-| `vendor_selections` | Stores the vendor choice made by each student for a specific month.         |
-| `vendor_feedbacks`| Aggregates student feedback for each vendor on various criteria.            |
-| `controls`        | A table for feature flags and system-wide settings.                         |
-
-### Enums
-- **`role`**: `admin`, `student`, `vendor`
-- **`meal_type`**: `breakfast`, `lunch`, `dinner`
-- **`preference`**: `Vegetarian`, `Non-Vegetarian`
-- **`hostel`**: `Velankani Micro Campus (Uniworld 2)`, `Neeladri Micro Campus (Uniworld 1)`
+See [ARCHITECTURE.md](./docs/ARCHITECTURE.md) for the full map.

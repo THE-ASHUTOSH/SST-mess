@@ -2,8 +2,6 @@
 
 import React from 'react'
 import { Button } from "@/components/ui/button"
-import Image from "next/image"
-import goggleLogo from '../../../public/google.png'
 import GoogleButton from 'react-google-button'
 
 

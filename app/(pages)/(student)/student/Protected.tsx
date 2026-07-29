@@ -1,28 +1,25 @@
 "use client";
-import { Skeleton } from "@/components/ui/skeleton";
 import React, { useEffect } from "react";
 import { useUser } from "@/context/UserContext";
 import { useRouter } from "next/navigation";
+import FullScreenLoader from "@/components/common/FullScreenLoader";
 
 const Protected: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { user, loading } = useUser();
+    const { user, loading, notRegistered } = useUser();
     const router = useRouter();
-    // console.log("Protected component rendered with user:", user, "and loading:", loading);
+
     useEffect(() => {
         if (!loading && (!user || user.role !== "student")) {
-            router.replace('/login');
+            // Unregistered accounts get the explanation screen, not another login attempt.
+            router.replace(notRegistered ? '/noAccess' : '/login');
         }
-        // console.log("Loading from student", loading);
-    }, [loading, user, router]);
+    }, [loading, user, notRegistered, router]);
 
-    // While verifying, you may display a blank or a loader
+    // The longest visible wait in the app: shown on every dashboard load while UserContext
+    // resolves the account. Same loader as the sign-in flow, so the whole journey reads as one
+    // continuous state.
     if (loading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground gap-4">
-                <Skeleton className="h-10 w-48" />
-                <Skeleton className="h-4 w-64" />
-            </div>
-        );
+        return <FullScreenLoader title="Loading your dashboard" detail="Checking your access." />;
     }
     if (!user || user.role !== "student") {
         return null;

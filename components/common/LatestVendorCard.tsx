@@ -1,19 +1,26 @@
 "use client";
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+import React from "react";
+import { Utensils } from "lucide-react";
 
 const LatestVendorCard = ({ vendorName }: { vendorName: string }) => {
   return (
-    <Card className="mb-4 bg-card text-card-foreground rounded-xl border border-border/60 shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-md">
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold text-foreground">Your Latest Vendor Selection</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-lg text-muted-foreground">
-          You selected <strong className="text-primary font-semibold">{vendorName}</strong>.
+    <div className="app-shell-kpi w-full rounded-2xl px-4 py-3.5 flex items-center gap-3 overflow-hidden">
+      <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[color:var(--surface-active)] text-primary shrink-0">
+        <Utensils className="h-5 w-5" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground truncate">
+          Your vendor this month
         </p>
-      </CardContent>
-    </Card>
+        <p
+          className="text-base sm:text-lg font-semibold text-foreground truncate"
+          title={vendorName}
+        >
+          {vendorName}
+        </p>
+      </div>
+    </div>
   );
 };
 

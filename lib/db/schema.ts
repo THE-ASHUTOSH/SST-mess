@@ -1,10 +1,9 @@
-import { pgTable, text, boolean, integer, timestamp, date, jsonb, pgEnum, uuid, uniqueIndex } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { pgTable, text, boolean, integer, timestamp, date, jsonb, pgEnum, uuid, uniqueIndex, index } from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
 
-export const roleEnum = pgEnum("role", ["admin", "student", "vendor"]);
+export const roleEnum = pgEnum("role", ["admin", "student", "vendor", "superAdmin"]);
 export const mealTypeEnum = pgEnum("meal_type", ["breakfast", "lunch", "dinner"]);
 export const preferenceEnum = pgEnum("preference", ["Vegetarian", "Non-Vegetarian", "Eggetarian"]);
-export const hostelEnum = pgEnum("hostel", ["Velankani Micro Campus (Uniworld 2)", "Neeladri Micro Campus (Uniworld 1)"]);
 
 export const users = pgTable("users", {
     id: uuid("id").defaultRandom().primaryKey(),
@@ -12,7 +11,6 @@ export const users = pgTable("users", {
     roll: text("roll"), // Roll number
     role: roleEnum("role").default("student"),
     picture: text("picture"),
-    hostel: text("hostel"),
     batch: text("batch"),
     name: text("name").notNull(),
     createdAt: timestamp("created_at").defaultNow(),
@@ -35,16 +33,24 @@ export const menus = pgTable("menus", {
 export const vendors = pgTable("vendors", {
     id: uuid("id").defaultRandom().primaryKey(),
     name: text("name").notNull(),
+    email: text("email"), // login email that maps a vendor user to this vendor (superAdmin-managed)
     description: text("description"),
     price: integer("price").notNull(), // Storing as integer (e.g., cents/pysa) or just number
     menuUrl: text("menu_url"),
-    menuId: uuid("menu_id").references(() => menus.id).unique(),
+    menuId: uuid("menu_id").references(() => menus.id),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
     breakfast: boolean("breakfast").default(true),
     lunch: boolean("lunch").default(true),
     dinner: boolean("dinner").default(true),
-});
+    deletedAt: timestamp("deleted_at"),
+}, (table) => ({
+    // Soft-delete: a menu can only bind to ONE *active* vendor; the menu becomes reusable once the vendor is soft-deleted.
+    menuIdActiveUnique: uniqueIndex("vendors_menu_id_active_unique").on(table.menuId).where(sql`${table.deletedAt} IS NULL`),
+    // At most one ACTIVE vendor per login email (emails are stored lowercased). NULL emails are allowed & non-conflicting.
+    emailActiveUnique: uniqueIndex("vendors_email_active_unique").on(table.email).where(sql`${table.deletedAt} IS NULL`),
+    deletedAtIdx: index("vendors_deleted_at_idx").on(table.deletedAt),
+}));
 
 export const meals = pgTable("meals", {
     id: uuid("id").defaultRandom().primaryKey(),
@@ -82,11 +88,13 @@ export const vendorSelections = pgTable("vendor_selections", {
     userId: uuid("user_id").references(() => users.id).notNull(),
     vendorId: uuid("vendor_id").references(() => vendors.id).notNull(),
     preference: preferenceEnum("preference").default("Vegetarian"),
-    hostel: hostelEnum("hostel"),
     forMonth: timestamp("for_month").notNull(), // Using timestamp to store month start date
     dateofEntry: timestamp("date_of_entry").notNull(),
     createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+    // One selection per user per month — lets the bulk upload upsert atomically (ON CONFLICT).
+    userMonthUnique: uniqueIndex("vendor_selections_user_month_uniq").on(table.userId, table.forMonth),
+}));
 
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({

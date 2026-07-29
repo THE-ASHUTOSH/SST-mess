@@ -6,8 +6,12 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { useUser } from "@/context/UserContext";
+import UserManagement from "./UserManagement";
+import VendorDirectory from "./VendorDirectory";
 
 const AdminControlsPage = () => {
+    const { user } = useUser();
     const [feedbackEnabled, setFeedbackEnabled] = useState<boolean | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,7 +49,7 @@ const AdminControlsPage = () => {
 
 
     return (
-        <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
+        <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center gap-6 p-4 py-8">
             <Card className="w-full max-w-md border-border bg-card shadow-lg">
                 <CardHeader>
                     <CardTitle className="text-2xl font-bold text-primary">
@@ -82,6 +86,10 @@ const AdminControlsPage = () => {
                     )}
                 </CardContent>
             </Card>
+
+            {/* superAdmin-only sections (the APIs are also superAdmin-gated). */}
+            {user?.role === "superAdmin" && <VendorDirectory />}
+            {user?.role === "superAdmin" && <UserManagement />}
         </div>
     );
 };

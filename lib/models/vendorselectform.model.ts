@@ -16,10 +16,6 @@ const vendorSelectionSchema = new mongoose.Schema({
         enum: ["Vegetarian", "Non-Vegetarian",],
         default: 'vegetarian',
     },
-    hostel: {
-        type: String,
-        enum: ["Velankani Micro Campus", "Neeladri Micro Campus"]
-    },
     forMonth: {
         type: Date,
         required: true,

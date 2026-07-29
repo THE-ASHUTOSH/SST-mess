@@ -9,6 +9,7 @@ import { ArrowLeft, GraduationCap, Loader2, Moon, Sun } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import AuthErrorNotice from "@/components/common/AuthErrorNotice";
+import FullScreenLoader from "@/components/common/FullScreenLoader";
 import {
   authErrorFromCode,
   authErrorFromException,
@@ -79,13 +80,15 @@ function SignInContent() {
     router.replace("/noAccess");
   }, [loading, notRegistered, router]);
 
-  // Once UserContext resolves a DB user, route by role — unless we're showing a failure
+  // Once UserContext resolves a DB user, route by role. A resolved `user` means the account is
+  // genuinely authorized, so a stale ?error= must NOT block this — that combination used to strand
+  // a registered user on a login page whose button did nothing.
   useEffect(() => {
-    if (loading || !user || error) return;
+    if (loading || !user) return;
     if (user.role === "admin" || user.role === "superAdmin") router.replace("/admin/dashboard");
     else if (user.role === "vendor") router.replace("/vendorUser/dashboard");
     else router.replace("/student/dashboard");
-  }, [user, loading, router, error]);
+  }, [user, loading, router]);
 
   // These codes leave a Clerk session with no usable app account — drop it so the retry is clean
   useEffect(() => {
@@ -116,7 +119,9 @@ function SignInContent() {
       await signIn.authenticateWithRedirect({
         strategy: "oauth_google",
         redirectUrl: "/login/sso-callback",
-        redirectUrlComplete: "/login",
+        // Land on the server-side router, not back here. /authCallback resolves the role in one
+        // server render instead of remounting this page and waiting on a client waterfall.
+        redirectUrlComplete: "/authCallback",
       });
     } catch (err) {
       console.error("Google sign-in error:", err);
@@ -126,6 +131,18 @@ function SignInContent() {
   };
 
   const isLoading = !signInLoaded || !authLoaded || !mounted;
+
+  // Middleware catches this case before any HTML is sent, but a client-side navigation into /login
+  // (or a session that appears while this page is open) bypasses it. Without this the form renders
+  // fully enabled to someone already signed in — and clicking it does nothing, because
+  // handleGoogleSignIn returns early when a session exists.
+  //
+  // Gated on `loading` so it is strictly temporary: if the account lookup finishes without
+  // producing a user (a 500, a dropped connection), we fall through to the form rather than
+  // spinning forever with no way out.
+  if (authLoaded && isSignedIn && loading && !notRegistered && !error) {
+    return <FullScreenLoader />;
+  }
 
   return (
     <div className="flex min-h-screen app-shell-canvas text-foreground">

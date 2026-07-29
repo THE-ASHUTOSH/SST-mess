@@ -35,7 +35,24 @@ the file-upload and paste paths.
 npx tsx scripts/seed-bulk-users.ts 3000 --yes
 ```
 
+### `import-students.ts` — roster import (real student data)
+Bulk-inserts students from a CSV/XLSX roster (`email,name,batch`). The roster is the source of truth for
+students — `/api/admin/users` deliberately can't create them — so this is how a student row comes into
+existence. **Strictly additive:** the only statement it issues is `INSERT … ON CONFLICT DO NOTHING`, with
+no `UPDATE`/`DELETE` anywhere, so existing rows are never touched and re-running is a no-op.
+
+```bash
+npx tsx scripts/import-students.ts "C:/path/to/students_batch_2024.csv"          # dry run (default)
+npx tsx scripts/import-students.ts "C:/path/to/students_batch_2024.csv" --yes    # commit
+```
+
+Emails are lowercased and matched against `lower(users.email)` before inserting, so a stored mixed-case
+address still counts as a duplicate. Skipped rows are written to `scripts/out/<file>-rejects.csv` with a
+reason. Flags: `--role` (default `student`; `superAdmin` refused), `--batch`/`--force-batch`, `--no-roll`,
+`--tidy-names`, `--rejects <path>`.
+
 ## Safety
 
-Both scripts print the **target database host** before acting — verify it's your **dev branch**, never
-production. `seed.ts` refuses to run without `--yes` (or `SEED_CONFIRM=1`) because it deletes data.
+These scripts print the **target database host** before acting — verify it's your **dev branch**, never
+production. `seed.ts` refuses to run without `--yes` (or `SEED_CONFIRM=1`) because it deletes data;
+`import-students.ts` defaults to a dry run and needs `--yes` to write anything.

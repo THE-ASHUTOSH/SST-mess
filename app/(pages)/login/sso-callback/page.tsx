@@ -17,8 +17,9 @@ import {
 const CALLBACK_TIMEOUT_MS = 20_000;
 
 const CALLBACK_PARAMS = {
-  signInFallbackRedirectUrl: "/login",
-  signUpFallbackRedirectUrl: "/login",
+  // Land on the server-side router so the role is resolved in one server render.
+  signInFallbackRedirectUrl: "/authCallback",
+  signUpFallbackRedirectUrl: "/authCallback",
   continueSignUpUrl: "/login?error=signup_incomplete",
 };
 
@@ -110,9 +111,20 @@ export default function SSOCallbackPage() {
             )}
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Completing sign in...</p>
+          // The animation the whole sign-in wait is spent on: this page stays visible while Clerk
+          // finishes the handshake AND while /authCallback resolves the role, because that route
+          // answers with a 307 and paints nothing. Putting a loading.tsx on /authCallback instead
+          // would flush a shell and break its redirect — see the note in authCallback/page.tsx.
+          <div className="flex flex-col items-center gap-4 py-2">
+            <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+              <Loader2 className="h-7 w-7 animate-spin text-primary" aria-hidden />
+            </span>
+            <div className="text-center">
+              <p className="text-base font-semibold text-foreground">Signing you in</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Just a moment while we get your dashboard ready.
+              </p>
+            </div>
           </div>
         )}
 

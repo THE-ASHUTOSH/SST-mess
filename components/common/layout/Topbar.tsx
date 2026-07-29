@@ -33,7 +33,7 @@ export default function Topbar({
 }: TopbarProps) {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const { user, setUser } = useUser();
+  const { user } = useUser();
   const { isSignedIn } = useAuth();
   const { user: clerkUser } = useClerkUser();
   const router = useRouter();
@@ -134,11 +134,12 @@ export default function Topbar({
                     <DropdownMenuSeparator />
                   </>
                 )}
-                <SignOutButton redirectUrl="/login">
-                  <DropdownMenuItem
-                    onClick={() => setUser(null)}
-                    className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
-                  >
+                {/* `?signedOut=1` tells middleware not to bounce this arrival back to a dashboard
+                    while the session cookie is still settling. No onClick clearing of the user
+                    here: UserContext already nulls it when Clerk's user goes away, and mutating
+                    this menu's children mid-click tore items out from under Radix. */}
+                <SignOutButton redirectUrl="/login?signedOut=1">
+                  <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer">
                     Logout
                   </DropdownMenuItem>
                 </SignOutButton>

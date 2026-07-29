@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { ShieldAlert } from "lucide-react";
 import Topbar from "@/components/common/layout/Topbar";
-import { Skeleton } from "@/components/ui/skeleton";
+import FullScreenLoader from "@/components/common/FullScreenLoader";
 import { useUser } from "@/context/UserContext";
 
 /**
@@ -25,16 +25,13 @@ export default function NoAccessPage() {
   useEffect(() => {
     if (loading || !isLoaded) return;
     if (!isSignedIn) router.replace("/login");
-    else if (user) router.replace("/login");
+    // An account that appeared while they sat here: let the server router place them, rather than
+    // bouncing via /login and paying the round trip again.
+    else if (user) router.replace("/authCallback");
   }, [loading, isLoaded, isSignedIn, user, router]);
 
   if (loading || !isLoaded) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground gap-4">
-        <Skeleton className="h-10 w-48" />
-        <Skeleton className="h-4 w-64" />
-      </div>
-    );
+    return <FullScreenLoader title="Checking your access" detail="One moment." />;
   }
 
   return (

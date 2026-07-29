@@ -24,56 +24,57 @@ interface DashboardCard {
   roles: AdminAreaRole[];
 }
 
+// Order is deliberate: the surfaces admins reach for most often come first.
+// Descriptions render in EventCard with `truncate`, so keep them to ~50 chars.
 const CARDS: DashboardCard[] = [
-  {
-    title: "Update Vendor Menu",
-    description: "Edit a vendor's menu URL and weekly CSV",
-    redirectUrl: "/admin/updateMenu",
-    icon: Utensils,
-    roles: ["admin", "superAdmin"],
-  },
-  {
-    title: "Analytics",
-    description: "Vendor demand and meals served, with charts",
-    redirectUrl: "/admin/analytics",
-    icon: BarChart3,
-    roles: ["superAdmin"],
-  },
-  {
-    title: "Feedback Analysis",
-    description: "Aggregate ratings and comments",
-    redirectUrl: "/admin/feedBackAnalysis",
-    icon: ClipboardList,
-    roles: ["admin", "superAdmin"],
-  },
-  {
-    title: "Controls",
-    description: "Toggle feedback window and system flags",
-    redirectUrl: "/admin/adminControls",
-    icon: Sliders,
-    roles: ["admin", "superAdmin"],
-  },
-  // superAdmin-only
-  {
-    title: "Verify Student QR",
-    description: "Scan a student's QR manually",
-    redirectUrl: "/admin/verifyStudentQR",
-    icon: ScanLine,
-    roles: ["superAdmin"],
-  },
-  {
-    title: "Manage Vendors",
-    description: "Add, edit details, or remove vendors",
-    redirectUrl: "/admin/manageVendor",
-    icon: Store,
-    roles: ["superAdmin"],
-  },
   {
     title: "Manage Students",
     description: "Opt-ins, vendor changes, meal history & bulk upload",
     redirectUrl: "/admin/manageStudents",
     icon: Users,
     roles: ["superAdmin"],
+  },
+  {
+    title: "Manage Vendors",
+    description: "Add or remove vendors, set price, meals & login",
+    redirectUrl: "/admin/manageVendor",
+    icon: Store,
+    roles: ["superAdmin"],
+  },
+  {
+    title: "Analytics",
+    description: "Monthly vendor demand and meals served, charted",
+    redirectUrl: "/admin/analytics",
+    icon: BarChart3,
+    roles: ["superAdmin"],
+  },
+  {
+    title: "Controls",
+    description: "Feedback toggle, user accounts and roles",
+    redirectUrl: "/admin/adminControls",
+    icon: Sliders,
+    roles: ["admin", "superAdmin"],
+  },
+  {
+    title: "Verify Student QR",
+    description: "Scan a student's QR to record their meal",
+    redirectUrl: "/admin/verifyStudentQR",
+    icon: ScanLine,
+    roles: ["superAdmin"],
+  },
+  {
+    title: "Update Vendor Menu",
+    description: "Set a vendor's menu URL or upload a weekly CSV",
+    redirectUrl: "/admin/updateMenu",
+    icon: Utensils,
+    roles: ["admin", "superAdmin"],
+  },
+  {
+    title: "Feedback Analysis",
+    description: "Ratings and comments by vendor, with averages",
+    redirectUrl: "/admin/feedBackAnalysis",
+    icon: ClipboardList,
+    roles: ["admin", "superAdmin"],
   },
 ];
 

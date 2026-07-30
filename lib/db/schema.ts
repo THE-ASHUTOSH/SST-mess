@@ -52,6 +52,33 @@ export const vendors = pgTable("vendors", {
     deletedAtIdx: index("vendors_deleted_at_idx").on(table.deletedAt),
 }));
 
+/**
+ * One vendor's menu for one calendar day.
+ *
+ * Replaces the recurring weekly `menus` table: the admin edits an explicit rolling window of days
+ * (see MENU_WINDOW_DAYS) instead of a pattern that repeats forever, so "Tuesday" can differ week to
+ * week. `date` is a plain Postgres date in IST — no timestamp, so no timezone drift between the
+ * admin who typed it and the student reading it.
+ *
+ * Days older than MENU_RETENTION_DAYS are hard-deleted; the UI only ever shows today onwards.
+ */
+export const menuDays = pgTable("menu_days", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    vendorId: uuid("vendor_id").references(() => vendors.id, { onDelete: "cascade" }).notNull(),
+    date: date("date", { mode: "string" }).notNull(),
+    // Dish lists. Empty array = "nothing set yet", which the UI shows as an invitation to add.
+    breakfast: jsonb("breakfast").$type<string[]>().notNull().default([]),
+    lunch: jsonb("lunch").$type<string[]>().notNull().default([]),
+    dinner: jsonb("dinner").$type<string[]>().notNull().default([]),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+    // One menu per vendor per day — lets the editor upsert without a read-then-write race.
+    vendorDateUnique: uniqueIndex("menu_days_vendor_date_uniq").on(table.vendorId, table.date),
+    // Every read filters on the date window, and the cleanup deletes by date.
+    dateIdx: index("menu_days_date_idx").on(table.date),
+}));
+
 export const meals = pgTable("meals", {
     id: uuid("id").defaultRandom().primaryKey(),
     forUserId: uuid("for_user_id").references(() => users.id).notNull(),
@@ -109,8 +136,16 @@ export const vendorsRelations = relations(vendors, ({ one, many }) => ({
         fields: [vendors.menuId],
         references: [menus.id],
     }),
+    menuDays: many(menuDays),
     feedbacks: many(vendorFeedbacks),
     selections: many(vendorSelections),
+}));
+
+export const menuDaysRelations = relations(menuDays, ({ one }) => ({
+    vendor: one(vendors, {
+        fields: [menuDays.vendorId],
+        references: [vendors.id],
+    }),
 }));
 
 export const mealsRelations = relations(meals, ({ one }) => ({

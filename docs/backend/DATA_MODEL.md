@@ -19,6 +19,22 @@ The identity for every human (and vendor account). `id` uuid PK · `email` text 
 > (superAdmin only, allowed domains only); students are loaded out of band. Every user has exactly
 > one `role`. Emails are stored lowercased.
 
+### `menu_days`
+One vendor's menu for one calendar day. `id` uuid PK · **`vendorId`** → `vendors.id` (`ON DELETE CASCADE`) ·
+**`date`** `date` not null (plain calendar date in **IST**, never a timestamp — that is what stops "today"
+differing between an admin in Kolkata and a server elsewhere) · `breakfast`/`lunch`/`dinner` jsonb
+`string[]` **not null default `'[]'`** · `createdAt`/`updatedAt`.
+Indexes: unique on **(`vendorId`, `date`)** — one menu per vendor per day, which lets the editor upsert
+with no read-then-write race — plus an index on `date` for the window read and the retention delete.
+
+> **Replaces the recurring weekly `menus` table.** The admin edits an explicit rolling window
+> (`MENU_WINDOW_DAYS` = 15, starting today) rather than a pattern that repeats forever, so the same
+> weekday can differ week to week. The window is **derived, never stored**: a date with no row is
+> served as an empty editable day and becomes a row on first save, so the far end grows automatically
+> as the near end falls away — no scheduled job keeps the count at 15. Days older than
+> `MENU_RETENTION_DAYS` (2) are hard-deleted on write. `menus` / `vendors.menuId` are no longer read
+> and can be dropped in a later migration.
+
 ### `vendors`
 A mess vendor. `id` uuid PK · `name` not null · **`email`** (nullable, login mapping — superAdmin-only) ·
 `description` · `price` int not null · `menuUrl` · `menuId` → `menus.id` · `breakfast`/`lunch`/`dinner`

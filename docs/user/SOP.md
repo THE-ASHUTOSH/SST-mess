@@ -24,31 +24,36 @@ This **Standard Operating Procedure (SOP)** document outlines the step-by-step p
 ### 2.1. Monthly Student Enrollment (Bulk Upload)
 
 **Frequency**: Once per month (usually 2-3 days before the 1st of the new month).
-**Prerequisite**: A clean `.xlsx` (Excel) file containing student choices.
+**Prerequisite**: A list of student emails — pasted, or a `.csv`/`.xlsx` file.
 
 #### Data Requirements
-Your Excel file **MUST** contain the following headers exactly as written (case-sensitive):
 
-| Header | Description | Example |
-| :--- | :--- | :--- |
-| `Email Address` | Student's official email. | `john.doe@sst.edu.in` |
-| `Choose your preference` | **Exact name** of the vendor selected. | `Spice Kitchen` |
-| `Meal Option` | Dietary preference. | `Vegetarian`, `Non-Vegetarian`, `Eggetarian` |
-| `Batch` | Student's batch identifier. | `2027` |
-| `Name` | (New Users Only) Student's full name. | `John Doe` |
+**The sheet contains student emails only.** No headers are required, and every other column is
+ignored. Vendor, month and meal preference are chosen in the form, not read from the file — so
+there is no vendor-name spelling to get wrong any more.
 
-> **! IMPORTANT**
-> The `Choose your preference` value must **exactly match** the Vendor Name stored in the system (e.g., if system has "Spice Kitchen", "spice kitchen" or "Spice Kitchen Pvt Ltd" might fail).
+You can also skip the file entirely and paste emails straight into the form, separated by spaces,
+commas or new lines.
+
+> **! IMPORTANT — one upload per meal preference**
+> The **Meal preference** you pick applies to *every* student in that upload. So split the month's
+> list by preference and upload each batch separately: the vegetarian list with `Vegetarian`
+> selected, then the non-vegetarian list with `Non-Vegetarian`, and so on. Uploading a mixed list
+> records everyone as whichever preference is selected.
 
 #### Workflow steps:
-1.  Navigate to the **Admin Dashboard** > **Upload Vendor Selection**.
-2.  Select the **Target Month** for these records (e.g., "August 2026").
-3.  Click **Choose File** and select your prepared `.xlsx` sheet.
-4.  Click **Upload**.
-5.  **Review the Output Log**:
-    *   **New Entries**: Number of successful enrollments.
-    *   **Duplicates**: Students who were already enrolled (skipped).
-    *   **Issues**: Rows that failed (e.g., "Vendor not found"). **Fix these rows in the Excel file and re-upload ONLY the failed rows.**
+1.  Navigate to the **Admin Dashboard** > **Manage Students** > **Bulk Upload**.
+2.  Choose the **Vendor**, the **Month**, and the **Meal preference** for this batch.
+3.  Either **Paste** the emails, or switch to **File** and choose your `.csv`/`.xlsx`.
+4.  Click **Verify** — nothing is written yet.
+5.  **Review the four tabs** before confirming:
+    *   **To add** — students with no selection this month. These will be created.
+    *   **Already opted** — students who already have a selection. Tick the ones you want *moved* to
+        this vendor; untouched ones keep what they have.
+    *   **Not found** — no student account for that email. Fix the address, or have the account added.
+    *   **Invalid** — not a valid email address.
+6.  Click **Confirm** to save. The whole batch is written in one transaction — if anything fails,
+    nothing is saved and you can safely retry.
 
 ---
 

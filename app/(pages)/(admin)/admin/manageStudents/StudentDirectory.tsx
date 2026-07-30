@@ -17,6 +17,7 @@ import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MultiSelect } from "@/components/common/MultiSelect";
+import { openNativePicker } from "@/lib/utils";
 import { ChangeVendorDialog, DeleteSelectionDialog, MealDetailsDialog } from "./StudentDialogs";
 import type { FilterOptions, StudentRow } from "./types";
 
@@ -163,7 +164,7 @@ export function StudentDirectory() {
         <div className="flex flex-col gap-4">
             {/* Filters */}
             <div className="theme-section flex flex-wrap items-center gap-2">
-                <Input type="month" value={month} onChange={(e) => withReset(setMonth)(e.target.value)} className="h-9 w-[160px] cursor-pointer" />
+                <Input type="month" value={month} onChange={(e) => withReset(setMonth)(e.target.value)} onClick={(e) => openNativePicker(e.currentTarget)} className="h-9 w-[160px] cursor-pointer" />
                 <div className="relative min-w-[200px] flex-1">
                     <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name, email or roll…" className="h-9 pl-8" />

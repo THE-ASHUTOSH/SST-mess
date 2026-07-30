@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { vendors } from '@/lib/db/schema';
+import { preferenceEnum, vendors } from '@/lib/db/schema';
 import { requireRole } from '@/lib/auth-helper';
 import { and, eq, isNull } from 'drizzle-orm';
 import {
@@ -19,8 +19,14 @@ import {
  * uploaded CSV/XLSX), then classifies them against DB state WITHOUT writing anything, so the
  * admin can review before committing. superAdmin only.
  *
- *   POST /api/admin/upload-vendor-selection/verify   (multipart: vendorId, month, emails?, file?)
+ *   POST /api/admin/upload-vendor-selection/verify   (multipart: vendorId, month, preference, emails?, file?)
  */
+
+// The sheet no longer carries a per-student dietary column, so the whole batch shares one
+// preference chosen in the UI. Required rather than defaulted: silently writing 'Vegetarian' for
+// everyone is how a month of demand data gets quietly falsified.
+const VALID_PREFERENCES = preferenceEnum.enumValues as readonly string[];
+
 export async function POST(req: Request) {
     try {
         await requireRole(['superAdmin']);
@@ -28,6 +34,7 @@ export async function POST(req: Request) {
         const formData = await req.formData();
         const vendorId = formData.get('vendorId') as string | null;
         const month = formData.get('month') as string | null;
+        const preference = formData.get('preference') as string | null;
         const emailsText = (formData.get('emails') as string | null) ?? '';
         const file = formData.get('file') as File | null;
 
@@ -37,6 +44,12 @@ export async function POST(req: Request) {
         const forMonth = monthToUtcDate(month ?? '');
         if (!forMonth) {
             return NextResponse.json({ success: false, message: 'A valid month (YYYY-MM) is required' }, { status: 400 });
+        }
+        if (!preference || !VALID_PREFERENCES.includes(preference)) {
+            return NextResponse.json(
+                { success: false, message: `A meal preference is required (${VALID_PREFERENCES.join(', ')})` },
+                { status: 400 },
+            );
         }
 
         const [vendor] = await db
@@ -71,6 +84,9 @@ export async function POST(req: Request) {
             success: true,
             vendor,
             month,
+            // Echoed back so the review step can state it, and so commit receives exactly what was
+            // verified rather than whatever the form holds by then.
+            preference,
             toCreate,
             duplicates,
             notFound,

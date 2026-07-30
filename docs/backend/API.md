@@ -37,6 +37,11 @@ Dry-run. Parses emails from the pasted text and/or uploaded file, then classifie
 
 - `vendorId` (uuid, required): The vendor these students opted into.
 - `month` (string, required): `YYYY-MM`.
+- `preference` (string, **required**): one of `Vegetarian` · `Non-Vegetarian` · `Eggetarian`. Applies
+  to **every** student in the batch — the sheet carries no per-student dietary column, so split the
+  month's list by preference and upload one batch each. Required, never defaulted: the column
+  defaults to `Vegetarian`, so omitting it would silently record the whole batch as vegetarian and
+  skew that month's demand analytics.
 - `emails` (string, optional): Pasted emails separated by spaces/commas/newlines.
 - `file` (file, optional): CSV/XLSX; any cell containing an email is picked up (other columns ignored).
 
@@ -47,6 +52,7 @@ Dry-run. Parses emails from the pasted text and/or uploaded file, then classifie
   "success": true,
   "vendor": { "id": "vendor-id", "name": "Sodexo" },
   "month": "2026-07",
+  "preference": "Non-Vegetarian",
   "toCreate": [{ "email": "a@sst.scaler.com", "userId": "…", "name": "A" }],
   "duplicates": [{ "email": "b@sst.scaler.com", "userId": "…", "name": "B", "currentVendorId": "…", "currentVendorName": "Other", "alreadyThisVendor": false }],
   "notFound": ["ghost@sst.scaler.com"],
@@ -65,6 +71,8 @@ the `meal-history` cache.
 **Request Body (JSON):**
 
 - `vendorId` (uuid, required), `month` (`YYYY-MM`, required)
+- `preference` (string, **required**): as for `verify`. Written on both paths — an overwritten
+  selection gets the new preference too, so a reassigned row can't keep a stale dietary value.
 - `createUserIds` (uuid[]): students with no selection this month.
 - `overwriteUserIds` (uuid[]): duplicates to reassign to this vendor.
 

@@ -16,7 +16,7 @@ import {
   ClipboardPaste, Upload, UserPlus, Users, AlertTriangle, XCircle, RotateCcw,
   Loader2, CheckCircle2, Home,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, openNativePicker } from "@/lib/utils";
 
 interface VendorOption { id: string; name: string }
 interface CreateEntry { email: string; userId: string; name: string }
@@ -25,9 +25,14 @@ interface DuplicateEntry {
   currentVendorId: string; currentVendorName: string | null; alreadyThisVendor: boolean;
 }
 interface VerifyResult {
-  vendor: VendorOption; month: string;
+  vendor: VendorOption; month: string; preference: string;
   toCreate: CreateEntry[]; duplicates: DuplicateEntry[]; notFound: string[]; invalid: string[];
 }
+
+// Mirrors preferenceEnum in lib/db/schema.ts. The sheet no longer carries a per-student dietary
+// column, so one value applies to the whole batch. No default — the API rejects a missing value
+// rather than letting everyone silently land on 'Vegetarian'.
+const PREFERENCES = ["Vegetarian", "Non-Vegetarian", "Eggetarian"] as const;
 type TabKey = "toCreate" | "duplicates" | "notFound" | "invalid";
 interface ResultRow { name: string; email: string; vendorName: string; action: "added" | "moved" | "kept" }
 interface CommitSummary { vendorName: string; month: string; rows: ResultRow[]; skipped: number }
@@ -52,6 +57,7 @@ export const BulkUploadPanel = () => {
   const [vendors, setVendors] = useState<VendorOption[]>([]);
   const [vendorId, setVendorId] = useState("");
   const [month, setMonth] = useState("");
+  const [preference, setPreference] = useState("");
   const [mode, setMode] = useState<"paste" | "file">("paste");
   const [emailsText, setEmailsText] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -92,11 +98,15 @@ export const BulkUploadPanel = () => {
     setOverwriteIds(new Set());
     setEmailsText("");
     setFile(null);
+    // Cleared deliberately, unlike vendor/month: the next batch is usually a DIFFERENT preference,
+    // and carrying the last one over is how a whole list gets the wrong dietary value.
+    setPreference("");
   };
 
   const handleVerify = async () => {
     if (!vendorId) return toast.error("Select a vendor.");
     if (!month) return toast.error("Select a month.");
+    if (!preference) return toast.error("Select a meal preference.");
     if (mode === "paste" && pastedCount === 0) return toast.error("Paste at least one email.");
     if (mode === "file" && !file) return toast.error("Choose a file to upload.");
 
@@ -105,6 +115,7 @@ export const BulkUploadPanel = () => {
       const fd = new FormData();
       fd.append("vendorId", vendorId);
       fd.append("month", month);
+      fd.append("preference", preference);
       if (mode === "paste") fd.append("emails", emailsText);
       if (mode === "file" && file) fd.append("file", file);
 
@@ -147,7 +158,10 @@ export const BulkUploadPanel = () => {
     setIsCommitting(true);
     try {
       await axiosInstance.post(`/api/admin/upload-vendor-selection/commit`, {
-        vendorId: result.vendor.id, month: result.month, createUserIds, overwriteUserIds,
+        // Everything comes from the verified result, so what gets written is exactly what was
+        // reviewed — not whatever the form happens to hold by now.
+        vendorId: result.vendor.id, month: result.month, preference: result.preference,
+        createUserIds, overwriteUserIds,
       });
       // Build the results view from data we already have — no extra API call.
       const rows: ResultRow[] = [
@@ -219,7 +233,19 @@ export const BulkUploadPanel = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="month">Month</Label>
-                    <Input id="month" type="month" value={month} onChange={(e) => setMonth(e.target.value)} disabled={isVerifying} className="cursor-pointer" />
+                    <Input id="month" type="month" value={month} onChange={(e) => setMonth(e.target.value)} onClick={(e) => openNativePicker(e.currentTarget)} disabled={isVerifying} className="cursor-pointer" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="preference">Meal preference</Label>
+                    <Select value={preference} onValueChange={setPreference} disabled={isVerifying}>
+                      <SelectTrigger id="preference" className="w-full"><SelectValue placeholder="Select a preference" /></SelectTrigger>
+                      <SelectContent>
+                        {PREFERENCES.map((p) => (<SelectItem key={p} value={p}>{p}</SelectItem>))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Applies to every student in this upload. Upload one batch per preference.
+                    </p>
                   </div>
                 </div>
 
@@ -243,7 +269,13 @@ export const BulkUploadPanel = () => {
                     <div className="space-y-2">
                       <Label htmlFor="file">CSV / Excel of emails</Label>
                       <Input id="file" type="file" accept=".csv, .xlsx, .xls" onChange={(e) => setFile(e.target.files?.[0] ?? null)} disabled={isVerifying} className="cursor-pointer file:cursor-pointer file:text-foreground file:bg-secondary hover:file:bg-secondary/80" />
-                      <p className="text-xs text-muted-foreground">Any column with emails works — other columns are ignored.</p>
+                      <p className="text-xs font-medium text-warning">
+                        The sheet must contain student emails only.
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Every other column is ignored — vendor, month and meal preference come from the
+                        fields on the left, not from the file.
+                      </p>
                     </div>
                   )}
                 </div>
@@ -354,7 +386,12 @@ const ReviewView = ({
       <Card className="border-border bg-card shadow-lg">
         <CardHeader>
           <CardTitle className="text-xl font-bold text-primary sm:text-2xl">Review &amp; Confirm</CardTitle>
-          <CardDescription><span className="font-medium text-foreground">{result.vendor.name}</span> · {result.month}</CardDescription>
+          {/* State the preference here too — it is about to be written to every row, and this is
+              the last screen before that happens. */}
+          <CardDescription>
+            <span className="font-medium text-foreground">{result.vendor.name}</span> · {result.month} ·{" "}
+            <span className="font-medium text-foreground">{result.preference}</span>
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           {/* Clickable category tiles */}

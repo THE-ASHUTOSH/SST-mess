@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
 import { db } from '@/lib/db';
-import { vendors, vendorSelections } from '@/lib/db/schema';
+import { preferenceEnum, vendors, vendorSelections } from '@/lib/db/schema';
 import { requireRole } from '@/lib/auth-helper';
 import { and, eq, isNull } from 'drizzle-orm';
 import { isUuid, MAX_UPLOAD_EMAILS, monthToUtcDate } from '@/lib/vendor-selection-upload';
@@ -14,10 +14,16 @@ import { isUuid, MAX_UPLOAD_EMAILS, monthToUtcDate } from '@/lib/vendor-selectio
  * if any statement fails, nothing is written. Idempotency + the one-per-month rule are enforced by the
  * `vendor_selections_user_month_uniq` (userId, forMonth) index, so no read-then-write race. superAdmin only.
  *
- *   POST /api/admin/upload-vendor-selection/commit   (JSON: vendorId, month, createUserIds, overwriteUserIds)
+ *   POST /api/admin/upload-vendor-selection/commit
+ *   (JSON: vendorId, month, preference, createUserIds, overwriteUserIds)
  */
 
 const CHUNK = 500; // rows per statement — well under Postgres' ~65k bind-parameter ceiling
+
+// Required, never defaulted. The column defaults to 'Vegetarian', so omitting it would silently
+// record the whole batch as vegetarian and skew the demand analytics for that month.
+type Preference = (typeof preferenceEnum.enumValues)[number];
+const VALID_PREFERENCES = preferenceEnum.enumValues as readonly string[];
 
 const err = (message: string, status: number) => NextResponse.json({ success: false, message }, { status });
 
@@ -28,6 +34,7 @@ export async function POST(req: Request) {
         const body = await req.json().catch(() => null);
         const vendorId: unknown = body?.vendorId;
         const month: unknown = body?.month;
+        const preference: unknown = body?.preference;
         const createUserIds: string[] = Array.isArray(body?.createUserIds) ? body.createUserIds : [];
         const overwriteUserIds: string[] = Array.isArray(body?.overwriteUserIds) ? body.overwriteUserIds : [];
 
@@ -35,6 +42,9 @@ export async function POST(req: Request) {
         if (typeof vendorId !== 'string' || !isUuid(vendorId)) return err('A valid vendor is required.', 400);
         const forMonth = monthToUtcDate(typeof month === 'string' ? month : '');
         if (!forMonth) return err('A valid month (YYYY-MM) is required.', 400);
+        if (typeof preference !== 'string' || !VALID_PREFERENCES.includes(preference)) {
+            return err(`A meal preference is required (${VALID_PREFERENCES.join(', ')}).`, 400);
+        }
 
         const createIds = Array.from(new Set(createUserIds));
         const overwriteIds = Array.from(new Set(overwriteUserIds));
@@ -54,7 +64,8 @@ export async function POST(req: Request) {
 
         // --- Build all writes, then run them in one atomic batch ---
         const now = new Date();
-        const rowsFor = (ids: string[]) => ids.map((id) => ({ userId: id, vendorId, forMonth, dateofEntry: now }));
+        const rowsFor = (ids: string[]) =>
+            ids.map((id) => ({ userId: id, vendorId, forMonth, dateofEntry: now, preference: preference as Preference }));
         const chunks = <T>(arr: T[]) => Array.from({ length: Math.ceil(arr.length / CHUNK) }, (_, i) => arr.slice(i * CHUNK, i * CHUNK + CHUNK));
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -67,13 +78,15 @@ export async function POST(req: Request) {
                     .onConflictDoNothing({ target: [vendorSelections.userId, vendorSelections.forMonth] }),
             );
         }
-        // Overwrite picks: move (or create) this month's selection to the chosen vendor.
+        // Overwrite picks: move (or create) this month's selection to the chosen vendor. The
+        // preference moves with it — leaving the old one behind would silently keep a stale dietary
+        // value against a vendor the admin just reassigned.
         for (const chunk of chunks(rowsFor(overwriteIds))) {
             statements.push(
                 db.insert(vendorSelections).values(chunk)
                     .onConflictDoUpdate({
                         target: [vendorSelections.userId, vendorSelections.forMonth],
-                        set: { vendorId, dateofEntry: now },
+                        set: { vendorId, dateofEntry: now, preference: preference as Preference },
                     }),
             );
         }

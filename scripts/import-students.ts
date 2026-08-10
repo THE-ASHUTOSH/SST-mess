@@ -40,8 +40,8 @@ import fs from 'fs';
 
 config({ path: path.resolve(process.cwd(), '.env.local') });
 
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { pgConnection } from '../lib/db/pg';
 import { asc, inArray, sql } from 'drizzle-orm';
 import * as xlsx from 'xlsx';
 import * as schema from '../lib/db/schema';
@@ -224,7 +224,7 @@ interface DbUser {
 
 /** Build the client. Wrapped so `Db` below infers the schema-aware type rather than the default. */
 function makeDb(connectionString: string) {
-    return drizzle(neon(connectionString), { schema });
+    return drizzle({ connection: pgConnection(connectionString), schema });
 }
 type Db = ReturnType<typeof makeDb>;
 
@@ -637,7 +637,8 @@ function explainError(err: unknown): string {
     return String(err);
 }
 
-main().catch((err) => {
+// Explicit exit: the pg pool keeps the event loop alive, so returning from main() is not enough.
+main().then(() => process.exit(0)).catch((err) => {
     const message = explainError(err);
     console.error(`\n✗ Import failed: ${message}`);
 

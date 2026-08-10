@@ -15,8 +15,7 @@ import fs from 'fs';
 
 config({ path: path.resolve(process.cwd(), '.env.local') });
 
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from '../lib/db/schema';
 
 const CHUNK = 500; // rows per insert — well under Postgres' ~65k bind-parameter ceiling
@@ -50,7 +49,7 @@ async function main() {
         };
     });
 
-    const db = drizzle(neon(url), { schema });
+    const db = drizzle(url, { schema });
 
     const t0 = Date.now();
     let inserted = 0;

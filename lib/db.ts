@@ -1,16 +1,21 @@
-
 import { drizzle } from 'drizzle-orm/node-postgres';
-import * as schema from "./db/schema";
+import * as schema from './db/schema';
+import { pgConnection } from './db/pg';
 
-/** Wrapped so the global cache below infers the schema-aware type. */
 const makeDb = () => {
-    const client = drizzle(process.env.DATABASE_URL!, { schema });
-    // Required: pg re-emits errors from *idle* clients on the pool, and an unhandled 'error'
-    // event takes down the process. Serverless freezes instances, so the server closing an
-    // idle connection is routine, not exceptional. The pool replaces the client itself.
-    // `?.` because drizzle leaves $client undefined when DATABASE_URL is unset — don't turn a
-    // missing env var into a crash at import time.
-    client.$client?.on('error', (err) => console.error('pg pool error (idle client dropped):', err));
+    const client = drizzle({
+        connection: {
+            ...pgConnection(process.env.DATABASE_URL!),
+            max: 5, // PgBouncer pools; keep per-instance low
+        },
+        schema,
+    });
+    // pg re-emits errors from *idle* clients on the pool, and an unhandled 'error' event takes
+    // down the process. Serverless freezes instances, so the server closing an idle connection
+    // is routine, not exceptional. The pool replaces the client itself.
+    client.$client?.on('error', (err) =>
+        console.error('pg pool error (idle client dropped):', err),
+    );
     return client;
 };
 

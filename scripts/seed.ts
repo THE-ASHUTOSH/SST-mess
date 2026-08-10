@@ -14,6 +14,7 @@ import path from 'path';
 config({ path: path.resolve(process.cwd(), '.env.local') });
 
 import { drizzle } from 'drizzle-orm/node-postgres';
+import { pgConnection } from '../lib/db/pg';
 import * as schema from '../lib/db/schema';
 
 const { users, menus, vendors, meals, controls, vendorSelections, vendorFeedbacks } = schema;
@@ -45,7 +46,7 @@ async function main() {
         process.exit(1);
     }
 
-    const db = drizzle(url, { schema });
+    const db = drizzle({ connection: pgConnection(url), schema });
     console.log(`Seeding as dev email: ${devEmail}\n`);
 
     // --- Clear (delete referencing tables first to satisfy FKs) ---

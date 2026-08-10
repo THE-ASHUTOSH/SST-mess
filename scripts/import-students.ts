@@ -41,6 +41,7 @@ import fs from 'fs';
 config({ path: path.resolve(process.cwd(), '.env.local') });
 
 import { drizzle } from 'drizzle-orm/node-postgres';
+import { pgConnection } from '../lib/db/pg';
 import { asc, inArray, sql } from 'drizzle-orm';
 import * as xlsx from 'xlsx';
 import * as schema from '../lib/db/schema';
@@ -223,7 +224,7 @@ interface DbUser {
 
 /** Build the client. Wrapped so `Db` below infers the schema-aware type rather than the default. */
 function makeDb(connectionString: string) {
-    return drizzle(connectionString, { schema });
+    return drizzle({ connection: pgConnection(connectionString), schema });
 }
 type Db = ReturnType<typeof makeDb>;
 

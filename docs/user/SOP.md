@@ -117,7 +117,8 @@ commas or new lines.
 ### 3.1. Validating a Meal (Scanning)
 1.  Log in to the **Vendor Portal**.
 2.  Access the **QR Scanner** (Verify Student QR page).
-3.  **Permission**: Allow camera access if prompted.
+3.  **Permission**: Tap **Enable camera**, then choose **Allow** in the browser's own prompt that
+    follows. Do not tap *Block* — see the warning in 3.3.
 4.  **Scan**: Point camera at Student's generated QR code.
     *   **Green Checkmark**: "Verified Successfully" -> **SERVE FOOD**.
     *   **Red X**: "Already Scanned" or "Invalid Vendor" -> **DENY FOOD**.
@@ -129,6 +130,24 @@ commas or new lines.
 | `Wrong Vendor` | Student selected a different mess. | Direct student to their assigned mess. |
 | `Already Scanned` | User already ate this meal today. | Do **NOT** serve. |
 | `403 Forbidden` | You are logged in as a Student. | Log out and login with Vendor credentials. |
+
+### 3.3. Camera Won't Start
+The scanner never opens the camera on its own — it shows a **Turn on the camera to scan** card
+first, and only asks the browser once you tap **Enable camera**. If anything goes wrong you land
+back on that card with the reason printed on it, and the same button tries again.
+
+> **Important:** the browser only re-shows its camera prompt if you *dismissed* it. Once you tap
+> **Block**, the choice is saved for the site and **no website can ask again** — it has to be
+> changed in browser settings (Android: lock icon → Permissions → Camera; iOS: `aA` → Website
+> Settings → Camera; desktop: camera icon at the right of the address bar). This is exactly why
+> the card explains the camera before the prompt appears.
+
+| Message on the card | Meaning | Action |
+| :--- | :--- | :--- |
+| `Camera access was blocked` | Permission was refused. | Set Camera to *Allow* in browser settings (above), then tap **Enable camera**. |
+| `No camera was found on this device` | No usable camera. | Connect/enable a camera, then tap **Enable camera**. |
+| `The camera is already in use` | Another app or tab holds the camera. | Close it, then tap **Enable camera**. |
+| `The camera needs a secure connection` | Page opened over `http`. | Open the `https` address of the site. |
 
 ---
 

@@ -108,8 +108,8 @@ function mapError(error: unknown, action: string) {
 async function assertLinkableVendorAccount(email: string | null, currentVendorId?: string): Promise<void> {
     if (!email) return;
 
-    // One HTTP round trip for both lookups (neon-http has no db.transaction).
-    const [accountRows, claimRows] = await db.batch([
+    // Both lookups concurrently — read-only existence checks, so they need no transaction.
+    const [accountRows, claimRows] = await Promise.all([
         db.select({ id: users.id, role: users.role }).from(users)
             .where(sql`lower(${users.email}) = ${email}`).limit(1),
         db.select({ id: vendors.id, name: vendors.name }).from(vendors)

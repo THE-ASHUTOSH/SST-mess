@@ -12,8 +12,8 @@ import path from 'path';
 
 config({ path: path.resolve(process.cwd(), '.env.local') });
 
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { pgConnection } from '../lib/db/pg';
 import { sql } from 'drizzle-orm';
 import * as schema from '../lib/db/schema';
 
@@ -40,7 +40,7 @@ async function main() {
     console.log(`Target database host: ${host}`);
 
     const email = emailArg.toLowerCase().trim();
-    const db = drizzle(neon(url), { schema });
+    const db = drizzle({ connection: pgConnection(url), schema });
 
     const updated = await db
         .update(schema.users)

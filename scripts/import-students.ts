@@ -644,12 +644,13 @@ main().then(() => process.exit(0)).catch((err) => {
 
     if (/authentication failed|password authentication/i.test(message)) {
         console.error(
-            '\n  Neon rejected the DATABASE_URL credentials. This is an environment problem, not a data\n' +
-                '  problem — the failure happens on a read, so nothing was written. Check that:\n' +
-                '    • the connection string in .env.local is for the branch you actually meant to use;\n' +
-                '    • the password has not been rotated — Neon shows it once, so reset it in the console\n' +
-                '      and copy the full pooled connection string again;\n' +
-                '    • the branch still exists and has not been recreated.\n' +
+            '\n  The server rejected the DATABASE_URL credentials. This is an environment problem, not a\n' +
+                '  data problem — the failure happens on a read, so nothing was written. Check that:\n' +
+                '    • the connection string in .env.local is for the database you actually meant to use;\n' +
+                '    • user/password match the server (for the local Docker DB they come from\n' +
+                '      docker-compose.yml — mess/mess — and a stale named volume can hold an older password:\n' +
+                '      `pnpm db:reset` recreates it from scratch);\n' +
+                '    • the database still exists.\n' +
                 '  Confirm independently with: npx tsx scripts/check-db.ts\n',
         );
     } else if (/ENOTFOUND|EAI_AGAIN|ECONNREFUSED|fetch failed|ETIMEDOUT/i.test(message)) {

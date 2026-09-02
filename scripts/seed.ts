@@ -5,8 +5,9 @@
  *   npx tsx scripts/seed.ts --yes
  *
  * SAFETY: reads DATABASE_URL from .env.local and WIPES the domain tables before re-inserting.
- * It refuses to run without an explicit confirm and prints the target host so you can verify it's
- * your dev branch — NEVER point .env.local at production when running this.
+ * Two gates, both must pass: the target must be a LOCAL host (the Docker Postgres from
+ * docker-compose.yml), and you must pass --yes. A remote host is refused outright unless you also
+ * pass --allow-remote, so a .env.local left pointing at a shared server survives a reflex `pnpm db:seed`.
  */
 import { config } from 'dotenv';
 import path from 'path';
@@ -14,7 +15,7 @@ import path from 'path';
 config({ path: path.resolve(process.cwd(), '.env.local') });
 
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { pgConnection } from '../lib/db/pg';
+import { isLocalDb, pgConnection } from '../lib/db/pg';
 import * as schema from '../lib/db/schema';
 
 const { users, menus, vendors, meals, controls, vendorSelections, vendorFeedbacks } = schema;
@@ -32,10 +33,23 @@ async function main() {
 
     const confirmed = process.argv.includes('--yes') || process.env.SEED_CONFIRM === '1';
     console.log(`\nTarget database host: ${host}`);
+
+    if (!isLocalDb(url) && !process.argv.includes('--allow-remote')) {
+        console.error(
+            `\n✗ Refusing to seed "${host}" — it is not your local machine, and this script WIPES\n` +
+            '  every domain table on whatever it is pointed at.\n\n' +
+            '  Point DATABASE_URL at the local Docker Postgres instead (see .env.example):\n' +
+            '    postgresql://mess:mess@localhost:5432/mess_dev?sslmode=disable\n' +
+            '    pnpm db:up\n\n' +
+            '  If you genuinely mean to wipe that remote database, re-run with --allow-remote.\n',
+        );
+        process.exit(1);
+    }
+
     if (!confirmed) {
         console.error(
             '\n✗ Refusing to seed without confirmation (this WIPES the domain tables).\n' +
-            '  Verify the host above is your DEV branch, then re-run with:  npx tsx scripts/seed.ts --yes\n',
+            '  Verify the host above is your local dev DB, then re-run with:  pnpm db:seed\n',
         );
         process.exit(1);
     }

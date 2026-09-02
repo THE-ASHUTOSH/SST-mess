@@ -1,7 +1,7 @@
 
 import { config } from 'dotenv';
 import { defineConfig } from "drizzle-kit";
-import { PG_SSL, stripSslMode } from "./lib/db/pg";
+import { sslFor, stripSslMode } from "./lib/db/pg";
 
 config({ path: '.env.local' });
 
@@ -11,6 +11,6 @@ export default defineConfig({
     dialect: "postgresql",
     dbCredentials: {
         url: stripSslMode(process.env.DATABASE_URL!),
-        ssl: PG_SSL,
+        ssl: sslFor(process.env.DATABASE_URL!), // `false` for the local Docker DB, which has no TLS
     },
 });

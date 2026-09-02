@@ -64,9 +64,13 @@ so they map to `400` distinctly from server errors.
 
 ## Database & writes
 
-- Driver is **`drizzle-orm/neon-http` — NO `db.transaction`.** Design writes to survive partial failure:
-  order them so the last statement is the "commit" (e.g. create the menu, then insert the vendor with its
-  `menuId`), and/or lean on unique indexes + `onConflictDoNothing`.
+- Driver is **`drizzle-orm/node-postgres`**, which **does** support interactive transactions — use
+  `await db.transaction(async (tx) => { … })` for a multi-statement write that must be all-or-nothing
+  (see `app/api/admin/upload-vendor-selection/commit/route.ts`). Keep transactions short: they hold a
+  pooled connection, and `lib/db.ts` caps the pool at 5 per instance.
+- Handlers written before the driver swap instead order writes so the last statement is the "commit"
+  (e.g. create the menu, then insert the vendor with its `menuId`) and lean on unique indexes +
+  `onConflictDoNothing`. That remains correct — don't churn it — but new code can just use a transaction.
 - **No N+1.** For bulk work: preload with one `inArray(...)` query → diff in memory → chunked bulk
   `insert`/`update` (chunk ≤ 500 rows; watch the 65k param ceiling on non-chunked `inArray`).
 - **Soft delete** vendors (`deletedAt`), never hard delete — FKs from `meals`/`vendorSelections`/

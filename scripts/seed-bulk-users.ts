@@ -16,7 +16,7 @@ import fs from 'fs';
 config({ path: path.resolve(process.cwd(), '.env.local') });
 
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { pgConnection } from '../lib/db/pg';
+import { isLocalDb, pgConnection } from '../lib/db/pg';
 import * as schema from '../lib/db/schema';
 
 const CHUNK = 500; // rows per insert — well under Postgres' ~65k bind-parameter ceiling
@@ -34,8 +34,15 @@ async function main() {
     const host = (() => { try { return new URL(url).host; } catch { return '(unparseable host)'; } })();
     console.log(`\nTarget database host: ${host}`);
     console.log(`About to insert ${count} dummy students.`);
+    if (!isLocalDb(url) && !args.includes('--allow-remote')) {
+        console.error(
+            `\n✗ Refusing to write ${count} dummy students to "${host}" — it is not your local machine.\n` +
+            '  Point DATABASE_URL at the local Docker Postgres (pnpm db:up), or pass --allow-remote.\n',
+        );
+        process.exit(1);
+    }
     if (!confirmed) {
-        console.error('\n✗ Verify the host is your DEV branch, then re-run with --yes\n');
+        console.error('\n✗ Verify the host is your local dev DB, then re-run with --yes\n');
         process.exit(1);
     }
 

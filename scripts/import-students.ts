@@ -40,8 +40,8 @@ import fs from 'fs';
 
 config({ path: path.resolve(process.cwd(), '.env.local') });
 
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { pgConnection } from '../lib/db/pg';
 import { asc, inArray, sql } from 'drizzle-orm';
 import * as xlsx from 'xlsx';
 import * as schema from '../lib/db/schema';
@@ -224,7 +224,7 @@ interface DbUser {
 
 /** Build the client. Wrapped so `Db` below infers the schema-aware type rather than the default. */
 function makeDb(connectionString: string) {
-    return drizzle(neon(connectionString), { schema });
+    return drizzle({ connection: pgConnection(connectionString), schema });
 }
 type Db = ReturnType<typeof makeDb>;
 
@@ -637,18 +637,20 @@ function explainError(err: unknown): string {
     return String(err);
 }
 
-main().catch((err) => {
+// Explicit exit: the pg pool keeps the event loop alive, so returning from main() is not enough.
+main().then(() => process.exit(0)).catch((err) => {
     const message = explainError(err);
     console.error(`\n✗ Import failed: ${message}`);
 
     if (/authentication failed|password authentication/i.test(message)) {
         console.error(
-            '\n  Neon rejected the DATABASE_URL credentials. This is an environment problem, not a data\n' +
-                '  problem — the failure happens on a read, so nothing was written. Check that:\n' +
-                '    • the connection string in .env.local is for the branch you actually meant to use;\n' +
-                '    • the password has not been rotated — Neon shows it once, so reset it in the console\n' +
-                '      and copy the full pooled connection string again;\n' +
-                '    • the branch still exists and has not been recreated.\n' +
+            '\n  The server rejected the DATABASE_URL credentials. This is an environment problem, not a\n' +
+                '  data problem — the failure happens on a read, so nothing was written. Check that:\n' +
+                '    • the connection string in .env.local is for the database you actually meant to use;\n' +
+                '    • user/password match the server (for the local Docker DB they come from\n' +
+                '      docker-compose.yml — mess/mess — and a stale named volume can hold an older password:\n' +
+                '      `pnpm db:reset` recreates it from scratch);\n' +
+                '    • the database still exists.\n' +
                 '  Confirm independently with: npx tsx scripts/check-db.ts\n',
         );
     } else if (/ENOTFOUND|EAI_AGAIN|ECONNREFUSED|fetch failed|ETIMEDOUT/i.test(message)) {

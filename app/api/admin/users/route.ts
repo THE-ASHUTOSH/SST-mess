@@ -239,9 +239,9 @@ export async function DELETE(req: NextRequest) {
             );
         }
 
-        // One HTTP round trip for all four integrity checks (neon-http has no db.transaction).
+        // All four integrity checks concurrently — read-only, so they need no transaction.
         // `limit(1)` everywhere — we only need existence, never a count.
-        const [mealRows, feedbackRows, selectionRows, vendorRows] = await db.batch([
+        const [mealRows, feedbackRows, selectionRows, vendorRows] = await Promise.all([
             db.select({ id: meals.id }).from(meals)
                 .where(or(eq(meals.forUserId, targetId), eq(meals.byUserId, targetId))).limit(1),
             db.select({ id: vendorFeedbacks.id }).from(vendorFeedbacks)

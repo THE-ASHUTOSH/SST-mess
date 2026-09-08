@@ -1,7 +1,8 @@
 # Data model
 
-Source of truth: [`lib/db/schema.ts`](../../lib/db/schema.ts) (Drizzle). Postgres on Neon. Regenerate
-migrations with `pnpm drizzle-kit generate` after editing the schema.
+Source of truth: [`lib/db/schema.ts`](../../lib/db/schema.ts) (Drizzle). Plain Postgres — a Docker
+container locally ([docker-compose.yml](../../docker-compose.yml)). Regenerate migrations with
+`pnpm db:generate` after editing the schema.
 
 ## Enums
 

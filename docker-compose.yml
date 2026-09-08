@@ -1,0 +1,46 @@
+# Local development database — a throwaway Postgres you own, replacing the shared/hosted DB for
+# day-to-day work. Nothing here is production-facing: the credentials are deliberately trivial
+# because the server is only reachable from your own machine.
+#
+#   docker compose up -d db     start it (or: pnpm db:up)
+#   docker compose down         stop it, keep the data
+#   docker compose down -v      stop it and DELETE the data (pnpm db:reset rebuilds from scratch)
+#
+# Matching DATABASE_URL for .env.local (see .env.example):
+#   postgresql://mess:mess@localhost:5432/mess_dev?sslmode=disable
+#
+# `sslmode=disable` is required: this server has no TLS at all, and pg's default would try an
+# SSLRequest first. lib/db/pg.ts turns TLS off for it and leaves it on for remote hosts.
+
+name: sst-mess
+
+services:
+  db:
+    # Pin the major version so everyone's local schema behaves identically. Keep this in step with
+    # the server the deployed app talks to before relying on version-specific SQL.
+    image: postgres:17-alpine
+    container_name: sst-mess-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mess
+      POSTGRES_PASSWORD: mess
+      POSTGRES_DB: mess_dev
+      POSTGRES_INITDB_ARGS: --encoding=UTF8
+    ports:
+      # Host 5432 → container 5432. Override the host side if something already holds that port:
+      #   POSTGRES_PORT=5433 docker compose up -d db   (then update DATABASE_URL to match)
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # Named volume, not a bind mount — a bind mount onto a Windows filesystem breaks initdb's
+      # permission checks. `docker compose down -v` is the only thing that deletes it.
+      - mess-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # `pnpm db:up` waits on this, so migrations never race the first-boot initdb.
+      test: ["CMD-SHELL", "pg_isready -U mess -d mess_dev"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+volumes:
+  mess-pgdata:

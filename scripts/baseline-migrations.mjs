@@ -42,7 +42,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { neon } from "@neondatabase/serverless";
+import pg from "pg";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const MIGRATIONS_DIR = path.join(ROOT, "drizzle");
@@ -85,7 +85,20 @@ const toBaseline = entries.slice(0, cutoff + 1);
 const toRun = entries.slice(cutoff + 1);
 
 const url = new URL(dbUrl);
-const sql = neon(dbUrl);
+
+/* A tagged template over node-postgres, so the queries below read as SQL and still parameterise
+   safely: sql`... ${v} ...` becomes query("... $1 ...", [v]) and resolves to the rows array.
+   This file is plain .mjs and cannot import lib/db/pg.ts, so the TLS rule is mirrored here —
+   keep the two in step: off for a local host or sslmode=disable, on-but-relaxed otherwise. */
+const isLocal = ["localhost", "127.0.0.1", "::1", "[::1]", "db"].includes(url.hostname);
+const sslMode = url.searchParams.get("sslmode");
+const pool = new pg.Pool({
+  connectionString: dbUrl.replace(/([?&])sslmode=[^&]*&?/, "$1"),
+  ssl: sslMode ? (sslMode === "disable" ? false : { rejectUnauthorized: false })
+              : (isLocal ? false : { rejectUnauthorized: false }),
+});
+const sql = (strings, ...values) =>
+  pool.query(strings.reduce((q, s, i) => q + "$" + i + s), values).then((r) => r.rows);
 
 console.log(`\n  host        ${url.hostname}`);
 console.log(`  database    ${url.pathname.slice(1).split("?")[0]}`);
@@ -203,3 +216,5 @@ for (const r of rows) {
 const [{ n }] = await sql`select count(*)::int as n from drizzle.__drizzle_migrations`;
 console.log(`\n  Done — ${n} bookkeeping row(s) written. No schema was changed.`);
 console.log("  Next: pnpm drizzle-kit migrate\n");
+
+await pool.end(); // pg holds the socket open; without this the process never exits

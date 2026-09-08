@@ -9,23 +9,26 @@ manage vendors, menus, monthly opt-ins, analytics, and system controls.
 ## Tech stack
 
 Next.js 15 (App Router, Turbopack) · React 19 · TypeScript · Tailwind CSS v4 · shadcn/Radix UI ·
-Clerk (Google SSO) · Drizzle ORM + Neon (serverless Postgres) · pnpm · Node 20 · Vercel.
+Clerk (Google SSO) · Drizzle ORM + Postgres (`pg`) · Docker (local DB) · pnpm · Node 20 · Vercel.
 
 ## Getting started
 
-**Prerequisites:** Node 20+, pnpm (`npm i -g pnpm`).
+**Prerequisites:** Node 20+, pnpm (`npm i -g pnpm`), Docker Desktop (running).
 
 ```bash
-pnpm install
+cp .env.example .env.local   # fill in the Clerk dev keys + DEV_SEED_EMAIL; leave DATABASE_URL as-is
+pnpm setup                   # install → start Postgres container → migrate → seed demo data
+pnpm dev                     # → http://localhost:3000
 ```
 
-Create `.env.local` with:
+`.env.local` keys:
 
 ```env
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
 CLERK_SECRET_KEY=
-DATABASE_URL=            # Neon Postgres connection string
+DATABASE_URL=            # local Docker Postgres — see .env.example
 JWT_SECRET_KEY=          # signs the meal QR tokens (HS256)
+DEV_SEED_EMAIL=          # your login email; the seed makes it superAdmin
 ```
 
 Common commands:
@@ -35,18 +38,23 @@ pnpm dev          # dev server → http://localhost:3000
 pnpm build        # production build
 pnpm lint         # ESLint
 pnpm typecheck    # tsc --noEmit
-pnpm drizzle-kit generate --name <desc>   # create a migration after editing lib/db/schema.ts
-pnpm drizzle-kit migrate                  # apply migrations
+
+pnpm db:up        # start the local Postgres container
+pnpm db:migrate   # apply migrations
+pnpm db:seed      # wipe + reseed demo data
+pnpm db:reset     # nuke the volume, then migrate + seed from scratch
+pnpm db:psql      # psql shell into the container
+pnpm db:generate --name <desc>   # create a migration after editing lib/db/schema.ts
 ```
 
-> **New here?** [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) walks you through a seeded local dev
-> environment (on a Neon dev branch) where you can explore the app as every role.
+> **New here?** [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) walks you through the seeded local dev
+> environment where you can explore the app as every role, plus a troubleshooting table.
 
 ## Documentation
 
 | Doc | What's in it |
 |---|---|
-| [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) | New-dev setup: Neon dev branch, env, migrate, **seed**, and viewing every role |
+| [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) | New-dev setup: Docker Postgres, env, migrate, **seed**, viewing every role, troubleshooting |
 | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | System overview, stack, auth flow, core meal flow, deploy notes |
 | [docs/backend/CONVENTIONS.md](./docs/backend/CONVENTIONS.md) | Route patterns: roles/access, error mapping, validation, DB/writes, caching, migrations |
 | [docs/backend/API.md](./docs/backend/API.md) | Endpoint reference (request/response for every route) |

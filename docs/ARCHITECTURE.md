@@ -16,7 +16,7 @@ vendors, menus, monthly opt-ins, analytics, and system controls.
 | Framework | Next.js 15 (App Router, Turbopack) · React 19 |
 | Styling / UI | Tailwind CSS v4 · shadcn-style Radix primitives (`components/ui`) |
 | Auth | Clerk (Google SSO), domain-restricted to `sst.scaler.com` / `scaler.com`, then roster-gated on a `users` row |
-| DB / ORM | Neon (serverless Postgres) · Drizzle ORM (`drizzle-orm/neon-http`) |
+| DB / ORM | Postgres · Drizzle ORM (`drizzle-orm/node-postgres`, pooled via `pg`) — locally a Docker container ([docker-compose.yml](../docker-compose.yml)) |
 | Runtime | Node 20 · pnpm · deployed on Vercel |
 
 ## Roles
@@ -100,8 +100,11 @@ Read-heavy endpoints use `unstable_cache` with tags; mutations call `revalidateT
 
 ## Deploy notes
 
-- **neon-http driver has no interactive transactions** — multi-statement writes are ordered defensively
-  and/or guarded by unique indexes instead. See [CONVENTIONS.md](./backend/CONVENTIONS.md#database--writes).
+- **The `node-postgres` driver has real interactive transactions** (`db.transaction(async (tx) => …)`).
+  Older handlers predate it and still order writes defensively / lean on unique indexes; that is safe,
+  just no longer required. See [CONVENTIONS.md](./backend/CONVENTIONS.md#database--writes).
+- **TLS is decided per connection URL** in [`lib/db/pg.ts`](../lib/db/pg.ts): off for a local host or
+  `sslmode=disable` (the Docker container has no TLS), on-but-verification-relaxed for anything remote.
 - Vercel serverless: ~4.5 MB request body cap; function timeout (10 s Hobby / higher on Pro). Bulk
   endpoints are capped accordingly (see the upload limits in [backend/API.md](./backend/API.md)).
 - Migrations are generated with `pnpm drizzle-kit generate` and applied with `pnpm drizzle-kit migrate`.

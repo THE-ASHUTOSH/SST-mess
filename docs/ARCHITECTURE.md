@@ -75,7 +75,7 @@ meals row inserted (forUserId, byUserId, mealType, date)
 Totals & analytics: /api/meal/total-meals, /api/vendor/choice-analysis, feedback-analysis
 ```
 
-Key domain tables: `users`, `vendors`, `menus`, `vendorSelections`, `meals`, `vendorFeedbacks`,
+Key domain tables: `users`, `vendors`, `menuDays`, `vendorSelections`, `meals`, `vendorFeedbacks`,
 `controls`. Full schema in [backend/DATA_MODEL.md](./backend/DATA_MODEL.md).
 
 ## Vendor accounts

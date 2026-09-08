@@ -20,17 +20,29 @@ The identity for every human (and vendor account). `id` uuid PK · `email` text 
 > (superAdmin only, allowed domains only); students are loaded out of band. Every user has exactly
 > one `role`. Emails are stored lowercased.
 
+### `menu_days`
+One vendor's menu for one calendar day. `id` uuid PK · **`vendorId`** → `vendors.id` (`ON DELETE CASCADE`) ·
+**`date`** `date` not null (plain calendar date in **IST**, never a timestamp — that is what stops "today"
+differing between an admin in Kolkata and a server elsewhere) · `breakfast`/`lunch`/`dinner` jsonb
+`string[]` **not null default `'[]'`** · `createdAt`/`updatedAt`.
+Indexes: unique on **(`vendorId`, `date`)** — one menu per vendor per day, which lets the editor upsert
+with no read-then-write race — plus an index on `date` for the window read and the retention delete.
+
+> **This replaced the weekly `menus` table, dropped in migration `0014`.** The admin edits an
+> explicit rolling window
+> (`MENU_WINDOW_DAYS` = 15, starting today) rather than a pattern that repeats forever, so the same
+> weekday can differ week to week. The window is **derived, never stored**: a date with no row is
+> served as an empty editable day and becomes a row on first save, so the far end grows automatically
+> as the near end falls away — no scheduled job keeps the count at 15. Days older than
+> `MENU_RETENTION_DAYS` (2) are hard-deleted on write. Migration `0013` carried the old weekly patterns
+> into this table; `0014` then dropped `menus` and `vendors.menuId`.
+
 ### `vendors`
 A mess vendor. `id` uuid PK · `name` not null · **`email`** (nullable, login mapping — superAdmin-only) ·
-`description` · `price` int not null · `menuUrl` · `menuId` → `menus.id` · `breakfast`/`lunch`/`dinner`
+`description` · `price` int not null · `menuUrl` (link to an uploaded menu PDF) · `breakfast`/`lunch`/`dinner`
 bool (default true) · `createdAt`/`updatedAt` · **`deletedAt`** (soft delete).
-Indexes: partial-unique on `menuId` **where `deletedAt IS NULL`** (one active vendor per menu),
-partial-unique on `email` **where `deletedAt IS NULL`** (one active vendor per login email; NULLs allowed),
+Indexes: partial-unique on `email` **where `deletedAt IS NULL`** (one active vendor per login email; NULLs allowed),
 and an index on `deletedAt`.
-
-### `menus`
-Weekly menu. `id` uuid PK · `monday`…`sunday` as `jsonb` `{ breakfast: string[], lunch: string[],
-dinner: string[] }` · `createdAt`/`updatedAt`. Parsed from an uploaded CSV via `lib/utils/generateMenu`.
 
 ### `vendorSelections`
 A student's monthly opt-in. `id` uuid PK · `userId` → `users.id` not null · `vendorId` → `vendors.id`
@@ -57,12 +69,12 @@ Feature flags. `id` uuid PK · `name` unique not null · `enabled` bool (default
 ```
 users ──< meals >── (byUser) users
     │        (forUser) ↑
-    ├──< vendorSelections >── vendors ──> menus
+    ├──< vendorSelections >── vendors ──< menuDays
     └──< vendorFeedbacks  >── vendors
 ```
 
 - `users` 1─N `vendorSelections`, `vendorFeedbacks`, `meals` (as eater and as scanner).
-- `vendors` 1─N `vendorSelections`, `vendorFeedbacks`; `vendors` N─1 `menus` (one active vendor per menu).
+- `vendors` 1─N `vendorSelections`, `vendorFeedbacks`; `vendors` 1-N `menuDays` (cascade-deleted with the vendor).
 - `meals.byUserId` is the vendor user who scanned; `meals.forUserId` is the student.
 
 ## Conventions

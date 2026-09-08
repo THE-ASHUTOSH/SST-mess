@@ -56,10 +56,12 @@ export const roleNavConfig: Record<ShellVariant, RoleNavConfig> = {
         icon: CalendarCheck,
       },
       {
-        id: "student-vendors",
-        label: "Vendors",
-        href: "/student/vendorDetails",
-        icon: Store,
+        // Replaces the old "Vendors" (/student/vendorDetails) page: the day-by-day menu plus each
+        // vendor's price, description and downloadable menu link.
+        id: "student-menu",
+        label: "Menu",
+        href: "/student/menu",
+        icon: Utensils,
       },
       {
         id: "student-feedback",

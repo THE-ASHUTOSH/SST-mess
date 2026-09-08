@@ -310,7 +310,7 @@ Fetches the currently authenticated user's details.
 
 To add a new vendor. It takes vendor details: name, login email, description, price, and meal options. **superAdmin only.**
 
-> **Note:** This endpoint manages the vendor **record** — `POST` creates, `PUT ?id=` updates details, and `DELETE ?id=` soft-deletes. All three are **superAdmin only**. The vendor's **menu** (URL + weekly CSV) is managed separately via `PUT /api/vendor/updateMenu` (see below), which admins can also access.
+> **Note:** This endpoint manages the vendor **record** — `POST` creates, `PUT ?id=` updates details, and `DELETE ?id=` soft-deletes. All three are **superAdmin only**. The vendor's **menu** (days + menu link) is managed separately via `/api/vendor/menu`, which admins can also access.
 
 **Request Body (form-data):**
 
@@ -367,27 +367,58 @@ To soft-delete a vendor. **superAdmin only.** Sets `deletedAt` so the vendor is 
 }
 ```
 
-### `PUT /api/vendor/updateMenu?id=[id]`
+> **One endpoint for everything menu-shaped.** `GET` reads, `PUT` writes a day, `PATCH` sets the menu
+> link. This replaced `menu-days` and `updateMenu`, which were both editing "the menu" from different
+> angles. Vendor details (name, price, meals, add/delete) remain in `manageVendor`.
 
-To update a vendor's **menu** — the menu URL and/or the weekly menu parsed from an uploaded CSV. Accessible to **admin and superAdmin**. Does not touch the vendor's name/price/meal options (those live in `manageVendor`). Returns `404` if the vendor does not exist or has been soft-deleted.
+### `GET /api/vendor/menu?vendorId=[id]`
 
-**Request Body (form-data):**
+The vendor's menu for the rolling window, plus the vendor's own menu details (`name`, `price`,
+`description`, `menuUrl`, and which meals it serves). Readable by **any signed-in user** — students
+browse it — so `vendors.email` is never selected here.
 
-- `menuUrl` (string): URL to the menu (empty clears it).
-- `menuFile` (file, optional): CSV file for the weekly menu. If provided, it replaces the vendor's existing weekly menu; if omitted, only the URL is updated.
+Always returns exactly `windowDays` (15) entries starting with **today in IST**, in order. A date with no
+row yet comes back with empty dish arrays and `isSet: false`: the window is derived, not stored, so the far
+end gains a new day the moment the near end falls away. Meals the vendor doesn't serve are returned empty.
 
 **Response:**
 
 ```json
 {
   "success": true,
-  "message": "Menu updated successfully",
-  "vendor": {
-    "id": "vendor-id",
-    "name": "Vendor Name"
-  }
+  "vendor": { "id": "…", "name": "CFFMS", "price": 4000, "description": "…", "menuUrl": null,
+              "breakfast": true, "lunch": true, "dinner": true },
+  "windowDays": 15,
+  "days": [
+    { "date": "2026-07-30", "breakfast": ["Poha"], "lunch": ["Dal", "Rice"], "dinner": [], "isSet": true, "updatedAt": "…" }
+  ]
 }
 ```
+
+### `PUT /api/vendor/menu?vendorId=[id]`
+
+Upserts **one** day. **admin / superAdmin only.**
+
+**Request Body (JSON):** `{ "date": "YYYY-MM-DD", "breakfast": [], "lunch": [], "dinner": [] }`
+
+- `date` must fall inside the current window (`400` otherwise) — the past is immutable and writing months
+  ahead would fill the table with days nobody can see.
+- Each meal is a `string[]`: trimmed, blanks dropped, de-duplicated case-insensitively, max **30** dishes of
+  **160** chars (`400` otherwise).
+- A meal the vendor doesn't serve is forced to `[]`, so a stored menu can't contradict the vendor's own
+  breakfast/lunch/dinner flags.
+- Busts the `vendors` cache tag, then hard-deletes days older than `MENU_RETENTION_DAYS`.
+
+### `PATCH /api/vendor/menu?vendorId=[id]`
+
+Sets the vendor's optional **menu link** (the external file students can download). **admin / superAdmin only.**
+
+**Request Body (JSON):** `{ "menuUrl": "https://…" }` — empty or omitted clears it.
+
+Must start with `http://` or `https://` (`400` otherwise, so a `javascript:` or `data:` URL can never be
+handed to a student's browser), max 2048 chars. Busts the `vendors` cache tag.
+
+**Response:** `{ "success": true, "message": "Menu link saved.", "vendor": { "id", "name", "menuUrl" } }`
 
 ### `POST /api/vendor/choice-analysis`
 
@@ -452,9 +483,12 @@ For admins to get paginated vendor feedback.
 
 ### `GET /api/vendor/getVendors`
 
-Fetches all active (non-soft-deleted) vendors and their associated menus.
+Fetches all active (non-soft-deleted) vendors. Per-day menus are a separate read (`GET /api/vendor/menu`).
 
 **Response:**
+
+Every column except `email` (superAdmin-only) — there is **no** nested menu object; dishes come from
+`GET /api/vendor/menu`. Cached under the `vendors` tag for an hour.
 
 ```json
 {
@@ -463,10 +497,15 @@ Fetches all active (non-soft-deleted) vendors and their associated menus.
     {
       "id": "vendor-id",
       "name": "Vendor Name",
-      "menu": {
-        "id": "menu-id",
-        "day1": "Dal, Roti"
-      }
+      "description": "…",
+      "price": 4000,
+      "menuUrl": null,
+      "breakfast": true,
+      "lunch": true,
+      "dinner": true,
+      "createdAt": "…",
+      "updatedAt": "…",
+      "deletedAt": null
     }
   ]
 }
@@ -521,27 +560,12 @@ export const users = pgTable("users", {
     createdAt: timestamp("created_at").defaultNow(),
 });
 
-// menus must be defined before vendors
-export const menus = pgTable("menus", {
-    id: uuid("id").defaultRandom().primaryKey(),
-    monday: jsonb("monday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
-    tuesday: jsonb("tuesday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
-    wednesday: jsonb("wednesday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
-    thursday: jsonb("thursday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
-    friday: jsonb("friday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
-    saturday: jsonb("saturday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
-    sunday: jsonb("sunday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
-    createdAt: timestamp("created_at").defaultNow(),
-    updatedAt: timestamp("updated_at").defaultNow(),
-});
-
 export const vendors = pgTable("vendors", {
     id: uuid("id").defaultRandom().primaryKey(),
     name: text("name").notNull(),
     description: text("description"),
     price: integer("price").notNull(), // Storing as integer (e.g., cents/pysa) or just number
     menuUrl: text("menu_url"),
-    menuId: uuid("menu_id").references(() => menus.id).unique(),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
     breakfast: boolean("breakfast").default(true),
@@ -598,11 +622,7 @@ export const usersRelations = relations(users, ({ many }) => ({
     selections: many(vendorSelections),
 }));
 
-export const vendorsRelations = relations(vendors, ({ one, many }) => ({
-    menu: one(menus, {
-        fields: [vendors.menuId],
-        references: [menus.id],
-    }),
+export const vendorsRelations = relations(vendors, ({ many }) => ({
     feedbacks: many(vendorFeedbacks),
     selections: many(vendorSelections),
 }));
@@ -617,13 +637,6 @@ export const mealsRelations = relations(meals, ({ one }) => ({
         fields: [meals.byUserId],
         references: [users.id],
         relationName: "generated_meals"
-    }),
-}));
-
-export const menusRelations = relations(menus, ({ one }) => ({
-    vendor: one(vendors, {
-        fields: [menus.id],
-        references: [vendors.menuId],
     }),
 }));
 

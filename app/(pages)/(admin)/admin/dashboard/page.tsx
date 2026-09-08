@@ -64,7 +64,7 @@ const CARDS: DashboardCard[] = [
   },
   {
     title: "Update Vendor Menu",
-    description: "Set a vendor's menu URL or upload a weekly CSV",
+    description: "Set what each vendor serves, day by day",
     redirectUrl: "/admin/updateMenu",
     icon: Utensils,
     roles: ["admin", "superAdmin"],

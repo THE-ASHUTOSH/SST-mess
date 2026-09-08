@@ -8,7 +8,7 @@ Next.js 15 App Router + React 19 + Tailwind v4 + shadcn-style Radix UI. See
 Pages live under `app/(pages)/` in **route groups by role** (the `(group)` folders don't affect the URL):
 
 ```
-(pages)/(student)/student/…     → /student/dashboard, /student/vendorDetails, /student/feedback, /student/mealHistory
+(pages)/(student)/student/…     → /student/dashboard, /student/menu, /student/feedback, /student/mealHistory
 (pages)/(admin)/admin/…         → /admin/dashboard, /admin/manageVendor, /admin/updateMenu,
                                   /admin/manageStudents (directory + bulk upload), /admin/adminControls,
                                   /admin/analytics (demand + meals), /admin/feedBackAnalysis,

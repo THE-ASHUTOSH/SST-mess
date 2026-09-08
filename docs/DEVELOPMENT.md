@@ -31,7 +31,7 @@ host, but keep `.env.local` pointed at the container anyway.
 
    `./dev.sh` does the same thing with an interactive menu (bash only — Git Bash on Windows).
 
-The seed creates 2 vendors (+ menus), 1 admin, 2 vendor users, 6 students, this month's opt-ins,
+The seed creates 2 vendors (each with a 15-day rolling per-day menu), 1 admin, 2 vendor users, 6 students, this month's opt-ins,
 some recorded meals, and opens the feedback window.
 
 ## The database

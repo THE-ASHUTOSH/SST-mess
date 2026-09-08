@@ -483,9 +483,12 @@ For admins to get paginated vendor feedback.
 
 ### `GET /api/vendor/getVendors`
 
-Fetches all active (non-soft-deleted) vendors and their associated menus.
+Fetches all active (non-soft-deleted) vendors. Per-day menus are a separate read (`GET /api/vendor/menu`).
 
 **Response:**
+
+Every column except `email` (superAdmin-only) — there is **no** nested menu object; dishes come from
+`GET /api/vendor/menu`. Cached under the `vendors` tag for an hour.
 
 ```json
 {
@@ -494,10 +497,15 @@ Fetches all active (non-soft-deleted) vendors and their associated menus.
     {
       "id": "vendor-id",
       "name": "Vendor Name",
-      "menu": {
-        "id": "menu-id",
-        "day1": "Dal, Roti"
-      }
+      "description": "…",
+      "price": 4000,
+      "menuUrl": null,
+      "breakfast": true,
+      "lunch": true,
+      "dinner": true,
+      "createdAt": "…",
+      "updatedAt": "…",
+      "deletedAt": null
     }
   ]
 }
@@ -552,27 +560,12 @@ export const users = pgTable("users", {
     createdAt: timestamp("created_at").defaultNow(),
 });
 
-// menus must be defined before vendors
-export const menus = pgTable("menus", {
-    id: uuid("id").defaultRandom().primaryKey(),
-    monday: jsonb("monday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
-    tuesday: jsonb("tuesday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
-    wednesday: jsonb("wednesday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
-    thursday: jsonb("thursday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
-    friday: jsonb("friday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
-    saturday: jsonb("saturday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
-    sunday: jsonb("sunday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
-    createdAt: timestamp("created_at").defaultNow(),
-    updatedAt: timestamp("updated_at").defaultNow(),
-});
-
 export const vendors = pgTable("vendors", {
     id: uuid("id").defaultRandom().primaryKey(),
     name: text("name").notNull(),
     description: text("description"),
     price: integer("price").notNull(), // Storing as integer (e.g., cents/pysa) or just number
     menuUrl: text("menu_url"),
-    menuId: uuid("menu_id").references(() => menus.id).unique(),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
     breakfast: boolean("breakfast").default(true),
@@ -629,11 +622,7 @@ export const usersRelations = relations(users, ({ many }) => ({
     selections: many(vendorSelections),
 }));
 
-export const vendorsRelations = relations(vendors, ({ one, many }) => ({
-    menu: one(menus, {
-        fields: [vendors.menuId],
-        references: [menus.id],
-    }),
+export const vendorsRelations = relations(vendors, ({ many }) => ({
     feedbacks: many(vendorFeedbacks),
     selections: many(vendorSelections),
 }));
@@ -648,13 +637,6 @@ export const mealsRelations = relations(meals, ({ one }) => ({
         fields: [meals.byUserId],
         references: [users.id],
         relationName: "generated_meals"
-    }),
-}));
-
-export const menusRelations = relations(menus, ({ one }) => ({
-    vendor: one(vendors, {
-        fields: [menus.id],
-        references: [vendors.menuId],
     }),
 }));
 

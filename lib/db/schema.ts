@@ -16,20 +16,6 @@ export const users = pgTable("users", {
     createdAt: timestamp("created_at").defaultNow(),
 });
 
-// menus must be defined before vendors
-export const menus = pgTable("menus", {
-    id: uuid("id").defaultRandom().primaryKey(),
-    monday: jsonb("monday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
-    tuesday: jsonb("tuesday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
-    wednesday: jsonb("wednesday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
-    thursday: jsonb("thursday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
-    friday: jsonb("friday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
-    saturday: jsonb("saturday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
-    sunday: jsonb("sunday").$type<{ breakfast: string[]; lunch: string[]; dinner: string[] }>(),
-    createdAt: timestamp("created_at").defaultNow(),
-    updatedAt: timestamp("updated_at").defaultNow(),
-});
-
 export const vendors = pgTable("vendors", {
     id: uuid("id").defaultRandom().primaryKey(),
     name: text("name").notNull(),
@@ -37,7 +23,6 @@ export const vendors = pgTable("vendors", {
     description: text("description"),
     price: integer("price").notNull(), // Storing as integer (e.g., cents/pysa) or just number
     menuUrl: text("menu_url"),
-    menuId: uuid("menu_id").references(() => menus.id),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
     breakfast: boolean("breakfast").default(true),
@@ -45,8 +30,6 @@ export const vendors = pgTable("vendors", {
     dinner: boolean("dinner").default(true),
     deletedAt: timestamp("deleted_at"),
 }, (table) => ({
-    // Soft-delete: a menu can only bind to ONE *active* vendor; the menu becomes reusable once the vendor is soft-deleted.
-    menuIdActiveUnique: uniqueIndex("vendors_menu_id_active_unique").on(table.menuId).where(sql`${table.deletedAt} IS NULL`),
     // At most one ACTIVE vendor per login email (emails are stored lowercased). NULL emails are allowed & non-conflicting.
     emailActiveUnique: uniqueIndex("vendors_email_active_unique").on(table.email).where(sql`${table.deletedAt} IS NULL`),
     deletedAtIdx: index("vendors_deleted_at_idx").on(table.deletedAt),
@@ -55,9 +38,8 @@ export const vendors = pgTable("vendors", {
 /**
  * One vendor's menu for one calendar day.
  *
- * Replaces the recurring weekly `menus` table: the admin edits an explicit rolling window of days
- * (see MENU_WINDOW_DAYS) instead of a pattern that repeats forever, so "Tuesday" can differ week to
- * week. `date` is a plain Postgres date in IST — no timestamp, so no timezone drift between the
+ * The admin edits an explicit rolling window of days (see MENU_WINDOW_DAYS) rather than a weekly
+ * pattern that repeats forever, so "Tuesday" can differ week to week. `date` is a plain Postgres date in IST — no timestamp, so no timezone drift between the
  * admin who typed it and the student reading it.
  *
  * Days older than MENU_RETENTION_DAYS are hard-deleted; the UI only ever shows today onwards.
@@ -131,11 +113,7 @@ export const usersRelations = relations(users, ({ many }) => ({
     selections: many(vendorSelections),
 }));
 
-export const vendorsRelations = relations(vendors, ({ one, many }) => ({
-    menu: one(menus, {
-        fields: [vendors.menuId],
-        references: [menus.id],
-    }),
+export const vendorsRelations = relations(vendors, ({ many }) => ({
     menuDays: many(menuDays),
     feedbacks: many(vendorFeedbacks),
     selections: many(vendorSelections),
@@ -158,13 +136,6 @@ export const mealsRelations = relations(meals, ({ one }) => ({
         fields: [meals.byUserId],
         references: [users.id],
         relationName: "generated_meals"
-    }),
-}));
-
-export const menusRelations = relations(menus, ({ one }) => ({
-    vendor: one(vendors, {
-        fields: [menus.id],
-        references: [vendors.menuId],
     }),
 }));
 

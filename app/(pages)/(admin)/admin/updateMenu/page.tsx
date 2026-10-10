@@ -1,15 +1,15 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from "@/components/ui/skeleton"
+import React, { useCallback, useEffect, useState } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import axiosInstance from '@/lib/axiosInstance'
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
+import { CalendarDays, Link2, Store } from "lucide-react"
+import MenuDayScroller from "@/components/features/menu/MenuDayScroller"
 
 interface Vendor {
   id: string
@@ -17,22 +17,22 @@ interface Vendor {
   menuUrl: string | null
 }
 
+/**
+ * Menu editing is now day-by-day over a rolling window (see MenuDayScroller), not a CSV upload of a
+ * repeating week. The optional menu link stays because students can still download it.
+ */
 const ManageMenu = () => {
   const [vendors, setVendors] = useState<Vendor[]>([])
   const [selectedVendorId, setSelectedVendorId] = useState<string>("")
   const [menuUrl, setMenuUrl] = useState<string>("")
-  const [menuFile, setMenuFile] = useState<File | null>(null)
-  const [fileKey, setFileKey] = useState(0)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSavingUrl, setIsSavingUrl] = useState(false)
 
   const loadVendors = useCallback(async () => {
     try {
       const response = await axiosInstance.get(`/api/vendor/getVendors`)
-      if (Array.isArray(response.data.vendors)) {
-        setVendors(response.data.vendors)
-      }
-    } catch (err) {
-      console.log(err)
+      if (Array.isArray(response.data.vendors)) setVendors(response.data.vendors)
+    } catch {
+      toast.error("Failed to load vendors.")
     }
   }, [])
 
@@ -43,102 +43,102 @@ const ManageMenu = () => {
   // Prefill on selection only (not on refetch), so a background refresh never clobbers edits.
   const handleSelectVendor = (id: string) => {
     setSelectedVendorId(id)
-    const vendor = vendors.find(v => v.id === id)
-    setMenuUrl(vendor?.menuUrl ?? "")
-    setMenuFile(null)
-    setFileKey(k => k + 1)
+    setMenuUrl(vendors.find(v => v.id === id)?.menuUrl ?? "")
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedVendorId) {
-      toast.error("Please select a vendor.")
-      return
-    }
-    setIsSubmitting(true)
+  const handleSaveUrl = async () => {
+    if (!selectedVendorId) return
+    setIsSavingUrl(true)
     try {
-      const body = new FormData()
-      body.append('menuUrl', menuUrl)
-      if (menuFile) body.append('menuFile', menuFile)
-
-      await axiosInstance.put(`/api/vendor/updateMenu?id=${selectedVendorId}`, body)
-      toast.success("Menu updated successfully!", { description: "Changes have been saved." })
+      // PATCH on the one menu endpoint — the day cards below PUT to the same route.
+      await axiosInstance.patch(`/api/vendor/menu?vendorId=${selectedVendorId}`, { menuUrl })
+      toast.success("Menu link saved.")
       await loadVendors()
-    } catch {
-      toast.error("Failed to update menu. Please try again.")
+    } catch (err) {
+      const msg =
+        typeof err === "object" && err !== null && "response" in err
+          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+          : undefined
+      toast.error(msg || "Failed to save the menu link.")
     } finally {
-      setIsSubmitting(false)
+      setIsSavingUrl(false)
     }
   }
+
+  const selectedVendor = vendors.find(v => v.id === selectedVendorId)
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 animate-in fade-in slide-in-from-bottom-6 duration-700">
-      <Card className="w-full max-w-md border-border bg-card shadow-lg">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <Card className="border-border bg-card shadow-lg">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-primary">Update Menu</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-2xl font-bold text-primary">
+            <CalendarDays className="h-6 w-6" /> Update Menu
+          </CardTitle>
+          <CardDescription>
+            Set what each vendor is serving, day by day. Pick a vendor, then use the pencil on any day
+            to edit its breakfast, lunch and dinner.
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+
+        <CardContent className="space-y-5">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="vendor">Select Vendor</Label>
-              <Select value={selectedVendorId} onValueChange={handleSelectVendor} disabled={isSubmitting}>
-                <SelectTrigger id="vendor">
+              <Label htmlFor="vendor">Vendor</Label>
+              <Select value={selectedVendorId} onValueChange={handleSelectVendor}>
+                <SelectTrigger id="vendor" className="w-full">
                   <SelectValue placeholder="Select a vendor" />
                 </SelectTrigger>
                 <SelectContent>
-                  {vendors.map(option => (
-                    <SelectItem key={option.id} value={option.id}>
-                      {option.name}
-                    </SelectItem>
-                  ))}
+                  {vendors.map(v => (<SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
 
             {selectedVendorId && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="menuUrl">Menu URL</Label>
-                  <Textarea
-                    id="menuUrl"
-                    name="menuUrl"
-                    value={menuUrl}
-                    onChange={(e) => setMenuUrl(e.target.value)}
-                    placeholder="Enter menu URL"
-                    disabled={isSubmitting}
-                    rows={3}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="menuFile">Menu File (CSV)</Label>
+              <div className="space-y-2">
+                <Label htmlFor="menuUrl" className="flex items-center gap-1.5">
+                  <Link2 className="h-3.5 w-3.5" /> Menu link <span className="text-muted-foreground">(optional)</span>
+                </Label>
+                <div className="flex gap-2">
                   <Input
-                    key={fileKey}
-                    type="file"
-                    id="menuFile"
-                    name="menuFile"
-                    onChange={(e) => setMenuFile(e.target.files?.[0] ?? null)}
-                    accept=".csv"
-                    disabled={isSubmitting}
-                    className="cursor-pointer file:cursor-pointer file:text-foreground file:bg-secondary hover:file:bg-secondary/80"
+                    id="menuUrl"
+                    value={menuUrl}
+                    onChange={e => setMenuUrl(e.target.value)}
+                    placeholder="https://…"
+                    disabled={isSavingUrl}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Upload a new CSV to replace the weekly menu, or leave empty to only update the URL.
-                  </p>
+                  <Button variant="outline" onClick={handleSaveUrl} disabled={isSavingUrl}>
+                    {isSavingUrl ? "Saving…" : "Save"}
+                  </Button>
                 </div>
-
-                <Button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? <Skeleton className="h-5 w-24" /> : 'Save Menu'}
-                </Button>
-              </>
+              </div>
             )}
-          </form>
+          </div>
         </CardContent>
       </Card>
+
+      {selectedVendorId ? (
+        <Card className="border-border bg-card shadow-lg">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+              <Store className="h-5 w-5 text-primary" /> {selectedVendor?.name}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <MenuDayScroller vendorId={selectedVendorId} editable />
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border-dashed border-border bg-card/60">
+          <CardContent className="py-14 text-center">
+            <CalendarDays className="mx-auto mb-3 h-9 w-9 text-muted-foreground" />
+            <p className="text-sm font-medium text-foreground">Pick a vendor to start</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              You&apos;ll get a card per day — today first, then the next two weeks.
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

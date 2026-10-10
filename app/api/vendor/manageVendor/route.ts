@@ -9,7 +9,7 @@ import { and, eq, isNull, sql } from 'drizzle-orm';
  * Vendor-entity management endpoint (superAdmin only). Handles the vendor record
  * itself — name, description, price, and which meals it serves — plus soft-delete.
  * The vendor's MENU (menu URL + weekly CSV) is managed separately via
- * `PUT /api/vendor/updateMenu?id=<id>`, which admins can also access.
+ * `/api/vendor/menu?vendorId=<id>`, which admins can also access.
  *
  *   POST   /api/vendor/manageVendor            → create a vendor
  *   PUT    /api/vendor/manageVendor?id=<id>    → update a vendor's details
@@ -160,7 +160,7 @@ export async function POST(req: NextRequest) {
     }
 }
 
-// UPDATE (vendor details only — menu is handled by /api/vendor/updateMenu)
+// UPDATE (vendor details only — menu is handled by /api/vendor/menu)
 export async function PUT(req: NextRequest) {
     try {
         const user = await requireRole(['superAdmin']);

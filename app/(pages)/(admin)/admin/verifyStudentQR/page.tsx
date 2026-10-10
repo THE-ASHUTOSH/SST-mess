@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 
 import RequireRole from "../RequireRole";
 import ScanResultCard from "@/components/common/ScanResultCard";
+import CameraPermissionPrompt from "@/components/common/CameraPermissionPrompt";
+import { cameraAlreadyGranted, cameraFailureMessage, requestCameraAccess } from "@/lib/camera";
 
 interface VerifiedUser {
   id: string;
@@ -30,8 +32,42 @@ const VerifyStudentQRPage = () => {
   const [verifiedUser, setVerifiedUser] = useState<VerifiedUser | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [selectedVendor, setSelectedVendor] = useState<string>('');
+  // The scanner only mounts once the operator has accepted the soft prompt (or the browser says
+  // permission was already granted) — the camera is never opened behind their back.
+  const [cameraReady, setCameraReady] = useState(false);
+  const [checkingCamera, setCheckingCamera] = useState(true);
+  const [requestingCamera, setRequestingCamera] = useState(false);
+  const [cameraNotice, setCameraNotice] = useState<string | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerContainerId = 'qr-code-full-region';
+
+  // An operator who already granted the camera shouldn't be asked again on every shift.
+  useEffect(() => {
+    let active = true;
+    cameraAlreadyGranted().then((granted) => {
+      if (!active) return;
+      setCameraReady(granted);
+      setCheckingCamera(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  /** The soft prompt's accept: this call is what raises the browser's own dialog. */
+  const enableCamera = async () => {
+    setRequestingCamera(true);
+    setCameraNotice(null);
+    try {
+      await requestCameraAccess();
+      setCameraReady(true);
+    } catch (err) {
+      console.warn('Camera permission refused:', err);
+      setCameraNotice(cameraFailureMessage(err));
+    } finally {
+      setRequestingCamera(false);
+    }
+  };
 
   useEffect(() => {
     const fetchVendors = async () => {
@@ -73,7 +109,7 @@ const VerifyStudentQRPage = () => {
   }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !selectedVendor) {
+    if (typeof window === 'undefined' || !selectedVendor || !cameraReady) {
       return;
     }
 
@@ -117,15 +153,27 @@ const VerifyStudentQRPage = () => {
               }
               handleVerify(decodedText);
             },
-            (errorMessage) => {
-              // ignore
+            () => {
+              // ignore per-frame decode errors
             }
           );
         } catch (err) {
-          console.error("Error starting scanner", err);
+          // warn, not error: a camera that won't open is a state the prompt below explains, not an
+          // app fault — and Next's dev overlay red-flags anything logged as an error.
+          console.warn("Camera unavailable:", err);
+          // start() never attached to the camera, so drop the instance — otherwise the guard above
+          // would see a live ref and skip the next attempt.
+          try {
+            scanner.clear();
+          } catch {
+            // nothing was rendered yet
+          }
+          scannerRef.current = null;
           // Only show error if not processing (processing might cause unmount/stop which throws)
           if (!isProcessing) {
-            setError("Failed to start camera. Please ensure camera permissions are granted.");
+            // Back to the soft prompt, now carrying the reason.
+            setCameraNotice(cameraFailureMessage(err));
+            setCameraReady(false);
           }
         }
       }
@@ -140,7 +188,7 @@ const VerifyStudentQRPage = () => {
       clearTimeout(timerId);
       cleanupScanner();
     };
-  }, [isProcessing, selectedVendor]);
+  }, [isProcessing, selectedVendor, cameraReady]);
 
   const handleVerify = async (token: string) => {
     if (!selectedVendor) {
@@ -201,8 +249,8 @@ const VerifyStudentQRPage = () => {
         </Select>
       </div>
 
-      {/* Vendor-fetch and camera/permission failures happen outside a scan, so without their own
-          surface they would be set and never shown. */}
+      {/* Vendor-fetch failures happen outside a scan, so without their own surface they would be
+          set and never shown. */}
       {error && !isProcessing && (
         <div className="mb-8 w-full max-w-sm">
           <ScanResultCard
@@ -214,7 +262,22 @@ const VerifyStudentQRPage = () => {
         </div>
       )}
 
-      {selectedVendor && (
+      {/* Ask in our own words before the browser's prompt — see CameraPermissionPrompt. */}
+      {selectedVendor && !cameraReady && !isProcessing && (
+        <div className="mb-8 w-full max-w-sm">
+          {checkingCamera ? (
+            <Skeleton className="h-64 w-full rounded-2xl" />
+          ) : (
+            <CameraPermissionPrompt
+              onEnable={enableCamera}
+              requesting={requestingCamera}
+              notice={cameraNotice}
+            />
+          )}
+        </div>
+      )}
+
+      {selectedVendor && cameraReady && (
         <div className="w-full max-w-sm relative" style={{ minHeight: '300px' }}>
           <div id={scannerContainerId} style={{ display: isProcessing ? 'none' : 'block' }} className="rounded-lg overflow-hidden border-2 border-primary/20 bg-black"></div>
           {isProcessing && (

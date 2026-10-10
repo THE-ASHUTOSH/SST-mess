@@ -69,7 +69,7 @@ so they map to `400` distinctly from server errors.
   (see `app/api/admin/upload-vendor-selection/commit/route.ts`). Keep transactions short: they hold a
   pooled connection, and `lib/db.ts` caps the pool at 5 per instance.
 - Handlers written before the driver swap instead order writes so the last statement is the "commit"
-  (e.g. create the menu, then insert the vendor with its `menuId`) and lean on unique indexes +
+  (e.g. insert the child rows last, so a half-done write leaves nothing dangling) and lean on unique indexes +
   `onConflictDoNothing`. That remains correct — don't churn it — but new code can just use a transaction.
 - **No N+1.** For bulk work: preload with one `inArray(...)` query → diff in memory → chunked bulk
   `insert`/`update` (chunk ≤ 500 rows; watch the 65k param ceiling on non-chunked `inArray`).

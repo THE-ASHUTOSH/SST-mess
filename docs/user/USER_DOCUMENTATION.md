@@ -24,7 +24,7 @@ The **SST Mess Management System** is a comprehensive digital platform designed 
 
 
 ### Admin
-*   **Vendor Management**: Add new vendors, update existing details, and manage weekly menus.
+*   **Vendor Management**: Add new vendors, update existing details, and manage day-by-day menus.
 *   **User Management**: Upload and manage bulk student vendor selections via Excel sheets.
 *   **System Controls**: Toggle global features like the "Feedback Form" availability.
 *   **Analytics**: View comprehensive charts on vendor popularity and student feedback trends.

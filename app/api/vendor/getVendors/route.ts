@@ -11,9 +11,9 @@ const getCachedVendors = unstable_cache(
             // `email` is the vendor's login mapping — superAdmin-only. Never expose it on this
             // public endpoint (consumed by students/vendors); see GET /api/admin/vendors instead.
             columns: { email: false },
-            with: {
-                menu: true,
-            },
+            // The legacy weekly `menu` relation is deliberately NOT loaded: per-day menus live in
+            // `menu_days` and are served by GET /api/vendor/menu. Nothing read it, and dropping it
+            // keeps this cached payload small.
         });
     },
     ['vendors-list'], // cache key

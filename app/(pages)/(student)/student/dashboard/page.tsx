@@ -54,8 +54,8 @@ const Dashboard = () => {
 
           <EventCard
             title="Menu"
-            description="Daily and weekly menus by vendor"
-            redirectUrl="/student/vendorDetails"
+            description="What's cooking for the next two weeks"
+            redirectUrl="/student/menu"
             icon={BookOpen}
           />
 

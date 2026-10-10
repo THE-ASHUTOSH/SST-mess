@@ -66,9 +66,9 @@ commas or new lines.
     *   **Description**: Short snippet (e.g., "Authentic Punjabi Cuisine").
     *   **Price**: Price per meal/subscription (numeric value).
     *   **Menu URL**: (Optional) External link.
-    *   **Meal Options**: Check all that apply (Breakfast/Lunch/Dinner).
-3.  **Menu File**: Upload a `.csv` file to auto-populate the weekly menu (see section 2.3).
-4.  Click **Add Vendor**.
+    *   **Meal Options**: Check all that apply (Breakfast/Lunch/Dinner). These decide which meal boxes
+        appear on the menu cards, so get them right before entering menus.
+3.  Click **Add Vendor**, then set the menu day-by-day under **Update Menu** (see section 2.3).
 
 #### Updating an Existing Vendor
 1.  Go to **Vendor Management** list.
@@ -80,14 +80,30 @@ commas or new lines.
 
 ### 2.3. Menu Management
 
-**Format**: Menus are uploaded via CSV or managed in the database.
-**Structure**: A menu CSV typically maps days of the week to items.
+**No file uploads.** The menu is typed in, one day at a time, for a rolling **15-day window**: today
+plus the next fourteen days.
 
-#### Updating Weekly Menu
-1.  Navigate to **Update Menu**.
-2.  Select the **Vendor**.
-3.  Input the new items for each day (Breakfast, Lunch, Dinner).
-4.  Click **Save**. *Changes reflect immediately for students.*
+#### Updating the menu
+1.  Navigate to **Update Menu** and select the **Vendor**.
+2.  You get one card per day, today first, each showing Breakfast / Lunch / Dinner. Use the **arrows**
+    (or swipe) to move one day at a time.
+3.  Click the **pencil** on the day you want to change — only that day becomes editable.
+4.  Type the dishes, **one per line**, in each meal box.
+5.  Click **Save**. *Changes reflect immediately for students.*
+
+> **The window looks after itself.** Each day that passes drops off the front, and a fresh empty day
+> appears at the far end ready to fill — so there are always 15. Nothing needs creating in advance.
+> A day only becomes a saved record once you enter dishes for it.
+
+**Only meals the vendor actually serves are shown.** If a vendor is lunch-only, that's the only box on
+the card — controlled by the vendor's Breakfast/Lunch/Dinner options under Manage Vendors.
+
+**Menu link (optional)**: a separate field on the same page for an external menu URL, which students
+can download. It is independent of the day-by-day menu.
+
+#### What students see
+The same day cards, read-only, under **Menu** in their sidebar. They can browse **any** vendor's menu
+via the pills at the top, with their own vendor marked *Yours* and selected first.
 
 ---
 
@@ -117,7 +133,8 @@ commas or new lines.
 ### 3.1. Validating a Meal (Scanning)
 1.  Log in to the **Vendor Portal**.
 2.  Access the **QR Scanner** (Verify Student QR page).
-3.  **Permission**: Allow camera access if prompted.
+3.  **Permission**: Tap **Enable camera**, then choose **Allow** in the browser's own prompt that
+    follows. Do not tap *Block* — see the warning in 3.3.
 4.  **Scan**: Point camera at Student's generated QR code.
     *   **Green Checkmark**: "Verified Successfully" -> **SERVE FOOD**.
     *   **Red X**: "Already Scanned" or "Invalid Vendor" -> **DENY FOOD**.
@@ -129,6 +146,24 @@ commas or new lines.
 | `Wrong Vendor` | Student selected a different mess. | Direct student to their assigned mess. |
 | `Already Scanned` | User already ate this meal today. | Do **NOT** serve. |
 | `403 Forbidden` | You are logged in as a Student. | Log out and login with Vendor credentials. |
+
+### 3.3. Camera Won't Start
+The scanner never opens the camera on its own — it shows a **Turn on the camera to scan** card
+first, and only asks the browser once you tap **Enable camera**. If anything goes wrong you land
+back on that card with the reason printed on it, and the same button tries again.
+
+> **Important:** the browser only re-shows its camera prompt if you *dismissed* it. Once you tap
+> **Block**, the choice is saved for the site and **no website can ask again** — it has to be
+> changed in browser settings (Android: lock icon → Permissions → Camera; iOS: `aA` → Website
+> Settings → Camera; desktop: camera icon at the right of the address bar). This is exactly why
+> the card explains the camera before the prompt appears.
+
+| Message on the card | Meaning | Action |
+| :--- | :--- | :--- |
+| `Camera access was blocked` | Permission was refused. | Set Camera to *Allow* in browser settings (above), then tap **Enable camera**. |
+| `No camera was found on this device` | No usable camera. | Connect/enable a camera, then tap **Enable camera**. |
+| `The camera is already in use` | Another app or tab holds the camera. | Close it, then tap **Enable camera**. |
+| `The camera needs a secure connection` | Page opened over `http`. | Open the `https` address of the site. |
 
 ---
 

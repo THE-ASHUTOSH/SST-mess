@@ -85,6 +85,27 @@
       "when": 1784962753786,
       "tag": "0011_drop_hostel",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1785402775048,
+      "tag": "0012_menu_days",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1785402850301,
+      "tag": "0013_seed_menu_days",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1788888399041,
+      "tag": "0014_drop_legacy_menus",
+      "breakpoints": true
     }
   ]
 }

@@ -61,6 +61,7 @@ pnpm db:generate --name <desc>   # create a migration after editing lib/db/schem
 | [docs/backend/DATA_MODEL.md](./docs/backend/DATA_MODEL.md) | Tables, enums, relationships (ERD), and data conventions |
 | [docs/frontend/FRONTEND.md](./docs/frontend/FRONTEND.md) | App Router routing, layout shell, nav config, guards, contexts, UI kit |
 | [docs/user/USER_DOCUMENTATION.md](./docs/user/USER_DOCUMENTATION.md) · [docs/user/SOP.md](./docs/user/SOP.md) | End-user guide & standard operating procedures |
+| [docs/CONTRIBUTING.md](./docs/CONTRIBUTING.md) | Branches, Conventional Commit PR titles, PR checklist, DB-change rules |
 | [CLAUDE.md](./CLAUDE.md) | Conventions & rules for AI-assisted development |
 
 ## Project layout (short)

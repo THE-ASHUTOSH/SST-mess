@@ -1,16 +1,21 @@
 #!/usr/bin/env bash
 #
-# DEV setup + run. Installs deps, optionally migrates / seeds, then starts the dev server.
-# Uses .env.local → your Neon DEV branch (see docs/DEVELOPMENT.md).
+# DEV setup + run. Starts the local Postgres container, installs deps, optionally migrates / seeds,
+# then starts the dev server. Uses .env.local → the Docker DB (see docs/DEVELOPMENT.md).
+#
+# Needs bash — on Windows use Git Bash. The same steps are available as cross-platform pnpm
+# scripts that work anywhere, including PowerShell:
+#   pnpm db:up · pnpm db:migrate · pnpm db:seed · pnpm db:reset · pnpm db:psql · pnpm dev
 #
 # Usage:  ./dev.sh [options]
 #   -s, --seed          Seed demo data (WIPES the dev DB) before starting
 #   -b, --bulk[=N]      Also seed N bulk students (default 3000) for upload load-testing
 #       --no-migrate    Skip applying migrations
+#       --no-docker     Don't touch Docker (point .env.local at an already-running Postgres)
 #   -h, --help          Show this help and exit
 #
 # With NO options, an interactive menu lets you choose what to do. The menu options that write to the
-# database (2-4) print the target host first and ask you to confirm it's your DEV branch.
+# database (2-4) print the target host first and ask you to confirm it's the DB you meant.
 #
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -19,6 +24,7 @@ MIGRATE="yes"
 SEED="no"
 BULK="no"
 BULK_N="3000"
+DOCKER="yes"
 EXPLICIT="no"   # did the user pass an action flag? (skips the menu)
 
 # Print the header comment block (skip the shebang; stop at the first non-comment line).
@@ -30,6 +36,7 @@ for arg in "$@"; do
     -b|--bulk)      BULK="yes"; EXPLICIT="yes" ;;
     --bulk=*)       BULK="yes"; BULK_N="${arg#*=}"; EXPLICIT="yes" ;;
     --no-migrate)   MIGRATE="no"; EXPLICIT="yes" ;;
+    --no-docker)    DOCKER="no" ;;
     -h|--help)      usage; exit 0 ;;
     *) echo "Unknown option: $arg"; echo; usage; exit 1 ;;
   esac
@@ -63,7 +70,8 @@ confirm_db_write() {
   echo
   echo "⚠ About to $1."
   echo "  Target database: $target"
-  echo "  Confirm this is your Neon DEV branch — never production (see docs/DEVELOPMENT.md)."
+  echo "  Confirm this is your LOCAL dev database — never production (see docs/DEVELOPMENT.md)."
+  echo "  The local one looks like: localhost:5432/mess_dev"
   read -r -p "Continue? [y/N]: " ok || ok=""
   case "$ok" in
     y|Y|yes|YES) ;;
@@ -101,22 +109,44 @@ if [ ! -d node_modules ]; then
   pnpm install
 fi
 
-# --- 3. Migrations (idempotent — applies only pending ones to your dev branch) ---
+# --- 2b. Local Postgres container (docker-compose.yml) ---
+# Skipped when DATABASE_URL points somewhere other than this machine, so `--no-docker` is only
+# needed for the unusual case of a local Postgres you manage yourself.
+if [ "$DOCKER" = "yes" ]; then
+  case "$(db_target || true)" in
+    localhost*|127.0.0.1*|"[::1]"*)
+      if ! docker info >/dev/null 2>&1; then
+        echo "✗ Docker isn't running — start Docker Desktop and try again."
+        echo "  (Or use --no-docker if you run Postgres yourself.)"
+        exit 1
+      fi
+      echo "• Starting the local Postgres container (waiting for it to accept connections)…"
+      # --wait blocks on the healthcheck in docker-compose.yml, so migrations below can't race
+      # the first-boot initdb, which takes a few seconds on a fresh volume.
+      docker compose up -d --wait db
+      ;;
+    *)
+      echo "• DATABASE_URL is not local — leaving Docker alone."
+      ;;
+  esac
+fi
+
+# --- 3. Migrations (idempotent — applies only the pending ones to your dev database) ---
 if [ "$MIGRATE" = "yes" ]; then
   echo "• Applying database migrations…"
-  pnpm drizzle-kit migrate || echo "⚠ Migration step failed — continuing (check DATABASE_URL)."
+  pnpm db:migrate || echo "⚠ Migration step failed — continuing (check DATABASE_URL)."
 fi
 
 # --- 4. Seed demo data (guarded; WIPES the dev DB before repopulating) ---
 if [ "$SEED" = "yes" ]; then
   echo "• Seeding demo data…"
-  pnpm dlx tsx scripts/seed.ts --yes || echo "⚠ Seed failed — continuing (is DEV_SEED_EMAIL set in .env.local?)."
+  pnpm tsx scripts/seed.ts --yes || echo "⚠ Seed failed — continuing (is DEV_SEED_EMAIL set in .env.local?)."
 fi
 
 # --- 5. Bulk students (for upload load-testing) ---
 if [ "$BULK" = "yes" ]; then
   echo "• Seeding $BULK_N bulk students…"
-  pnpm dlx tsx scripts/seed-bulk-users.ts "$BULK_N" --yes || echo "⚠ Bulk seed failed — continuing."
+  pnpm tsx scripts/seed-bulk-users.ts "$BULK_N" --yes || echo "⚠ Bulk seed failed — continuing."
 fi
 
 # --- 6. Run ---

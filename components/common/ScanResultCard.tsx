@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { AlertCircle, CheckCircle2, RotateCcw } from "lucide-react";
+import { AlertCircle, CheckCircle2, GraduationCap, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ScanResultCardProps {
@@ -9,7 +9,7 @@ interface ScanResultCardProps {
   /** The server's own message, rendered as-is. */
   message: string;
   /** Shown on success so the operator can match the face to the person. */
-  user?: { name: string; picture?: string | null } | null;
+  user?: { name: string; picture?: string | null; batch?: string | null } | null;
   onAction: () => void;
   /** Defaults to "Scan Again"; setup failures want "Reload" or "Dismiss" instead. */
   actionLabel?: string;
@@ -62,6 +62,16 @@ const ScanResultCard: React.FC<ScanResultCardProps> = ({
 
       {showAvatar && (
         <h3 className="mb-1 truncate text-xl font-bold text-foreground">{user?.name}</h3>
+      )}
+
+      {showAvatar && user?.batch && (
+        <span
+          title="Batch"
+          className="mb-3 inline-flex max-w-full items-center gap-1.5 rounded-full border border-border bg-background px-3.5 py-1 text-sm font-semibold text-foreground"
+        >
+          <GraduationCap className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+          <span className="truncate">{user.batch}</span>
+        </span>
       )}
 
       <p className={`mx-auto max-w-[34ch] text-lg font-semibold leading-snug ${accent}`}>

@@ -36,6 +36,14 @@ const VerifyStudentQRPage = () => {
   const [requestingCamera, setRequestingCamera] = useState(false);
   const [cameraNotice, setCameraNotice] = useState<string | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  // html5-qrcode fires onSuccess on every decoded frame until stop() lands, so one QR can call
+  // handleVerify several times. A ref (not state) blocks the repeats synchronously — otherwise the
+  // duplicate's "already taken" 403 can land after, and overwrite, the real success.
+  const verifyingRef = useRef(false);
+  // The last QR this device verified. After "Scan Again" the previous student's code is still on
+  // their screen (valid 30s; their page flips to "Verified" only on its next 5s poll), so it gets
+  // read again — and its "already taken" shows while the NEXT student is at the counter.
+  const verifiedTokenRef = useRef<string | null>(null);
   const scannerContainerId = 'qr-code-full-region';
 
   // A vendor who already granted the camera shouldn't be asked again on every shift.
@@ -163,15 +171,18 @@ const VerifyStudentQRPage = () => {
   }, [isProcessing, myVendor, cameraReady]);
 
   const handleVerify = async (token: string) => {
+    if (verifyingRef.current || token === verifiedTokenRef.current) return;
     if (!myVendor) {
       setError('No vendor is linked to your account.');
       return;
     }
+    verifyingRef.current = true;
     setIsProcessing(true);
     try {
       // The server pins the scan to THIS vendor account (from the session), so we don't send a
       // vendorId — a client-supplied one would be ignored for vendor accounts anyway.
       const response = await axiosInstance.post(`/api/meal/verify-qr`, { token });
+      verifiedTokenRef.current = token;
       setMessage(response.data.message || 'Meal verified.');
       setVerifiedUser(response.data.user);
       setError('');
@@ -187,6 +198,7 @@ const VerifyStudentQRPage = () => {
   };
 
   const resetScanner = () => {
+    verifyingRef.current = false;
     setMessage('');
     setError('');
     setIsProcessing(false);

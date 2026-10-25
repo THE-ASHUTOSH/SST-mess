@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQRCode } from "next-qrcode";
-import { AlertCircle, Info, Loader2, RefreshCw } from "lucide-react";
+import { AlertCircle, GraduationCap, Info, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMealQR } from "@/context/MealQRContext";
+import { useUser } from "@/context/UserContext";
 
 export default function MealQRPanel() {
   const {
@@ -20,6 +21,7 @@ export default function MealQRPanel() {
     expired,
     refresh,
   } = useMealQR();
+  const { user } = useUser();
 
   const { Canvas } = useQRCode();
   const [qrWidth, setQrWidth] = useState(260);
@@ -52,7 +54,7 @@ export default function MealQRPanel() {
 
   return (
     <Card className="app-shell-kpi rounded-none sm:rounded-2xl border-x-0 sm:border-x px-0 sm:px-6 py-0 sm:py-6 flex flex-col items-center gap-3 sm:gap-4 overflow-hidden">
-      <div className="flex items-center justify-between w-full px-4 sm:px-0 pt-4 sm:pt-0">
+      <div className="flex items-start justify-between gap-3 w-full px-4 sm:px-0 pt-4 sm:pt-0">
         <div>
           <h2 className="text-base sm:text-lg font-semibold text-foreground">
             {scanned ? "Meal verified" : "Your meal QR"}
@@ -63,6 +65,15 @@ export default function MealQRPanel() {
               : "Show this code to the vendor to collect food."}
           </p>
         </div>
+        {user?.batch && (
+          <span
+            title="Batch"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[color:var(--surface-active)] px-3 py-1 text-xs font-semibold text-primary"
+          >
+            <GraduationCap className="h-3.5 w-3.5" aria-hidden />
+            {user.batch}
+          </span>
+        )}
       </div>
 
       {loading ? (
